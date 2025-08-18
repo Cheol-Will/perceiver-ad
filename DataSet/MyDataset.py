@@ -10,7 +10,7 @@ import ipdb
 
 
 class CsvDataset(Dataset):
-    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train'):
+    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 0.5):
         super(CsvDataset, self).__init__()
         x = []
         labels = []
@@ -32,7 +32,7 @@ class CsvDataset(Dataset):
 
         inlier_indices = np.where(target == 0)[0]
         outlier_inices = np.where(target == 1)[0]
-        train_data, train_label, test_data, test_label = train_test_split(data[inlier_indices], data[outlier_inices])
+        train_data, train_label, test_data, test_label = train_test_split(data[inlier_indices], data[outlier_inices], ratio)
 
         if preprocess == 'standard':
             processor = sklearn.preprocessing.StandardScaler().fit(train_data)
@@ -61,7 +61,7 @@ class CsvDataset(Dataset):
 
 
 class MatDataset(Dataset):
-    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train'):
+    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 0.5):
         super(MatDataset, self).__init__()
         path = os.path.join(data_dir, dataset_name + '.mat')
         data = io.loadmat(path)
@@ -70,7 +70,7 @@ class MatDataset(Dataset):
 
         inliers = samples[labels == 0]
         outliers = samples[labels == 1]
-        train_data, train_label, test_data, test_label = train_test_split(inliers, outliers)
+        train_data, train_label, test_data, test_label = train_test_split(inliers, outliers, ratio)
 
         if preprocess == 'standard':
             processor = sklearn.preprocessing.StandardScaler().fit(train_data)
@@ -98,7 +98,7 @@ class MatDataset(Dataset):
     
 
 class NpzDataset(Dataset):
-    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train'):
+    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 0.5):
         super(NpzDataset, self).__init__()
         path = os.path.join(data_dir, dataset_name+'.npz')
         data=np.load(path)  
@@ -107,7 +107,7 @@ class NpzDataset(Dataset):
 
         inliers = samples[labels == 0]
         outliers = samples[labels == 1]
-        train_data, train_label, test_data, test_label = train_test_split(inliers, outliers)
+        train_data, train_label, test_data, test_label = train_test_split(inliers, outliers, ratio)
 
         if preprocess == 'standard':
             processor = sklearn.preprocessing.StandardScaler().fit(train_data)
@@ -134,14 +134,25 @@ class NpzDataset(Dataset):
         return len(self.data)
 
     
-def train_test_split(inliers, outliers):
+def train_test_split(inliers, outliers, ratio=1.0):
+    """
+    Split normal (inliers) and abnormal (outliers) data into train/test sets.
+
+    Train set: First `ratio` fraction of the first half of the normal samples (only normals).
+    Test set: Second half of the normal samples + all abnormal samples.    
+    """
+
     np.random.shuffle(inliers)
     num_split = len(inliers) // 2
-    train_data = inliers[:num_split]
-    train_label = np.zeros(num_split)
+    train_data = inliers[:int(num_split*ratio)]
+    train_label = np.zeros(int(num_split*ratio))
     test_data = np.concatenate([inliers[num_split:], outliers], 0)
 
     test_label = np.zeros(test_data.shape[0])
     test_label[-len(outliers):] = 1
+
+    print("Split train and test dataset following ratio")
+    print(f"the number of train instances: {train_data.shape[0]}")
+    print(f"the number of test instances: {test_data.shape[0]}")
 
     return train_data, train_label, test_data, test_label
