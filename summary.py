@@ -72,6 +72,7 @@ def convert_results_to_csv(results, save_csv=False, outdir="summary"):
                 .sort_values(["model", "dataset"])
                 .reset_index(drop=True)
             )
+
             key = f"ratio_{tr}_{metric.replace('-', '')}"
             dfs[key] = df_sub
             if save_csv:
@@ -94,6 +95,8 @@ def make_pivots(dfs, save_csv=False, outdir="summary"):
                   .sort_index(axis=0)
                   .sort_index(axis=1)
             )
+            pivoted.columns = pivoted.columns.str.lower()
+            pivoted = pivoted[sorted(pivoted.columns)]
             key_piv = f"ratio_{tr}_{metric.replace('-', '')}"
             pivots[key_piv] = pivoted
             if save_csv:
@@ -115,30 +118,20 @@ def main():
 
     results = collect_results()
     df_all, dfs = convert_results_to_csv(results, save_csv=False)
-    pivots = make_pivots(dfs, save_csv=False)
+    dfs = make_pivots(dfs, save_csv=False)
+    keys = [
+        'ratio_0.1_AUCROC', 
+        'ratio_0.5_AUCROC', 
+        'ratio_1.0_AUCROC', 
+        'ratio_0.1_AUCPR', 
+        'ratio_0.5_AUCPR', 
+        'ratio_1.0_AUCPR'
+    ]
 
-    print("\n=== 0.1_AUCROC  ===")
-    df = pivots.get('ratio_0.1_AUCROC', pd.DataFrame())
-    print(df[data_names])
-    print("\n=== 0.5_AUCROC  ===")
-    df = pivots.get('ratio_0.5_AUCROC', pd.DataFrame())
-    print(df[data_names])
-    print("\n=== 1.0_AUCROC  ===")
-    df = pivots.get('ratio_1.0_AUCROC', pd.DataFrame())
-    print(df[data_names])
-    print(df)
-
-    print("\n=== 0.1_AUCPR  ===")
-    df = pivots.get('ratio_0.1_AUCPR', pd.DataFrame())
-    print(df[data_names])
-    print("\n=== 0.5_AUCPR  ===")
-    df = pivots.get('ratio_0.5_AUCPR', pd.DataFrame())
-    print(df[data_names])
-    print("\n=== 1.0_AUCPR  ===")
-    df = pivots.get('ratio_1.0_AUCPR', pd.DataFrame())
-    print(df[data_names])
-    print(df)
-
+    for k in keys:
+        print(k)
+        print(dfs[k])
+        print()
 
 if __name__ == "__main__":
     main()

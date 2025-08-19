@@ -16,9 +16,6 @@ mat_files = glob.glob(os.path.join('./Data', '*.mat'))
 mat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in mat_files]
 
 
-# def 
-
-
 def train_test(args, seed):
     # Load config
     dict_to_import = 'model_config_' + args.model_type

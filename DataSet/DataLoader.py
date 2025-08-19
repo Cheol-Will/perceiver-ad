@@ -31,3 +31,20 @@ def get_dataloader(model_config: dict):
                               )
     test_loader = DataLoader(test_set, batch_size=model_config['batch_size'], shuffle=False)
     return train_loader, test_loader
+
+def get_dataset(model_config: dict):
+    dataset_name = model_config['dataset_name']
+    
+    if dataset_name in npz_datanames:
+        train_set = NpzDataset(dataset_name, model_config['data_dim'], model_config['data_dir'], model_config['preprocess'], mode='train', ratio=model_config["train_ratio"])
+        test_set = NpzDataset(dataset_name, model_config['data_dim'], model_config['data_dir'], model_config['preprocess'], mode='eval', ratio=model_config["train_ratio"])
+
+    elif dataset_name in mat_datanames:
+        train_set = MatDataset(dataset_name, model_config['data_dim'], model_config['data_dir'], model_config['preprocess'], mode='train', ratio=model_config["train_ratio"])
+        test_set = MatDataset(dataset_name, model_config['data_dim'], model_config['data_dir'], model_config['preprocess'], mode='eval', ratio=model_config["train_ratio"])
+        
+    else:
+        train_set = CsvDataset(dataset_name, model_config['data_dim'], model_config['data_dir'], model_config['preprocess'], mode='train', ratio=model_config["train_ratio"])
+        test_set = CsvDataset(dataset_name, model_config['data_dim'], model_config['data_dir'], model_config['preprocess'], mode='eval', ratio=model_config["train_ratio"])
+
+    return train_set, test_set

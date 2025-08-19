@@ -24,8 +24,8 @@ class Trainer(object):
         ).to(self.device)
         self.train_loader, self.test_loader = get_dataloader(model_config)
         self.model_config = model_config
-        self.seed = model_config['seed']
-        self.base_path = os.path.join(base_path, str(self.seed))
+        self.run = model_config['run']
+        self.base_path = os.path.join(base_path, str(self.run))
         os.makedirs(self.base_path, exist_ok=True)
 
 

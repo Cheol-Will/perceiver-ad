@@ -10,7 +10,7 @@ import ipdb
 
 
 class CsvDataset(Dataset):
-    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 0.5):
+    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 1.0):
         super(CsvDataset, self).__init__()
         x = []
         labels = []
@@ -61,7 +61,7 @@ class CsvDataset(Dataset):
 
 
 class MatDataset(Dataset):
-    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 0.5):
+    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 1.0):
         super(MatDataset, self).__init__()
         path = os.path.join(data_dir, dataset_name + '.mat')
         data = io.loadmat(path)
@@ -98,7 +98,7 @@ class MatDataset(Dataset):
     
 
 class NpzDataset(Dataset):
-    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 0.5):
+    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 1.0):
         super(NpzDataset, self).__init__()
         path = os.path.join(data_dir, dataset_name+'.npz')
         data=np.load(path)  
@@ -143,13 +143,13 @@ def train_test_split(inliers, outliers, ratio=1.0):
     """
 
     np.random.shuffle(inliers)
-    num_split = len(inliers) // 2
-    train_data = inliers[:int(num_split*ratio)]
-    train_label = np.zeros(int(num_split*ratio))
-    test_data = np.concatenate([inliers[num_split:], outliers], 0)
+    num_split = len(inliers) // 2 # half of the normal samples
+    train_data = inliers[:int(num_split*ratio)] # use (100*ratio)% of half of normal samples.
+    train_label = np.zeros(int(num_split*ratio)) # normal: 0
 
+    test_data = np.concatenate([inliers[num_split:], outliers], 0)
     test_label = np.zeros(test_data.shape[0])
-    test_label[-len(outliers):] = 1
+    test_label[-len(outliers):] = 1 # abnormal: 1
 
     print("Split train and test dataset following ratio")
     print(f"the number of train instances: {train_data.shape[0]}")
