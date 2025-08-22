@@ -2,6 +2,7 @@ import os
 import csv
 import numpy as np
 import pandas as pd
+import glob
 from scipy import io
 import torch
 from torch.utils.data import Dataset
@@ -9,9 +10,44 @@ import sklearn.preprocessing
 import ipdb
 
 
-class CsvDataset(Dataset):
-    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 1.0):
-        super(CsvDataset, self).__init__()
+npz_files = glob.glob(os.path.join('./Data', '*.npz'))
+npz_datanames = [os.path.splitext(os.path.basename(file))[0] for file in npz_files]
+
+mat_files = glob.glob(os.path.join('./Data', '*.mat'))
+mat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in mat_files]
+
+
+class MyDataset(Dataset):
+    def __init__(self, data, label):
+        super(MyDataset, self).__init__()
+        self.data = torch.Tensor(data)
+        self.targets = torch.Tensor(label)
+
+    def __getitem__(self, item):
+        return self.data[item], self.targets[item]
+
+    def __len__(self):
+        return len(self.data)
+
+
+def load_dataset(data_dir, dataset_name, data_dim):
+    if dataset_name in npz_datanames:
+        path = os.path.join(data_dir, dataset_name+'.npz')
+        data=np.load(path)  
+        samples = data['X']
+        labels = ((data['y']).astype(np.int)).reshape(-1)
+
+        inliers = samples[labels == 0]
+        outliers = samples[labels == 1]
+    elif dataset_name in mat_datanames:
+        path = os.path.join(data_dir, dataset_name + '.mat')
+        data = io.loadmat(path)
+        samples = data['X']
+        labels = ((data['y']).astype(np.int)).reshape(-1)
+
+        inliers = samples[labels == 0]
+        outliers = samples[labels == 1]
+    else:
         x = []
         labels = []
         path = os.path.join(data_dir, dataset_name+'.csv')
@@ -29,130 +65,46 @@ class CsvDataset(Dataset):
 
         data = np.array(x)
         target = np.array(labels)
-
         inlier_indices = np.where(target == 0)[0]
-        outlier_inices = np.where(target == 1)[0]
-        train_data, train_label, test_data, test_label = train_test_split(data[inlier_indices], data[outlier_inices], ratio)
+        outlier_indices = np.where(target == 1)[0]
 
-        if preprocess == 'standard':
-            processor = sklearn.preprocessing.StandardScaler().fit(train_data)
-        elif preprocess == 'minmax':
-            processor = sklearn.preprocessing.MinMaxScaler().fit(train_data)
-        elif preprocess == 'quantile':
-            processor = sklearn.preprocessing.QuantileTransformer().fit(train_data)
-        elif preprocess == 'none':
-            processor = sklearn.preprocessing.FunctionTransformer().fit(train_data)
-        train_data = processor.transform(train_data)
-        test_data = processor.transform(test_data)
+        inliers = data[inlier_indices]
+        outliers = data[outlier_indices]
 
-        if mode == 'train':
-            self.data = torch.Tensor(train_data)
-            self.targets = torch.Tensor(train_label)
-        else:
-            self.data = torch.Tensor(test_data)
-            self.targets = torch.Tensor(test_label)
-        print(len(self.data))
-
-    def __getitem__(self, item):
-        return self.data[item], self.targets[item]
-
-    def __len__(self):
-        return len(self.data)
+    return inliers, outliers
 
 
-class MatDataset(Dataset):
-    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 1.0):
-        super(MatDataset, self).__init__()
-        path = os.path.join(data_dir, dataset_name + '.mat')
-        data = io.loadmat(path)
-        samples = data['X']
-        labels = ((data['y']).astype(np.int)).reshape(-1)
-
-        inliers = samples[labels == 0]
-        outliers = samples[labels == 1]
-        train_data, train_label, test_data, test_label = train_test_split(inliers, outliers, ratio)
-
-        if preprocess == 'standard':
-            processor = sklearn.preprocessing.StandardScaler().fit(train_data)
-        elif preprocess == 'minmax':
-            processor = sklearn.preprocessing.MinMaxScaler().fit(train_data)
-        elif preprocess == 'quantile':
-            processor = sklearn.preprocessing.QuantileTransformer().fit(train_data)
-        elif preprocess == 'none':
-            processor = sklearn.preprocessing.FunctionTransformer().fit(train_data)
-        train_data = processor.transform(train_data)
-        test_data = processor.transform(test_data)
-
-        if mode == 'train':
-            self.data = torch.Tensor(train_data)
-            self.targets =torch.Tensor(train_label)
-        else:
-            self.data = torch.Tensor(test_data)
-            self.targets = torch.Tensor(test_label)
-
-    def __getitem__(self, item):
-        return self.data[item], self.targets[item]
-
-    def __len__(self):
-        return len(self.data)
-    
-
-class NpzDataset(Dataset):
-    def __init__(self, dataset_name: str, data_dim: int, data_dir: str, preprocess: str, mode: str = 'train', ratio: float = 1.0):
-        super(NpzDataset, self).__init__()
-        path = os.path.join(data_dir, dataset_name+'.npz')
-        data=np.load(path)  
-        samples = data['X']
-        labels = ((data['y']).astype(np.int)).reshape(-1)
-
-        inliers = samples[labels == 0]
-        outliers = samples[labels == 1]
-        train_data, train_label, test_data, test_label = train_test_split(inliers, outliers, ratio)
-
-        if preprocess == 'standard':
-            processor = sklearn.preprocessing.StandardScaler().fit(train_data)
-        elif preprocess == 'minmax':
-            processor = sklearn.preprocessing.MinMaxScaler().fit(train_data)
-        elif preprocess == 'quantile':
-            processor = sklearn.preprocessing.QuantileTransformer().fit(train_data)
-        elif preprocess == 'none':
-            processor = sklearn.preprocessing.FunctionTransformer().fit(train_data)
-        train_data = processor.transform(train_data)
-        test_data = processor.transform(test_data)
-        
-        if mode == 'train':
-            self.data = torch.Tensor(train_data)
-            self.targets =torch.Tensor(train_label)
-        else:
-            self.data = torch.Tensor(test_data)
-            self.targets = torch.Tensor(test_label)
-
-    def __getitem__(self, item):
-        return self.data[item], self.targets[item]
-
-    def __len__(self):
-        return len(self.data)
-
-    
-def train_test_split(inliers, outliers, ratio=1.0):
+def split_and_preprocess(inliers, outliers, preprocess, ratio=1.0):
     """
-    Split normal (inliers) and abnormal (outliers) data into train/test sets.
-
-    Train set: First `ratio` fraction of the first half of the normal samples (only normals).
-    Test set: Second half of the normal samples + all abnormal samples.    
+    Shuffle, split, and apply preprocessor. 
     """
 
+    # shuffle and split
     np.random.shuffle(inliers)
-    num_split = len(inliers) // 2 # half of the normal samples
-    train_data = inliers[:int(num_split*ratio)] # use (100*ratio)% of half of normal samples.
-    train_label = np.zeros(int(num_split*ratio)) # normal: 0
-
+    num_split = len(inliers) // 2
+    train_data = inliers[:num_split]
+    train_label = np.zeros(num_split)
     test_data = np.concatenate([inliers[num_split:], outliers], 0)
     test_label = np.zeros(test_data.shape[0])
-    test_label[-len(outliers):] = 1 # abnormal: 1
+    test_label[-len(outliers):] = 1
 
-    print("Split train and test dataset following ratio")
-    print(f"the number of train instances: {train_data.shape[0]}")
-    print(f"the number of test instances: {test_data.shape[0]}")
+
+    # preprocessing
+    if preprocess == 'standard':
+        processor = sklearn.preprocessing.StandardScaler().fit(train_data)
+    elif preprocess == 'minmax':
+        processor = sklearn.preprocessing.MinMaxScaler().fit(train_data)
+    elif preprocess == 'quantile':
+        processor = sklearn.preprocessing.QuantileTransformer().fit(train_data)
+    elif preprocess == 'none':
+        processor = sklearn.preprocessing.FunctionTransformer().fit(train_data)
+    train_data = processor.transform(train_data)
+    test_data = processor.transform(test_data)
+
+    return train_data, train_label, test_data, test_label   
+
+def load_and_preprocess(data_dir, dataset_name, data_dim, preprocess):
+    inliers, outliers = load_dataset(data_dir, dataset_name, data_dim)
+    train_data, train_label, test_data, test_label = split_and_preprocess(inliers, outliers, preprocess, ratio=1.0)
 
     return train_data, train_label, test_data, test_label
