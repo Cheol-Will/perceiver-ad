@@ -3,7 +3,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import math
+import random
 import itertools
+
+def comb(n, r):
+    if r < 0 or r > n:
+        return 0
+    r = min(r, n - r) # symmetric
+    numer = 1
+    denom = 1
+    for i in range(1, r+1):
+        numer *= n - (r - i)
+        denom *= i
+    return numer // denom
 
 
 class MLP(nn.Module):
@@ -172,7 +184,6 @@ class BiDiectionalCrossAttention(nn.Module):
         return latents_, mask_
 
 
-
 class FeatureTokenizer(nn.Module):
     def __init__(
         self, 
@@ -198,9 +209,6 @@ class FeatureTokenizer(nn.Module):
         return torch.cat(outs, dim=1)  # (batch_size, len(col_idx), hidden_dim)
 
 
-
-
-
 class RIN(nn.Module):
     
     def __init__(
@@ -212,6 +220,7 @@ class RIN(nn.Module):
         mlp_ratio: float = 4,
         dropout_prob: float = 0.0,
         drop_col_prob: float = 0.5,
+        max_repeat: int = 100,
     ):
         assert 0.0 < drop_col_prob < 1.0 
         super(RIN, self).__init__()
@@ -220,14 +229,16 @@ class RIN(nn.Module):
         self.mask_token = nn.Parameter(torch.empty(1, 1, hidden_dim)) # shared mask token
         
         # Mask and latents attend to each other.
-        
         self.self_attention_latent = SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
         self.self_attention_mask = SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
         self.bidirectional_attention = BiDiectionalCrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
+        self.proj = nn.ModuleList([nn.Linear(hidden_dim, 1) for _ in range(num_features)])
 
         self.num_features = num_features
         self.depth = depth
         self.drop_col_prob = drop_col_prob
+        self.max_repeat = max_repeat
+        self.test_drop_col = self.generate_test_drop_col()
 
         self.reset_parameters()
 
@@ -235,36 +246,52 @@ class RIN(nn.Module):
         nn.init.trunc_normal_(self.mask_token, std=0.02)
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
-    def generate_drop_col_idx(self):
+    def generate_test_drop_col(self):
+        n = self.num_features
+        k = max(1, math.floor(n * self.drop_col_prob))
+        # max_num_combinations = math.comb(n, k)
+        max_num_combinations = comb(n, k)
+
+        # if max_repeat > nCk
+        if self.max_repeat >= max_num_combinations:
+            return [list(c) for c in itertools.combinations(range(n), k)]
+        
+        combs = []
+        visited = set()
+        while len(combs) < self.max_repeat:
+            c = tuple(sorted(random.sample(range(n), k)))
+            if c not in combs:
+                visited.add(c)
+                combs.append(list(c))
+    
+        return combs    
+
+    def generate_random_drop_col(self):
+        assert self.training
         cols = list(range(self.num_features))
-        if self.training:
-            drop_col_indicies = [i for i in cols if torch.rand(1).item() < self.drop_col_prob]
-            if len(drop_col_indicies) == 0:
-                # Drop at least one column
-                drop_col_indicies.append(torch.randint(0, self.num_features, (1,)).item())
-            elif len(drop_col_indicies) == self.num_features:
-                # Do not drop every columns.
-                alive_idx = torch.randint(0, self.num_features, (1,)).item()
-                drop_col_indicies.remove(alive_idx)
-            return [drop_col_indicies]
-
-        else:
-            # eval mode: generate all combinations of given size
-            num_drop_cols = max(1, math.floor(self.num_features * self.drop_col_prob))
-            combs = list(itertools.combinations(cols, num_drop_cols))
-            return [list(c) for c in combs]
-
+        drop_col_indicies = [i for i in cols if torch.rand(1).item() < self.drop_col_prob]
+        if len(drop_col_indicies) == 0:
+            # Drop at least one column
+            drop_col_indicies.append(torch.randint(0, self.num_features, (1,)).item())
+        elif len(drop_col_indicies) == self.num_features:
+            # Do not drop every columns.
+            alive_idx = torch.randint(0, self.num_features, (1,)).item()
+            drop_col_indicies.remove(alive_idx)
+        return [drop_col_indicies]
 
     def forward(self, x):
         batch_size, num_features = x.shape # (B, F)
 
-        target_col_idx_list = self.generate_drop_col_idx()
+        if self.training:
+            target_col_idx_list = self.generate_random_drop_col()
+        else:
+            target_col_idx_list = self.test_drop_col
+        
         batch_losses = torch.zeros(batch_size, device=x.device, dtype=x.dtype) # 
-
         for target_col_idx in target_col_idx_list:
             # Indexing input and target
             input_col_idx = [i for i in range(num_features) if i not in target_col_idx]
-            target_input = x[:, target_col_idx] # (B, F-F')
+            target_input = x[:, input_col_idx] # (B, F-F')
             target_mask = x[:, target_col_idx] # (B, F-F')
 
             # Embed input and add pos encoding
@@ -273,8 +300,10 @@ class RIN(nn.Module):
 
             # mask tokens
             mask = self.mask_token.repeat(batch_size, len(target_col_idx), 1) # (B, F-F', D)
+            mask = mask + self.pos_encoding[:, target_col_idx, :]
 
-            for _ in range(self.detph):
+            for _ in range(self.depth):
+                # self attention and cross attention
                 latents = self.self_attention_latent(latents)
                 mask = self.self_attention_latent(mask)
                 latents, mask = self.bidirectional_attention(latents, mask)
@@ -283,12 +312,18 @@ class RIN(nn.Module):
             pred_mask = []
 
             for i, col_idx in enumerate(input_col_idx):
-                pred_latents.append(self.proj[col_idx](pred_latents[:, i, :]))
+                pred_latents.append(self.proj[col_idx](latents[:, i, :]))
             pred_latents = torch.cat(pred_latents, dim=1) # (B, F-F')
 
             for i, col_idx in enumerate(target_col_idx):
                 pred_mask.append(self.proj[col_idx](mask[:, i, :]))
             pred_mask = torch.cat(pred_mask, dim=1) # (B, F-F')
+
+            # print(f"shape of pred_latents, target_input")
+            # print(pred_latents.shape, target_input.shape)
+
+            # print(f"shape of pred_mask, target_mask")
+            # print(pred_mask.shape, target_mask.shape)
 
             # output error
             loss_latents = F.mse_loss(pred_latents, target_input, reduction='none').mean(dim=1) # keep batch dim
