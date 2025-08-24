@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import torch
 import torch.optim as optim
 from DataSet.DataLoader import get_dataloader
@@ -9,13 +10,13 @@ from utils import aucPerformance, F1Performance
 
 class Trainer(object):
     def __init__(self, model_config: dict):
+        self.train_loader, self.test_loader = get_dataloader(model_config)
         self.sche_gamma = model_config['sche_gamma']
         self.device = model_config['device']
         self.learning_rate = model_config['learning_rate']
         self.model = MCM(model_config).to(self.device)
         self.loss_fuc = LossFunction(model_config).to(self.device)
         self.score_func = ScoreFunction(model_config).to(self.device)
-        self.train_loader, self.test_loader = get_dataloader(model_config)
         self.logger = model_config['logger']
         self.model_config = model_config
         self.epochs = model_config['epochs']
@@ -23,6 +24,8 @@ class Trainer(object):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
 
     def training(self):
+        self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
+        self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
         optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
         self.model.train()
@@ -57,6 +60,8 @@ class Trainer(object):
             test_label.append(y_label)
         mse_score = torch.cat(mse_score, axis=0).numpy()
         test_label = torch.cat(test_label, axis=0).numpy()
+        mse_score = np.nan_to_num(mse_score, nan=0.0, posinf=1e12, neginf=-1e12) # some abnormal has large input; thus output high anomaly score
+
         mse_rauc, mse_ap = aucPerformance(mse_score, test_label)
         mse_f1 = F1Performance(mse_score, test_label)
         return mse_rauc, mse_ap, mse_f1

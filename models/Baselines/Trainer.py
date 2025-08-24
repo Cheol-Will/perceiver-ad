@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import torch
 from utils import aucPerformance, F1Performance
 from DataSet.DataLoader import get_dataset
 
@@ -39,7 +41,8 @@ def build_model(model_config):
     elif model_type == 'DeepSVDD':
         return DeepSVDD(n_features=model_config['data_dim']) # input dimension should be given
     elif model_type == 'ICL':
-        return ICL(hidden_dims='200,400', rep_dim=200) # hyperparamters from ICL paper
+        # return ICL(hidden_dims='200,400', rep_dim=200) # hyperparamters from ICL paper
+        return ICL() # hyperparamters from ICL paper
     elif model_type == 'NeuTraL':
         return NeuTraL() # 
     elif model_type == 'SLAD':
@@ -51,22 +54,44 @@ def build_model(model_config):
 
 class Trainer(object):
     def __init__(self, model_config: dict):
+        # get dataset and then build model
+        # since some model changes random seed.
         self.device = model_config['device']
+        self.train_set, self.test_set = get_dataset(model_config) #
         self.model = build_model(model_config)
-        self.train_set, self.test_set = get_dataset(model_config)
         self.logger = model_config['logger']
         self.model_config = model_config
+
+    @staticmethod
+    def _to_numpy(x, dtype=np.float32):
+        if isinstance(x, torch.Tensor):
+            return x.detach().cpu().numpy().astype(dtype, copy=False)
+        return np.asarray(x, dtype=dtype)
 
     def training(self):
         self.logger.info(self.train_set.data[0]) # to confirm the same data split
         self.logger.info(self.test_set.data[0]) # to confirm the same data split
         print("Training Start.")
-        self.model.fit(self.train_set.data)
+
+        X_train = self._to_numpy(self.train_set.data) 
+        self.model.fit(X_train)
         print("Training complete.")
 
     def evaluate(self):
-        scores = self.model.decision_function(self.test_set.data)
-        test_label = self.test_set.targets
-        mse_rauc, mse_ap = aucPerformance(scores, test_label)
-        mse_f1 = F1Performance(scores, test_label)
+        X_test = self._to_numpy(self.test_set.data)
+        scores = self.model.decision_function(X_test)
+        scores = np.nan_to_num(scores, nan=0.0, posinf=1e12, neginf=-1e12) # some abnormal has large input; thus output high anomaly score
+        scores_arr = np.asarray(scores, dtype=np.float64).ravel()
+        # nan_mask = np.isnan(scores_arr) | np.isinf(scores_arr)
+
+        # if nan_mask.any():
+        #     bad_idx = np.where(nan_mask)[0]
+        #     print(f"[DEBUG] Found {len(bad_idx)} invalid scores at indices: {bad_idx.tolist()}")
+
+        #     for i in bad_idx:
+        #         print(f"idx={i}, score={scores_arr[i]}, input={X_test[i]}, label={self.test_set.targets[i]}")
+
+        y_test = self._to_numpy(self.test_set.targets, dtype=np.int64).ravel()
+        mse_rauc, mse_ap = aucPerformance(scores_arr, y_test)
+        mse_f1 = F1Performance(scores_arr, y_test)
         return mse_rauc, mse_ap, mse_f1

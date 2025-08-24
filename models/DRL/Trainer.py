@@ -8,12 +8,12 @@ import numpy as np
 
 class Trainer(object):
     def __init__(self, model_config: dict):
+        self.train_loader, self.test_loader = get_dataloader(model_config)
         self.device = model_config['device']
         # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.sche_gamma = model_config['sche_gamma']
         self.learning_rate = model_config['learning_rate']
         self.model = DRL(model_config).to(self.device)
-        self.train_loader, self.test_loader = get_dataloader(model_config)
         self.logger = model_config['logger']
         self.model_config = model_config
         self.epochs = model_config['epochs']
