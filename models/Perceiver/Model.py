@@ -3,7 +3,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import math
+import random
 import itertools
+
+def comb(n, r):
+    if r < 0 or r > n:
+        return 0
+    r = min(r, n - r) # symmetric
+    numer = 1
+    denom = 1
+    for i in range(1, r+1):
+        numer *= n - (r - i)
+        denom *= i
+    return numer // denom
 
 
 class MLP(nn.Module):
@@ -190,6 +202,7 @@ class Perceiver(nn.Module):
         mlp_ratio: float = 4,
         dropout_prob: float = 0.0,
         drop_col_prob: float = 0.5,
+        max_repeat: int = 100,
     ):
         assert 0.0 < drop_col_prob < 1.0 
         super(Perceiver, self).__init__()
@@ -203,41 +216,59 @@ class Perceiver(nn.Module):
         self.proj = nn.ModuleList([nn.Linear(hidden_dim, 1) for _ in range(num_features)])
         self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
         self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim))
+        
         self.num_features = num_features
         self.drop_col_prob = drop_col_prob
-
+        self.max_repeat = max_repeat
+        self.test_drop_col = self.generate_test_drop_col()
         self.reset_parameters()
 
     def reset_parameters(self):
         nn.init.trunc_normal_(self.decoder_query, std=0.02)
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
-    def generate_drop_col_idx(self):
+    def generate_test_drop_col(self):
+        n = self.num_features
+        k = max(1, math.floor(n * self.drop_col_prob))
+        # max_num_combinations = math.comb(n, k)
+        max_num_combinations = comb(n, k)
+
+        # if max_repeat > nCk
+        if self.max_repeat >= max_num_combinations:
+            return [list(c) for c in itertools.combinations(range(n), k)]
+        
+        combs = []
+        visited = set()
+        while len(combs) < self.max_repeat:
+            c = tuple(sorted(random.sample(range(n), k)))
+            if c not in combs:
+                visited.add(c)
+                combs.append(list(c))
+    
+        return combs    
+
+    def generate_random_drop_col(self):
+        assert self.training
         cols = list(range(self.num_features))
-        if self.training:
-            drop_col_indicies = [i for i in cols if torch.rand(1).item() < self.drop_col_prob]
-            if len(drop_col_indicies) == 0:
-                # Drop at least one column
-                drop_col_indicies.append(torch.randint(0, self.num_features, (1,)).item())
-            elif len(drop_col_indicies) == self.num_features:
-                # Do not drop every columns.
-                alive_idx = torch.randint(0, self.num_features, (1,)).item()
-                drop_col_indicies.remove(alive_idx)
-            return [drop_col_indicies]
-
-        else:
-            # eval mode: generate all combinations of given size
-            num_drop_cols = max(1, math.floor(self.num_features * self.drop_col_prob))
-            combs = list(itertools.combinations(cols, num_drop_cols))
-            return [list(c) for c in combs]
-
+        drop_col_indicies = [i for i in cols if torch.rand(1).item() < self.drop_col_prob]
+        if len(drop_col_indicies) == 0:
+            # Drop at least one column
+            drop_col_indicies.append(torch.randint(0, self.num_features, (1,)).item())
+        elif len(drop_col_indicies) == self.num_features:
+            # Do not drop every columns.
+            alive_idx = torch.randint(0, self.num_features, (1,)).item()
+            drop_col_indicies.remove(alive_idx)
+        return [drop_col_indicies]
 
     def forward(self, x):
         batch_size, num_features = x.shape # (B, F)
 
-        target_col_idx_list = self.generate_drop_col_idx()
+        if self.training:
+            target_col_idx_list = self.generate_random_drop_col()
+        else:
+            target_col_idx_list = self.test_drop_col
+        
         batch_losses = torch.zeros(batch_size, device=x.device, dtype=x.dtype) # 
-
         for target_col_idx in target_col_idx_list:
             # Indexing input and target
             input_col_idx = [i for i in range(num_features) if i not in target_col_idx]
