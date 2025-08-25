@@ -4,8 +4,7 @@ import argparse
 import os
 import json
 import time
-from utils import get_logger, load_configs
-from main import train_test
+from utils import get_logger, load_yaml
 from models.Perceiver.Trainer import Trainer
 from models.Perceiver.Analyzer import Analyzer
 
@@ -22,6 +21,10 @@ def train_test(model_config, run):
         'AUC-PR': float(mse_ap),
         'f1': float(mse_f1),
     }
+
+    if model_config['plot_recon']:
+        trainer.plot_reconstruction()
+        
     return results_dict
 
 
@@ -33,11 +36,14 @@ def main(args):
         return
 
     logger = get_logger(os.path.join(args.base_path, 'log.log'))
-    model_config = load_configs(args)
+    model_config = load_yaml(args)
     model_config['logger'] = logger
     model_config['device'] = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if model_config['num_workers'] > 0:
         torch.multiprocessing.set_start_method('spawn', force=True)
+
+    model_config['plot_attn'] = args.plot_attn
+    model_config['plot_recon'] = args.plot_recon
 
     start = time.time()    
     all_results = []
@@ -84,6 +90,10 @@ if __name__ == "__main__":
     parser.add_argument('--mlp_ratio', type=float, default=None)
     parser.add_argument('--dropout_prob', type=float, default=None)
     parser.add_argument('--drop_col_prob', type=float, default=None)
+    
+    # Analysis arguments
+    parser.add_argument('--plot_attn', action='store_true')
+    parser.add_argument('--plot_recon', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:
