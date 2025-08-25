@@ -16,7 +16,6 @@ npz_datanames = [os.path.splitext(os.path.basename(file))[0] for file in npz_fil
 mat_files = glob.glob(os.path.join('./Data', '*.mat'))
 mat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in mat_files]
 
-
 class MyDataset(Dataset):
     def __init__(self, data, label):
         super(MyDataset, self).__init__()
@@ -35,7 +34,7 @@ def load_dataset(data_dir, dataset_name, data_dim):
         path = os.path.join(data_dir, dataset_name+'.npz')
         data=np.load(path)  
         samples = data['X']
-        labels = ((data['y']).astype(np.int)).reshape(-1)
+        labels = ((data['y']).astype(int)).reshape(-1)
 
         inliers = samples[labels == 0]
         outliers = samples[labels == 1]
@@ -43,7 +42,7 @@ def load_dataset(data_dir, dataset_name, data_dim):
         path = os.path.join(data_dir, dataset_name + '.mat')
         data = io.loadmat(path)
         samples = data['X']
-        labels = ((data['y']).astype(np.int)).reshape(-1)
+        labels = ((data['y']).astype(int)).reshape(-1)
 
         inliers = samples[labels == 0]
         outliers = samples[labels == 1]

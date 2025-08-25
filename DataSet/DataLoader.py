@@ -6,7 +6,6 @@ import glob
 def get_dataset(model_config: dict):
     dataset_name = model_config['dataset_name']
     train_data, train_label, test_data, test_label = load_and_preprocess(model_config['data_dir'], dataset_name, model_config['data_dim'], model_config['preprocess'])
-    
     train_set = MyDataset(train_data, train_label)
     test_set = MyDataset(test_data, test_label)
 
