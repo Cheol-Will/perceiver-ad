@@ -4,7 +4,7 @@ import argparse
 import os
 import json
 import time
-from utils import get_logger, build_trainer, load_configs
+from utils import get_logger, build_trainer, load_configs, load_yaml
 
 def train_test(model_config, run):
     model_config['run'] = run
@@ -29,12 +29,14 @@ def main(args):
         return
 
     logger = get_logger(os.path.join(args.base_path, 'log.log'))
-    model_config = load_configs(args)
+    # model_config = load_configs(args)
+    model_config = load_yaml(args)
     model_config['logger'] = logger
     model_config['device'] = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if model_config['num_workers'] > 0:
         torch.multiprocessing.set_start_method('spawn', force=True)
-
+    print(model_config)
+    
     start = time.time()    
     all_results = []
     for seed in range(10):
@@ -50,12 +52,10 @@ def main(args):
         'AUC-PR': float(np.mean([r['AUC-PR'] for r in all_results])),
         'f1': float(np.mean([r['f1'] for r in all_results]))
     }
+    model_config.pop('device')
+    model_config.pop('logger')
     summary = {
-        'model_config': {
-            'model_type': args.model_type,
-            'dataset_name': args.dataname,
-            'train_ratio': args.train_ratio
-        },
+        'model_config': model_config,
         'mean_metrics': mean_metrics,
         'total_time': total_time,
         'all_seeds': all_results,
