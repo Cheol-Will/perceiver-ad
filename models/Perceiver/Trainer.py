@@ -15,7 +15,7 @@ class Trainer(object):
         self.model = Perceiver(
             num_features=model_config['data_dim'],
             num_heads=model_config['num_heads'],
-            num_layers=model_config['num_layers'],
+            depth=model_config['depth'],
             hidden_dim=model_config['hidden_dim'],
             mlp_ratio=model_config['mlp_ratio'],
             dropout_prob=model_config['dropout_prob'],

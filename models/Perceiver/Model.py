@@ -94,7 +94,7 @@ class MultiHeadAttention(nn.Module):
                 if module.bias is not None:
                     nn.init.zeros_(module.bias)
                     
-    def forward(self, x_q, x_k, x_v):
+    def forward(self, x_q, x_k, x_v, return_weight = False):
         """
             x_q: (B, S, D)
             x_k: (B, F, D)
@@ -123,7 +123,10 @@ class MultiHeadAttention(nn.Module):
         x = self.proj(x)
         x = self.proj_drop(x)
 
-        return x # (B, S ,D)
+        if return_weight:
+            return x, attn 
+        else:
+            return x # (B, S ,D)
 
 class CrossAttention(nn.Module):
     def __init__(
@@ -140,10 +143,16 @@ class CrossAttention(nn.Module):
         )     
         self.mlp = MLP(hidden_dim, mlp_ratio, dropout_prob)    
 
-    def forward(self, x_q, x_k, x_v):
-        x_q = x_q + self.attention(x_q, x_k, x_v)
-        x_q = x_q + self.mlp(x_q)
-        return x_q
+    def forward(self, x_q, x_k, x_v, return_weight = False):
+        if return_weight:
+            x_attn, attn = self.attention(x_q, x_k, x_v, return_weight)
+            x_q = x_q + x_attn
+            x_q = x_q + self.mlp(x_q)
+            return x_q, attn
+        else: 
+            x_q = x_q + self.attention(x_q, x_k, x_v, return_weight)
+            x_q = x_q + self.mlp(x_q)
+            return x_q
     
 class SelfAttention(nn.Module):
     def __init__(
@@ -161,10 +170,16 @@ class SelfAttention(nn.Module):
         )     
         self.mlp = MLP(hidden_dim, mlp_ratio, dropout_prob)    
 
-    def forward(self, x):
-        x = x + self.attention(x, x, x)
-        x = x + self.mlp(x)
-        return x
+    def forward(self, x, return_weight = False):
+        if return_weight:
+            x_attn, attn = self.attention(x, x, x, return_weight)
+            x = x + x_attn
+            x = x + self.mlp(x)
+            return x, attn
+        else: 
+            x = x + self.attention(x, x, x, return_weight)
+            x = x + self.mlp(x)
+            return x    
 
 
 class FeatureTokenizer(nn.Module):
@@ -197,7 +212,7 @@ class Perceiver(nn.Module):
         self,
         num_features: int,
         num_heads: int = 4,
-        num_layers: int = 4, 
+        depth: int = 4, 
         hidden_dim: int = 64,
         mlp_ratio: float = 4,
         dropout_prob: float = 0.0,
@@ -209,7 +224,7 @@ class Perceiver(nn.Module):
         self.feature_tokenizer = FeatureTokenizer(num_features, 1, hidden_dim) # only numerical inputs
         self.block = nn.ModuleList([
             SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
-            for _ in range(num_layers)
+            for _ in range(depth)
         ])
             
         self.decoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
@@ -260,7 +275,7 @@ class Perceiver(nn.Module):
             drop_col_indicies.remove(alive_idx)
         return [drop_col_indicies]
 
-    def forward(self, x):
+    def forward(self, x, return_weight = False):
         batch_size, num_features = x.shape # (B, F)
 
         if self.training:
@@ -278,14 +293,25 @@ class Perceiver(nn.Module):
             encoding = self.feature_tokenizer(x, input_col_idx) # (B, F', D)
             encoding = encoding + self.pos_encoding[:, input_col_idx, :]
 
-            # transformer block
-            for block in self.block:
-                encoding = block(encoding)
+           # transformer block
+            if return_weight:
+                attns = []
+                for block in self.block:
+                    encoding, attn = block(encoding, return_weight=True)
+                    attns.append(attn)
+            else:
+                for block in self.block: 
+                    encoding = block(encoding)
 
             # decoding 
             decoder_query = self.decoder_query[:, target_col_idx, :].expand(batch_size, -1, -1)
-            decoding = self.decoder(decoder_query, encoding, encoding)
             
+            if return_weight:
+                decoding, atnn = self.decoder(decoder_query, encoding, encoding, return_weight=True)
+                attns.append(atnn)
+            else:
+                decoding = self.decoder(decoder_query, encoding, encoding)
+
             pred = []
             for i, col_idx in enumerate(target_col_idx):
                 pred.append(self.proj[col_idx](decoding[:, i, :]))
@@ -296,4 +322,8 @@ class Perceiver(nn.Module):
             batch_losses = batch_losses + loss # (B)
 
         batch_losses = batch_losses / len(target_col_idx_list)
-        return batch_losses
+        
+        if self.training and return_weight:
+            return batch_losses, attns, input_col_idx, target_col_idx 
+        else:
+            return batch_losses

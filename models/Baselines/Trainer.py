@@ -37,18 +37,19 @@ def build_model(model_config):
     elif model_type == 'ECOD':
         return ECOD()
     elif model_type == 'AutoEncoder':
-        return AutoEncoder()
+        return AutoEncoder(batch_size=512)
     elif model_type == 'DeepSVDD':
-        return DeepSVDD(n_features=model_config['data_dim']) # input dimension should be given
+        return DeepSVDD(batch_size=512, n_features=model_config['data_dim']) # input dimension should be given
     elif model_type == 'ICL':
         # return ICL(hidden_dims='200,400', rep_dim=200) # hyperparamters from ICL paper
-        return ICL() # hyperparamters from ICL paper
+        return ICL(batch_size=512) 
     elif model_type == 'NeuTraL':
-        return NeuTraL() # 
+        # return NeuTraL(batch_size=512, hidden_dims='24,24,24,24', rep_dim=24, trans_hidden_dims=24, n_trans=11) #  hyperparamters from ICL paper 
+        return NeuTraL(batch_size=512) 
     elif model_type == 'SLAD':
-        return SLAD() # 
+        return SLAD(batch_size=512) # 
     elif model_type == 'GOAD':
-        return GOAD() # 
+        return GOAD(batch_size=512) # 
     else: 
         raise ValueError(f"Unknown model type is given: {model_type}")
 
