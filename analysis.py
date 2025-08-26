@@ -24,6 +24,8 @@ def train_test(model_config, run):
 
     if model_config['plot_recon']:
         trainer.plot_reconstruction()
+    if model_config['plot_histogram']:
+        trainer.plot_anomaly_histograms(remove_outliers=True)
         
     return results_dict
 
@@ -44,7 +46,8 @@ def main(args):
 
     model_config['plot_attn'] = args.plot_attn
     model_config['plot_recon'] = args.plot_recon
-
+    model_config['plot_histogram'] = args.plot_histogram
+    
     start = time.time()    
     all_results = []
     for seed in range(1):
@@ -70,8 +73,8 @@ def main(args):
         'total_time': total_time,
         'all_seeds': all_results,
     }
-    with open(summary_path, 'w') as f:
-        json.dump(summary, f, indent=4)
+    # with open(summary_path, 'w') as f:
+    #     json.dump(summary, f, indent=4)
     print("\nSummary")
     print(json.dumps(summary, indent=4))
 
@@ -79,7 +82,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataname', type=str, default='Hepatitis')
-    parser.add_argument('--model_type', type=str, default='DRL')
+    parser.add_argument('--model_type', type=str, default='Perceiver')
     parser.add_argument('--exp_name', type=str, default=None)
     parser.add_argument('--train_ratio', type=float, default=1.0)
 
@@ -94,6 +97,8 @@ if __name__ == "__main__":
     # Analysis arguments
     parser.add_argument('--plot_attn', action='store_true')
     parser.add_argument('--plot_recon', action='store_true')
+    parser.add_argument('--plot_histogram', action='store_true')
+
 
     args = parser.parse_args()
     if args.exp_name is None:

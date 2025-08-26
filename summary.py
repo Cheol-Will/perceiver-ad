@@ -4,7 +4,6 @@ import pandas as pd
 BASE_DIR = "results"
 TRAIN_RATIOS = [0.1, 0.5, 1.0]
 METRICS_CANON = ["AUC-ROC", "AUC-PR"]
-
 METRIC_ALIAS = {
     "AUC-ROC": "AUC-ROC", "AUROC": "AUC-ROC", "AUCROC": "AUC-ROC",
     "AUC_ROC": "AUC-ROC", "auc_roc": "AUC-ROC",
@@ -97,6 +96,7 @@ def make_pivots(dfs, save_csv=False, outdir="summary"):
             )
             pivoted.columns = pivoted.columns.str.lower()
             pivoted = pivoted[sorted(pivoted.columns)]
+            # pivoted['AVG'] = pivoted.mean(axis=1)
             key_piv = f"ratio_{tr}_{metric.replace('-', '')}"
             pivots[key_piv] = pivoted
             if save_csv:
@@ -105,32 +105,60 @@ def make_pivots(dfs, save_csv=False, outdir="summary"):
     return pivots
 
 def main():
-    data_names = [
-        # 'Hepatitis',      
-        'annthyroid', 
-        # 'arrhythmia',   
-        'breastw',
-        'mammography',
-        # 'optdigits',
+    data=[
+        'arrhythmia',
+        'breastw', 
+        'cardio',
+        'campaign',
+        'cardiotocography', 
+        # 'census',
+        'glass',
+        'ionosphere',
+        'mammography', 
+        # 'nslkdd',
+        'hepatitis',
+        'optdigits',
+        'pendigits',
+        'pima',
+        'satellite',
+        # 'shuttle',
+        # 'satimage-2',
         'thyroid',
-        'Pima',  
+        'wbc',
+        'wine',
     ]
+
 
     results = collect_results()
     df_all, dfs = convert_results_to_csv(results, save_csv=False)
     dfs = make_pivots(dfs, save_csv=False)
     keys = [
-        'ratio_0.1_AUCROC', 
-        'ratio_0.5_AUCROC', 
-        'ratio_1.0_AUCROC', 
-        'ratio_0.1_AUCPR', 
-        'ratio_0.5_AUCPR', 
+        # 'ratio_0.1_AUCROC', 
+        # 'ratio_0.5_AUCROC', 
+       # 'ratio_1.0_AUCROC', 
+        # 'ratio_0.1_AUCPR', 
+        # 'ratio_0.5_AUCPR', 
         'ratio_1.0_AUCPR'
     ]
 
     for k in keys:
         print(k)
-        print(dfs[k])
+        df = dfs[k][data].copy()
+        # df = dfs[k].copy()
+        df.loc[:, 'AVG'] = df.mean(axis=1)
+        df = df.round(4)
+        df = df.T
+
+        df.columns = [c.replace("Perceiver", "Per") if "Perceiver" in c else c 
+                  for c in df.columns]
+        
+        df.to_csv(f'metrics/{k}.csv')
+        df.T.to_csv(f'metrics/{k}_T.csv')
+
+        # cols = [c for c in df.columns if ("Per" not in c and 'RIN' not in c)]
+        # df = df[cols].copy()
+
+        print(df.T)
         print()
 
 if __name__ == "__main__":

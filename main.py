@@ -4,7 +4,7 @@ import argparse
 import os
 import json
 import time
-from utils import get_logger, build_trainer, load_configs, load_yaml
+from utils import get_logger, build_trainer, load_yaml
 
 def train_test(model_config, run):
     model_config['run'] = run
@@ -78,6 +78,8 @@ if __name__ == "__main__":
     parser.add_argument('--mlp_ratio', type=float, default=None)
     parser.add_argument('--dropout_prob', type=float, default=None)
     parser.add_argument('--drop_col_prob', type=float, default=None)
+    parser.add_argument('--learning_rate', type=float, default=None)
+    parser.add_argument('--sim_type', type=str, default=None)
 
     args = parser.parse_args()
     if args.exp_name is None:
