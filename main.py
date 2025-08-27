@@ -71,15 +71,21 @@ if __name__ == "__main__":
     parser.add_argument('--exp_name', type=str, default=None)
     parser.add_argument('--train_ratio', type=float, default=1.0)
 
-    # Perceiver Experiment 
+    # Experiment 
     parser.add_argument('--num_heads', type=int, default=None)
-    parser.add_argument('--num_layers', type=int, default=None)
+    parser.add_argument('--depth', type=int, default=None)
     parser.add_argument('--hidden_dim', type=int, default=None)
+    parser.add_argument('--learning_rate', type=float, default=None)
+
+    # 
     parser.add_argument('--mlp_ratio', type=float, default=None)
     parser.add_argument('--dropout_prob', type=float, default=None)
     parser.add_argument('--drop_col_prob', type=float, default=None)
-    parser.add_argument('--learning_rate', type=float, default=None)
+    parser.add_argument('--temperature', type=float, default=None)
     parser.add_argument('--sim_type', type=str, default=None)
+    parser.add_argument('--num_repeat', type=int, default=None)
+    parser.add_argument('--is_weight_sharing', action='store_true')
+
 
     args = parser.parse_args()
     if args.exp_name is None:
