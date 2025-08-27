@@ -44,7 +44,7 @@ class MemoryUnit(nn.Module):
         else:
             raise ValueError(f"sim_type must be 'cos' or 'l2', got {self.sim_type}")
 
-        logits = logits / max(self.temperature, 1e-6)
+        logits = logits / self.temperature
         weight = F.softmax(logits, dim=-1)                       # (B, N)
         read = weight @ self.memories                            # (B, D)
         return read
