@@ -5,13 +5,27 @@ import os
 import json
 import time
 from utils import get_logger, load_yaml
-from models.Perceiver.Trainer import Trainer
-from models.Perceiver.Analyzer import Analyzer
+
+BASELINE_MODELS = ['OCSVM', 'KNN', 'IForest', 'LOF', 'PCA', 'ECOD', 
+                   'DeepSVDD', 'AutoEncoder', 'GOAD', 'ICL', 'NeuTraL']
+
+def build_analyzer(model_config):
+    model_type = model_config['model_type']
+    if model_type == 'Perceiver':
+        from models.Perceiver.Analyzer import Analyzer
+    elif model_type == 'MemAE':
+        from models.MemAE.Analyzer import Analyzer
+    elif model_type in BASELINE_MODELS:
+        from models.Baselines.Analyzer import Analyzer
+    else:
+        raise ValueError(f"Unknown model type {model_type}")
+    return Analyzer(model_config)
+
 
 def train_test(model_config, run):
     model_config['run'] = run
     model_config['logger'].info(f"[run {run}]" + '-'*60)
-    trainer = Analyzer(model_config)    
+    trainer = build_analyzer(model_config)    
     trainer.training()
     mse_rauc, mse_ap, mse_f1 = trainer.evaluate()
     model_config['logger'].info(f"[run {run}] AUC-ROC: {mse_rauc:.4f} | AUC-PR: {mse_ap:.4f} | F1: {mse_f1:.4f}")
@@ -93,6 +107,10 @@ if __name__ == "__main__":
     parser.add_argument('--mlp_ratio', type=float, default=None)
     parser.add_argument('--dropout_prob', type=float, default=None)
     parser.add_argument('--drop_col_prob', type=float, default=None)
+    parser.add_argument('--learning_rate', type=float, default=None)
+
+    parser.add_argument('--sim_type', type=str, default=None)
+    parser.add_argument('--num_repeat', type=int, default=None)
     
     # Analysis arguments
     parser.add_argument('--plot_attn', action='store_true')
