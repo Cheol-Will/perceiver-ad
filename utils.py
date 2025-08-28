@@ -9,7 +9,6 @@ import yaml
 import importlib
 from sklearn.metrics import average_precision_score, roc_auc_score, precision_recall_fscore_support
 
-DEEP_MODELS = ['Perceiver', 'MCM', 'DRL', 'RIN']
 BASELINE_MODELS = ['OCSVM', 'KNN', 'IForest', 'LOF', 'PCA', 'ECOD', 
                    'DeepSVDD', 'AutoEncoder', 'GOAD', 'ICL', 'NeuTraL']
 
@@ -29,9 +28,9 @@ def load_yaml(args):
     if args.dataname in model_configs:
         for k, v in model_configs[args.dataname].items():
             model_config[k] = v
-    if args.model_type in ['Perceiver', 'RIN']:
+    if args.model_type in ['Perceiver', 'RIN', 'PAE']:
         model_config = replace_transformer_config(args, model_config)
-    elif args.model_type in ['MemAE']:
+    elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
         model_config = replace_mlp_config(args, model_config)
 
 
@@ -56,6 +55,12 @@ def build_trainer(model_config):
         from models.RIN.Trainer import Trainer
     elif model_type == 'MemAE':
         from models.MemAE.Trainer import Trainer
+    elif model_type == 'MultiMemAE':
+        from models.MultiMemAE.Trainer import Trainer
+    elif model_type == 'RINMLP':
+        from models.RINMLP.Trainer import Trainer        
+    elif model_type == 'PAE':
+        from models.PAE.Trainer import Trainer        
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Trainer import Trainer
     else:
@@ -76,20 +81,32 @@ def get_input_dim(args, model_config):
 
 def replace_transformer_config(args, model_config):
     model_config['num_heads'] = args.num_heads if args.num_heads is not None else model_config['num_heads']
-    model_config['depth'] = args.num_layers if args.num_layers is not None else model_config['depth']
+    model_config['depth'] = args.depth if args.depth is not None else model_config['depth']
     model_config['hidden_dim'] = args.hidden_dim if args.hidden_dim is not None else model_config['hidden_dim']
     model_config['mlp_ratio'] = args.mlp_ratio if args.mlp_ratio is not None else model_config['mlp_ratio']
     model_config['dropout_prob'] = args.dropout_prob if args.dropout_prob is not None else model_config['dropout_prob']
-    model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
     model_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else model_config['drop_col_prob']
+
+    if args.model_type in ['Perceiver', 'RIN']:
+        model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
+    if args.model_type in ['PAE']:
+        model_config['is_weight_sharing'] = args.is_weight_sharing # default False
+
     return model_config
 
 def replace_mlp_config(args, model_config):
-    model_config['depth'] = args.num_layers if args.num_layers is not None else model_config['depth']
+    model_config['depth'] = args.depth if args.depth is not None else model_config['depth']
     model_config['hidden_dim'] = args.hidden_dim if args.hidden_dim is not None else model_config['hidden_dim']
     model_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else model_config['drop_col_prob']
-    if args.model_type == 'MemAE':
+
+    if args.model_type in ['MemAE', 'MultiMemAE']:
         model_config['sim_type'] = args.sim_type if args.sim_type is not None else model_config['sim_type']
+        model_config['temperature'] = args.temperature if args.temperature is not None else model_config['temperature']
+        if args.model_type == 'MultiMemAE':
+            model_config['num_adapters'] = args.num_adapters if args.num_adapters is not None else model_config['num_adapters']
+
+    if args.model_type == 'RINMLP':
+        model_config['num_repeat'] = args.num_repeat if args.num_repeat is not None else model_config['num_repeat']
 
     return model_config
 
