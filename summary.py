@@ -1,6 +1,7 @@
 import os, json, glob
 import numpy as np
 import pandas as pd
+pd.set_option('display.max_rows', None)
 
 BASE_DIR = "results"
 TRAIN_RATIOS = [0.1, 0.5, 1.0]
@@ -127,6 +128,77 @@ def make_pivots(dfs, save_csv=False, outdir="summary"):
                     pivoted.to_csv(os.path.join(outdir, f"{key_piv}.csv"))
     return pivots
 
+def add_rank_columns(
+    df_mean: pd.DataFrame,
+    tie_method: str = "average",
+):
+    
+    # higher_is_better
+    ranks = df_mean.rank(axis=0, ascending=False, method=tie_method)
+    avg_rank = ranks.mean(axis=1, skipna=True).rename('AVG_RANK')
+
+    df_with_avg_rank = df_mean.copy()
+    df_with_avg_rank['AVG_RANK'] = avg_rank
+
+    return df_with_avg_rank
+
+def add_tire_colums(
+    df_mean: pd.DataFrame,
+    df_std: pd.DataFrame,
+) -> pd.DataFrame:
+    dfm = df_mean.copy()
+    cols = [c for c in dfm.columns if c in df_std.columns] # extract only dataset column (excludes AVG_RANK columns)
+
+    def _tier_one_column(s_mean: pd.Series, s_std: pd.Series) -> pd.Series:
+        ascending = False
+        s_std = s_std.fillna(0.0)
+
+        order = s_mean.sort_values(ascending=ascending, na_position="last").index.tolist()
+
+        tiers = {idx: np.nan for idx in s_mean.index}
+        ref_idx = None
+        for idx in order:
+            if not pd.isna(s_mean.loc[idx]):
+                ref_idx = idx
+                break
+        if ref_idx is None:
+            return pd.Series(tiers)
+
+        curr_tier = 1
+        ref_mean = float(s_mean.loc[ref_idx])
+        ref_std  = float(s_std.loc[ref_idx])
+        tiers[ref_idx] = curr_tier
+
+        for idx in order[order.index(ref_idx)+1:]:
+            m = s_mean.loc[idx]
+            if pd.isna(m):
+                tiers[idx] = np.nan
+                continue
+            sd = float(s_std.loc[idx])
+            same_tier = (float(m) <= ref_mean + ref_std)
+            if same_tier:
+                tiers[idx] = curr_tier
+            else:
+                curr_tier += 1
+                ref_mean, ref_std = float(m), sd
+                tiers[idx] = curr_tier
+
+        return pd.Series(tiers)
+
+    tier_cols = []
+    for c in cols:
+        tiers = _tier_one_column(dfm[c], df_std[c])
+        tcol = f"{c}_tier"
+        dfm[tcol] = tiers
+        tier_cols.append(tcol)
+
+    dfm['AVG_TIER'] = dfm[tier_cols].mean(axis=1, skipna=True)
+    dfm.drop(columns=tier_cols, inplace=True) 
+
+
+    return dfm
+
+
 def _render_mean_pm_std(df_mean: pd.DataFrame, df_std: pd.DataFrame, digits=4) -> pd.DataFrame:
     # align indexes/columns
     df_std = df_std.reindex(index=df_mean.index, columns=df_mean.columns)
@@ -142,6 +214,23 @@ def _render_mean_pm_std(df_mean: pd.DataFrame, df_std: pd.DataFrame, digits=4) -
     )
 
 def main():
+    models=  [
+        'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA', 
+        'AutoEncoder', 'DeepSVDD', 'GOAD', 
+        'NeuTraL', 'ICL', 'MCM', 'DRL',
+    ]
+    my_models = [
+        'Perceiver-d16-dcol0.5',
+        'RIN-d16-dcol0.1',
+        'MemAE-d64-lr0.05',
+        # 'MemAE-d256-lr0.01-t0.1',
+        # 'MemAE-l2-d128-lr0.005',
+        'MultiMemAE-d64-lr0.05-ad8',
+        'MultiMemAE-d64-lr0.05-ad16',
+        'MultiMemAE-d64-lr0.05-ad32',
+        'PAE-ws-d32-lr0.005',
+
+    ]
     data = [
         'arrhythmia', 'breastw', 'cardio', 'campaign', 'cardiotocography',
         'glass', 'ionosphere', 'mammography', 'hepatitis', 'optdigits',
@@ -168,12 +257,24 @@ def main():
         df_mean.loc[:, 'AVG'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG']  = df_std.mean(axis=1, numeric_only=True)
 
+        # ordering
+        first = [m for m in models if m in df_mean.index]
+        rest  = [m for m in df_mean.index if m not in first]
+        rest  = my_models
+        order = first + rest
+        # order = [col for col in order if 'RINMLP' not in col]
+        # order = [col for col in order if 'PAE' in col]
+
+        df_mean = df_mean.loc[order]
+        df_std  = df_std.loc[order]
+        
+        # df_mean = add_rank_columns(df_mean)
+        # df_mean = add_tire_colums(df_mean, df_std)
+        
         # df_render = _render_mean_pm_std(df_mean.round(4), df_std.round(4))
         df_render = df_mean.round(4)
-
-
-        df_render.columns = [c.replace("Perceiver", "Per") if "Perceiver" in c else c
-                             for c in df_render.columns]
+        # df_render.columns = [c.replace("Perceiver", "Per") if "Perceiver" in c else c
+        #                      for c in df_render.columns]
 
         os.makedirs('metrics', exist_ok=True)
         df_render.to_csv(f'metrics/{base}_rendered.csv')
