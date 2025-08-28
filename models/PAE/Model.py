@@ -219,7 +219,7 @@ class PAE(nn.Module):
     ):
         super(PAE, self).__init__()
         assert num_latents is not None
-
+        print("Init with weight_sharing" if is_weight_sharing else "Init without weight sharing")
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim) # only numerical inputs
         
         if is_weight_sharing:
@@ -261,7 +261,7 @@ class PAE(nn.Module):
 
         if self.is_weight_sharing:
             for _ in range(self.depth):
-                latents = block(latents)
+                latents = self.block(latents)
         else:
             for block in self.block:
                 latents = block(latents)
