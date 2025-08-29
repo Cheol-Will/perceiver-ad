@@ -18,7 +18,7 @@ mat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in mat_fil
 
 class MyDataset(Dataset):
     def __init__(self, data, label):
-        super(MyDataset, self).__init__()
+        super().__init__()
         self.data = torch.Tensor(data)
         self.targets = torch.Tensor(label)
 
@@ -28,6 +28,27 @@ class MyDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+class DisentDataset(Dataset):
+    def __init__(self, data, label, patch_size, overlap):
+        super().__init__()
+        self.data = torch.Tensor(data)
+        self.label = torch.Tensor(label)
+        self.patch_size = patch_size
+        self.overlap = overlap
+    
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        data = self.data[idx]
+        subset_size = self.patch_size
+        overlap = self.overlap
+        stride = subset_size - overlap
+        data = data.unfold(0, subset_size, stride)
+
+        return data, self.label[idx]
+
+    def __len__(self):
+        return len(self.data)
 
 def load_dataset(data_dir, dataset_name, data_dim):
     if dataset_name in npz_datanames:
