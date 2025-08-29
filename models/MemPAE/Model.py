@@ -262,6 +262,7 @@ class MemPAE(nn.Module):
         is_weight_sharing: bool = True,
         temperature: float = 1,
         sim_type: str = 'cos',
+        use_pos_enc_as_query: bool = False,
     ):
         super(MemPAE, self).__init__()
         assert num_latents is not None
@@ -283,11 +284,17 @@ class MemPAE(nn.Module):
         self.decoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
         self.proj = OutputProjection(num_features, hidden_dim)
         self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
-        self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim))
         self.latents_query = nn.Parameter(torch.empty(1, num_latents, hidden_dim))
-        
+
+        if use_pos_enc_as_query: 
+            print(f"Init decoder query of shape {(1, 1, hidden_dim)}")
+            self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
+        else:
+            self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d
+
         self.num_features = num_features
         self.is_weight_sharing = is_weight_sharing
+        self.use_pos_enc_as_query = use_pos_enc_as_query
         self.depth = depth
         self.reset_parameters()
 
@@ -296,7 +303,7 @@ class MemPAE(nn.Module):
         nn.init.trunc_normal_(self.latents_query, std=0.02)
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
-    def forward(self, x, return_weight = False):
+    def forward(self, x, return_weight = False, return_pred = False):
         batch_size, num_features = x.shape # (B, F)
 
         # feature tokenizer
@@ -319,10 +326,18 @@ class MemPAE(nn.Module):
         latents = self.memory(latents) 
 
         # decoder
-        decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
+        if self.use_pos_enc_as_query:
+            decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (B, F, D)
+            decoder_query = decoder_query + self.pos_encoding
+        else:
+            decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
+
         output = self.decoder(decoder_query, latents, latents)
         x_hat = self.proj(output)
 
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
-
-        return loss
+        
+        if return_pred:
+            return loss, x, x_hat
+        else:
+            return loss

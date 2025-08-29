@@ -4,30 +4,46 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 from DataSet.DataLoader import get_dataloader
-from models.Perceiver.Model import Perceiver
+from models.MemPAE.Model import MemPAE
 from utils import aucPerformance, F1Performance
+import math
+
+def nearest_power_of_two(x: int) -> int:
+    if x < 1:
+        return 1
+    return 2 ** int(math.floor(math.log2(x)))
 
 
 class Analyzer(object):
     def __init__(self, model_config: dict):
         self.train_loader, self.test_loader = get_dataloader(model_config)
+        model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['data_dim']))) # sqrt(F)
+        model_config['num_memories'] = self.calculate_num_memories() # sqrt(N)
         self.device = model_config['device']
         self.sche_gamma = model_config['sche_gamma']
         self.learning_rate = model_config['learning_rate']
-        self.model = Perceiver(
+        self.model = MemPAE(
             num_features=model_config['data_dim'],
             num_heads=model_config['num_heads'],
             depth=model_config['depth'],
             hidden_dim=model_config['hidden_dim'],
             mlp_ratio=model_config['mlp_ratio'],
-            dropout_prob=model_config['dropout_prob'],
-            drop_col_prob=model_config['drop_col_prob'],
+            num_latents=model_config['num_latents'],
+            num_memories=model_config['num_memories'],
+            is_weight_sharing=model_config['is_weight_sharing'],
+            temperature=model_config['temperature'],
+            sim_type=model_config['sim_type'],
         ).to(self.device)
         self.logger = model_config['logger']
         self.model_config = model_config
         self.epochs = model_config['epochs']
         self.plot_attn = model_config['plot_attn'] # bool
         self.plot_recon = model_config['plot_recon'] # 
+
+
+    def calculate_num_memories(self):
+        n = len(self.train_loader.dataset)
+        return nearest_power_of_two(int(math.sqrt(n)))
 
     @torch.no_grad()
     def _accumulate_attn(
@@ -162,25 +178,8 @@ class Analyzer(object):
         H = int(np.sqrt(num_features))
         assert H * H == num_features, f"{num_features} is not squared number."
 
-        target_col_idx = self.model.test_drop_col[0]
-        input_col_idx = [i for i in range(num_features) if i not in target_col_idx]
 
-        encoding = self.model.feature_tokenizer(x, input_col_idx)
-        encoding = encoding + self.model.pos_encoding[:, input_col_idx, :]
-
-        for block in self.model.block:
-            encoding = block(encoding)
-
-        decoder_query = self.model.decoder_query[:, target_col_idx, :].expand(batch_size, -1, -1)
-        decoding = self.model.decoder(decoder_query, encoding, encoding)
-
-        preds = []
-        for i, col_idx in enumerate(target_col_idx):
-            preds.append(self.model.proj[col_idx](decoding[:, i, :]))
-        pred = torch.cat(preds, dim=1)
-
-        recon = x.clone()
-        recon[:, target_col_idx] = pred
+        _, x, recon = self.model(x, return_pred=True)
 
         base_path = self.model_config['base_path']
         os.makedirs(base_path, exist_ok=True)
@@ -199,29 +198,18 @@ class Analyzer(object):
             orig_plot  = _norm_with_ref(orig_img,  ref_min, ref_max)
             recon_plot = _norm_with_ref(recon_img, ref_min, ref_max)
 
-            # masked image as RGB with red overlay
-            masked_img = _norm_with_ref(orig_img, ref_min, ref_max)
-            masked_rgb = np.stack([masked_img]*3, axis=-1)  # (H,W,3)
-            for idx in target_col_idx:
-                r, c = divmod(idx, H)
-                masked_rgb[r, c, :] = [1.0, 0.0, 0.0]  # red
-
             plt.figure(figsize=(9, 3), dpi=200)
-            plt.subplot(1, 3, 1)
+            plt.subplot(1, 2, 1)
             plt.imshow(orig_plot, cmap='gray', vmin=0, vmax=1)
             plt.title(f'Original (label={int(y[i].detach().cpu())})')
             plt.axis('off')
-            plt.subplot(1, 3, 2)
-            plt.imshow(masked_rgb, aspect='equal')
-            plt.title('Masked (red)')
-            plt.axis('off')
-            plt.subplot(1, 3, 3)
+            plt.subplot(1, 2, 2)
             plt.imshow(recon_plot, cmap='gray', vmin=0, vmax=1)
             plt.title('Reconstruction')
             plt.axis('off')
 
             plt.tight_layout()
-            out_path = os.path.join(base_path, f'reconstruction_triplet_{i}_label{int(y[i].detach().cpu())}.png')
+            out_path = os.path.join(base_path, f'reconstruction_pair_{i}_label{int(y[i].detach().cpu())}.png')
             plt.savefig(out_path)
             plt.close()
 
@@ -380,7 +368,8 @@ class Analyzer(object):
             running_loss = 0.0
             for step, (x_input, y_label) in enumerate(self.train_loader):
                 x_input = x_input.to(self.device)
-                losses, attns, input_col_idx, target_col_idx = self.model(x_input, return_weight=True)
+                # losses, attns, input_col_idx, target_col_idx = self.model(x_input, return_weight=True)
+                losses = self.model(x_input)
                 loss = losses.mean() # (B) -> scalar
                 # loss = self.model(x_input).mean() # (B) -> scalar
                 running_loss += loss.item()
@@ -388,11 +377,11 @@ class Analyzer(object):
                 loss.backward()
                 optimizer.step()
 
-                self._accumulate_attn(
-                    attns, input_col_idx, target_col_idx,
-                    self_attention_map, self_count_map,
-                    cross_attention_map, cross_count_map
-                )
+                # self._accumulate_attn(
+                #     attns, input_col_idx, target_col_idx,
+                #     self_attention_map, self_count_map,
+                #     cross_attention_map, cross_count_map
+                # )
 
             scheduler.step()
             info = 'Epoch:[{}]\t loss={:.4f}\t'
@@ -400,10 +389,10 @@ class Analyzer(object):
             self.logger.info(info.format(epoch,loss.cpu()))
         print("Training complete.")
 
-        self._finalize_and_save_attention_maps(
-            self_attention_map, self_count_map,
-            cross_attention_map, cross_count_map
-        )
+        # self._finalize_and_save_attention_maps(
+        #     self_attention_map, self_count_map,
+        #     cross_attention_map, cross_count_map
+        # )
 
     @torch.no_grad()
     def evaluate(self):

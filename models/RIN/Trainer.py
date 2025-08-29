@@ -63,7 +63,7 @@ class Trainer(object):
         score, test_label = [], []
         for step, (x_input, y_label) in enumerate(self.test_loader):
             x_input = x_input.to(self.device)
-            loss = self.model(x_input)
+            loss = model(x_input)
             loss = loss.data.cpu()
             score.append(loss)
             test_label.append(y_label)

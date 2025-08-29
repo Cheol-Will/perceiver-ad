@@ -27,6 +27,7 @@ class Trainer(object):
             mlp_ratio=model_config['mlp_ratio'],
             num_latents=model_config['num_latents'],
             is_weight_sharing=model_config['is_weight_sharing'],
+            use_pos_enc_as_query=model_config['is_weight_sharing'],
         ).to(self.device)
         self.logger = model_config['logger']
         self.model_config = model_config
@@ -65,7 +66,7 @@ class Trainer(object):
         score, test_label = [], []
         for step, (x_input, y_label) in enumerate(self.test_loader):
             x_input = x_input.to(self.device)
-            loss = self.model(x_input)
+            loss = model(x_input)
             loss = loss.data.cpu()
             score.append(loss)
             test_label.append(y_label)

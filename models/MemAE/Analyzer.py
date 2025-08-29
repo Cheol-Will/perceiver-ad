@@ -202,3 +202,116 @@ class Analyzer(object):
         plt.close(fig)
 
         print(f"Saved histogram to {out_overlay}, {out_grid}")
+
+
+    @torch.no_grad()
+    def plot_reconstruction(self):
+        self.model.eval()
+
+        def _gather_class_samples(loader, need_per_class=4):
+            xs_normal, ys_normal = [], []
+            xs_abnorm, ys_abnorm = [], []
+            for xb, yb in loader:
+                if yb.ndim > 1:
+                    yb = yb.squeeze(-1)
+                normal_mask = (yb == 0)
+                abnorm_mask = (yb != 0)
+                if normal_mask.any():
+                    xs_normal.append(xb[normal_mask])
+                    ys_normal.append(yb[normal_mask])
+                if abnorm_mask.any():
+                    xs_abnorm.append(xb[abnorm_mask])
+                    ys_abnorm.append(yb[abnorm_mask])
+                if sum(x.shape[0] for x in xs_normal) >= need_per_class and \
+                sum(x.shape[0] for x in xs_abnorm) >= need_per_class:
+                    break
+            x_norm = torch.cat(xs_normal, dim=0) if xs_normal else torch.empty(0)
+            y_norm = torch.cat(ys_normal, dim=0) if ys_normal else torch.empty(0, dtype=torch.long)
+            x_abn  = torch.cat(xs_abnorm,  dim=0) if xs_abnorm else torch.empty(0)
+            y_abn  = torch.cat(ys_abnorm,  dim=0) if ys_abnorm else torch.empty(0, dtype=torch.long)
+            return x_norm, y_norm, x_abn, y_abn
+
+        # gather 4 normal + 4 abnormal
+        need = 4
+        x_norm, y_norm, x_abn, y_abn = _gather_class_samples(self.test_loader, need_per_class=need)
+        if x_norm.shape[0] < need or x_abn.shape[0] < need:
+            x_norm2, y_norm2, x_abn2, y_abn2 = _gather_class_samples(self.train_loader, need_per_class=need)
+            if x_norm.shape[0] < need and x_norm2.numel() > 0:
+                x_norm = torch.cat([x_norm, x_norm2], dim=0)
+                y_norm = torch.cat([y_norm, y_norm2], dim=0)
+            if x_abn.shape[0] < need and x_abn2.numel() > 0:
+                x_abn = torch.cat([x_abn, x_abn2], dim=0)
+                y_abn = torch.cat([y_abn, y_abn2], dim=0)
+
+        if x_norm.shape[0] == 0 and x_abn.shape[0] == 0:
+            raise RuntimeError("Not found: Normal/Abnormal.")
+
+        def _pad_with_repeat(x, y, target_k):
+            if x.shape[0] >= target_k:
+                return x[:target_k], y[:target_k]
+            idx = torch.arange(x.shape[0])
+            rep = (target_k + x.shape[0] - 1) // x.shape[0]
+            idx_full = idx.repeat(rep)[:target_k]
+            return x[idx_full], y[idx_full]
+
+        if x_norm.shape[0] < need:
+            x_norm, y_norm = _pad_with_repeat(x_norm, y_norm, need)
+        else:
+            x_norm, y_norm = x_norm[:need], y_norm[:need]
+
+        if x_abn.shape[0] < need:
+            x_abn, y_abn = _pad_with_repeat(x_abn, y_abn, need)
+        else:
+            x_abn, y_abn = x_abn[:need], y_abn[:need]
+
+        x = torch.cat([x_norm, x_abn], dim=0).to(self.device)  # (8, F)
+        y = torch.cat([y_norm, y_abn], dim=0).to(self.device)  # (8,)
+
+        batch_size, num_features = x.shape
+        H = int(np.sqrt(num_features))
+        assert H * H == num_features, f"{num_features} is not squared number."
+
+
+        _, x, recon = self.model(x, return_pred=True)
+
+        base_path = self.model_config['base_path']
+        os.makedirs(base_path, exist_ok=True)
+
+        def _norm_with_ref(arr, ref_min, ref_max):
+            if ref_max > ref_min:
+                return (arr - ref_min) / (ref_max - ref_min)
+            return np.zeros_like(arr)
+
+        saved_paths = []
+        for i in range(batch_size):
+            orig_img  = x[i].detach().float().cpu().numpy().reshape(H, H)
+            recon_img = recon[i].detach().float().cpu().numpy().reshape(H, H)
+
+            ref_min, ref_max = orig_img.min(), orig_img.max()
+            orig_plot  = _norm_with_ref(orig_img,  ref_min, ref_max)
+            recon_plot = _norm_with_ref(recon_img, ref_min, ref_max)
+
+            plt.figure(figsize=(9, 3), dpi=200)
+            plt.subplot(1, 2, 1)
+            plt.imshow(orig_plot, cmap='gray', vmin=0, vmax=1)
+            plt.title(f'Original (label={int(y[i].detach().cpu())})')
+            plt.axis('off')
+            plt.subplot(1, 2, 2)
+            plt.imshow(recon_plot, cmap='gray', vmin=0, vmax=1)
+            plt.title('Reconstruction')
+            plt.axis('off')
+
+            plt.tight_layout()
+            out_path = os.path.join(base_path, f'reconstruction_pair_{i}_label{int(y[i].detach().cpu())}.png')
+            plt.savefig(out_path)
+            plt.close()
+
+            saved_paths.append(out_path)
+            if hasattr(self, "logger") and self.logger is not None:
+                self.logger.info(f"[plot_reconstruction] saved: {out_path}")
+
+        return {
+            "num_saved": len(saved_paths),
+            "paths": saved_paths,
+            "labels": [int(v) for v in y.detach().cpu().tolist()],
+        }        

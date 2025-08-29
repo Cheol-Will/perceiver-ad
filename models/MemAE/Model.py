@@ -85,7 +85,7 @@ class MemAE(nn.Module):
             de_sizes = [self.hidden_dim] * self.de_nlayers + [self.data_dim]
         self.decoder = make_mlp(de_sizes, bias=False, last_act=None)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor, return_pred = False):
         """
         x: (B, F)
         return:
@@ -100,4 +100,7 @@ class MemAE(nn.Module):
         mse_per_dim = F.mse_loss(x_hat, x, reduction='none')   # (B, F)
         batch_losses = mse_per_dim.mean(dim=1)              # (B,)
 
-        return batch_losses
+        if return_pred: 
+            return batch_losses, x, x_hat
+        else:
+            return batch_losses
