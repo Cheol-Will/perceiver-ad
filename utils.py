@@ -21,6 +21,7 @@ def load_yaml(args):
     dict_to_import = args.model_type + '.yaml'
     if args.model_type in BASELINE_MODELS:
         dict_to_import = 'CLASSIC.yaml'
+
     with open(f'configs/{dict_to_import}', 'r') as f:
         model_configs = yaml.safe_load(f)
     model_config = model_configs['default']
@@ -28,11 +29,11 @@ def load_yaml(args):
     if args.dataname in model_configs:
         for k, v in model_configs[args.dataname].items():
             model_config[k] = v
-    if args.model_type in ['Perceiver', 'RIN', 'PAE']:
+
+    if args.model_type in ['Perceiver', 'RIN', 'PAE', 'MemPAE']:
         model_config = replace_transformer_config(args, model_config)
     elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
         model_config = replace_mlp_config(args, model_config)
-
 
     model_config['model_type'] = args.model_type
     model_config['data_dim'] = get_input_dim(args, model_config)
@@ -40,6 +41,7 @@ def load_yaml(args):
     model_config['dataset_name'] = args.dataname
     model_config['train_ratio'] = args.train_ratio
     model_config['base_path'] = args.base_path    
+
     return model_config
 
 
@@ -49,12 +51,16 @@ def build_trainer(model_config):
         from models.DRL.Trainer import Trainer
     elif model_type == 'MCM':
         from models.MCM.Trainer import Trainer
+    elif model_type == 'Disent':
+        from models.Disent.Trainer import Trainer
     elif model_type == 'Perceiver':
         from models.Perceiver.Trainer import Trainer
     elif model_type == 'RIN':
         from models.RIN.Trainer import Trainer
     elif model_type == 'MemAE':
         from models.MemAE.Trainer import Trainer
+    elif model_type == 'MemPAE':
+        from models.MemPAE.Trainer import Trainer        
     elif model_type == 'MultiMemAE':
         from models.MultiMemAE.Trainer import Trainer
     elif model_type == 'RINMLP':
@@ -89,8 +95,14 @@ def replace_transformer_config(args, model_config):
 
     if args.model_type in ['Perceiver', 'RIN']:
         model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
-    if args.model_type in ['PAE']:
+    
+    if args.model_type in ['PAE', 'MemPAE']:
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
+        model_config['use_pos_enc_as_query'] = args.use_pos_enc_as_query # default False
+        
+        if args.model_type == 'MemPAE': 
+            model_config['sim_type'] = args.sim_type if args.sim_type is not None else model_config['sim_type']
+            model_config['temperature'] = args.temperature if args.temperature is not None else model_config['temperature']
 
     return model_config
 
