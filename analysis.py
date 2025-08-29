@@ -15,6 +15,10 @@ def build_analyzer(model_config):
         from models.Perceiver.Analyzer import Analyzer
     elif model_type == 'MemAE':
         from models.MemAE.Analyzer import Analyzer
+    elif model_type == 'MemPAE':
+        from models.MemPAE.Analyzer import Analyzer
+    elif model_type == 'PAE':
+        from models.PAE.Analyzer import Analyzer        
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Analyzer import Analyzer
     else:
@@ -96,22 +100,25 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataname', type=str, default='Hepatitis')
-    parser.add_argument('--model_type', type=str, default='Perceiver')
+    parser.add_argument('--model_type', type=str, default='DRL')
     parser.add_argument('--exp_name', type=str, default=None)
     parser.add_argument('--train_ratio', type=float, default=1.0)
 
-    # Perceiver Experiment 
+    # Experiment 
     parser.add_argument('--num_heads', type=int, default=None)
-    parser.add_argument('--num_layers', type=int, default=None)
+    parser.add_argument('--depth', type=int, default=None)
     parser.add_argument('--hidden_dim', type=int, default=None)
+    parser.add_argument('--learning_rate', type=float, default=None)
+
+    # 
     parser.add_argument('--mlp_ratio', type=float, default=None)
     parser.add_argument('--dropout_prob', type=float, default=None)
     parser.add_argument('--drop_col_prob', type=float, default=None)
-    parser.add_argument('--learning_rate', type=float, default=None)
-
+    parser.add_argument('--temperature', type=float, default=None)
     parser.add_argument('--sim_type', type=str, default=None)
     parser.add_argument('--num_repeat', type=int, default=None)
-    
+    parser.add_argument('--is_weight_sharing', action='store_true')
+    parser.add_argument('--num_adapters', type=int, default=None)
     # Analysis arguments
     parser.add_argument('--plot_attn', action='store_true')
     parser.add_argument('--plot_recon', action='store_true')
