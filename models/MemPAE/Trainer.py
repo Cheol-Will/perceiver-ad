@@ -32,7 +32,7 @@ class Trainer(object):
             is_weight_sharing=model_config['is_weight_sharing'],
             temperature=model_config['temperature'],
             sim_type=model_config['sim_type'],
-            use_pos_enc_as_query=model_config['is_weight_sharing'],
+            use_pos_enc_as_query=model_config['use_pos_enc_as_query'],
         ).to(self.device)
         self.logger = model_config['logger']
         self.model_config = model_config
