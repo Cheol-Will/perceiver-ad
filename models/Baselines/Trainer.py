@@ -15,6 +15,7 @@ def build_model(model_config):
     NO Error returned. 
     """
     model_type = model_config['model_type']
+    batch_size = model_config['batch_size']
     if model_type == 'KNN':
         from pyod.models.knn import KNN
         return KNN()
@@ -35,29 +36,24 @@ def build_model(model_config):
         return ECOD()
     elif model_type == 'AutoEncoder':
         from pyod.models.auto_encoder import AutoEncoder        
-        return AutoEncoder()
+        return AutoEncoder(batch_size=batch_size)
+        # return AutoEncoder(batch_size=batch_size, hidden_neuron_list=[64, 64, 64], )
     elif model_type == 'DeepSVDD':
         from pyod.models.deep_svdd import DeepSVDD
         # return DeepSVDD(batch_size=512, n_features=model_config['data_dim']) # input dimension should be given
-        return DeepSVDD(n_features=model_config['data_dim']) # input dimension should be given
+        return DeepSVDD(batch_size=batch_size)
     elif model_type == 'ICL':
         from deepod.models.tabular.icl import ICL
-        return ICL() 
-        # return ICL(hidden_dims='200,400', rep_dim=200) # hyperparamters from ICL paper
-        # return ICL(batch_size=512) 
+        return ICL(batch_size=batch_size)
     elif model_type == 'NeuTraL':
         from deepod.models.tabular.neutral import NeuTraL
-        # return NeuTraL(batch_size=512, hidden_dims='24,24,24,24', rep_dim=24, trans_hidden_dims=24, n_trans=11) #  hyperparamters from ICL paper 
-        # return NeuTraL(batch_size=512) 
-        return NeuTraL() 
+        return NeuTraL(batch_size=batch_size) 
     elif model_type == 'SLAD':
         from deepod.models.tabular.slad import SLAD
-        return SLAD() # 
-        # return SLAD(batch_size=512) # 
+        return SLAD(batch_size=batch_size)
     elif model_type == 'GOAD':
         from deepod.models.tabular.goad import GOAD
-        # return GOAD(batch_size=512) # 
-        return GOAD() # 
+        return GOAD(batch_size=batch_size)
     else: 
         raise ValueError(f"Unknown model type is given: {model_type}")
 
