@@ -131,6 +131,7 @@ def make_pivots(dfs, save_csv=False, outdir="summary"):
 def add_rank_columns(
     df_mean: pd.DataFrame,
     tie_method: str = "average",
+    is_sort: bool = False,
 ):
     
     # higher_is_better
@@ -139,6 +140,9 @@ def add_rank_columns(
 
     df_with_avg_rank = df_mean.copy()
     df_with_avg_rank['AVG_RANK'] = avg_rank
+
+    if is_sort:
+        df_with_avg_rank = df_with_avg_rank.sort_values(by=['AVG_RANK'])
 
     return df_with_avg_rank
 
@@ -213,39 +217,73 @@ def _render_mean_pm_std(df_mean: pd.DataFrame, df_std: pd.DataFrame, digits=4) -
         index=df_mean.index, columns=df_mean.columns
     )
 
+def add_baseline_pr(df, data):
+    dataset_properties = pd.read_csv("Data/dataset_properties.csv")
+    dataset_properties['Data'] = dataset_properties['Data'].str.lower()
+    dataset_properties['Baseline (ratio)'] = dataset_properties['Anomalies'] / (dataset_properties['Samples'] // 2)
+    dataset_properties = dataset_properties.set_index('Data')
+    baseline = dataset_properties.loc[data, 'Baseline (ratio)']
+
+    df.loc['Baseline (ratio)', data] = baseline
+    df.iloc[-1, -1] = 0
+    df.iloc[-1, -2] = np.mean(baseline)
+
+    return df
+
+
 def main():
+    keys = [
+        # 'ratio_0.1_AUCROC', 'ratio_0.5_AUCROC', 
+        # 'ratio_0.1_AUCPR', 'ratio_0.5_AUCPR',
+        'ratio_1.0_AUCROC',
+        'ratio_1.0_AUCPR',
+    ]
+
+    data = [
+        'arrhythmia', 'breastw', 'cardio', 
+        # 'census',
+        'campaign', 'cardiotocography', 'glass', 'ionosphere', 'mammography', 
+        # 'nslkdd',
+        # 'hepatitis', 
+        'optdigits', 'pima', 'pendigits', 'satellite', 
+        # 'staimage-2', 'shuttle'
+        'thyroid', 'wbc', 'wine',
+    ]
+
     models=  [
-        'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA', 
+        'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
         'AutoEncoder', 'DeepSVDD', 'GOAD', 
         'NeuTraL', 'ICL', 'MCM', 'DRL',
+        # 'Disent',
     ]
     my_models = [
-        'Perceiver-d16-dcol0.5',
-        'RIN-d16-dcol0.1',
-        'MemAE-d64-lr0.05',
-        # 'MemAE-d256-lr0.01-t0.1',
-        # 'MemAE-l2-d128-lr0.005',
-        'MultiMemAE-d64-lr0.05-ad8',
-        'MultiMemAE-d64-lr0.05-ad16',
-        'MultiMemAE-d64-lr0.05-ad32',
-        'PAE-ws-d32-lr0.005',
+        # 'Perceiver-d16-dcol0.5',
+        # 'RIN-d16-dcol0.1',
 
+        # 'MemAE-d64-lr0.05', # 0.6751
+        # 'MemAE-d256-lr0.001', # 0.6751
+        # 'MemAE-d256-lr0.01-t0.1', # 0.6818
+        # 'MemAE-l2-d128-lr0.005', # 0.6693
+
+        'PAE-ws-d64-lr0.001', # 0.6867    3.5625 # (SOTA! KNN: 4.1875)
+        # 'PAE-d64-lr0.001', # 0.6867    3.6875  (SOTA! KNN: 4.1250)
+        # 'PAE-ws-pos_query-d64-lr0.001', # 0.6836    3.8750 (SOTA! KNN: 4.3125)
+
+        # 'PAE-pos_query-d64-lr0.001', # Not done
+
+
+        # 'MemPAE-d64-lr0.001', # 0.6878    3.8125 (SOTA! KNN: 4.1875)
+        # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.8125 (SOTA! KNN: 4.1875)
+        # 'MemPAE-ws-d64-lr0.001-t0.1', # 0.6842    4.2500 (close KNN: 4.0625)
+        # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', #  0.6892    3.8750 (SOTA! KNN: 4.2500)
+        
+        # 'MemPAE-ws-pos_query-d64-lr0.001 # Not done
     ]
-    data = [
-        'arrhythmia', 'breastw', 'cardio', 'campaign', 'cardiotocography',
-        'glass', 'ionosphere', 'mammography', 'hepatitis', 'optdigits',
-        'pendigits', 'pima', 'satellite', 'thyroid', 'wbc', 'wine',
-    ]
+
 
     results = collect_results()
     df_all, dfs = convert_results_to_csv(results, save_csv=False)
     pivots = make_pivots(dfs, save_csv=False)
-
-    keys = [
-        # 'ratio_0.1_AUCROC', 'ratio_0.5_AUCROC', 'ratio_1.0_AUCROC',
-        # 'ratio_0.1_AUCPR', 'ratio_0.5_AUCPR',
-        'ratio_1.0_AUCPR'
-    ]
 
     for base in keys:
         tr, metr = base.split('_')[1], base.split('_')[2]  # e.g., '1.0', 'AUCPR'
@@ -254,31 +292,41 @@ def main():
         print(base)
         df_mean = pivots[k_mean][data].copy()
         df_std  = pivots[k_std][data].copy()
-        df_mean.loc[:, 'AVG'] = df_mean.mean(axis=1, numeric_only=True)
-        df_std.loc[:, 'AVG']  = df_std.mean(axis=1, numeric_only=True)
+        df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
+        df_std.loc[:, 'AVG_AUC']  = df_std.mean(axis=1, numeric_only=True)
 
         # ordering
         first = [m for m in models if m in df_mean.index]
         rest  = [m for m in df_mean.index if m not in first]
         rest  = my_models
         order = first + rest
-        # order = [col for col in order if 'RINMLP' not in col]
+
+        # filtering
+        order = [col for col in order if 'MultiMemAE' not in col]
+        order = [col for col in order if 'RINMLP' not in col]
+        order = [col for col in order if 'PAE-d8' not in col]
+
+        # order = [col for col in order if 'MemAE-l2' not in col]
         # order = [col for col in order if 'PAE' in col]
 
         df_mean = df_mean.loc[order]
         df_std  = df_std.loc[order]
         
-        # df_mean = add_rank_columns(df_mean)
+        df_mean = add_rank_columns(df_mean, is_sort=False)
         # df_mean = add_tire_colums(df_mean, df_std)
-        
-        # df_render = _render_mean_pm_std(df_mean.round(4), df_std.round(4))
+
+        if base == 'ratio_1.0_AUCPR':
+            df_mean = add_baseline_pr(df_mean, data)
+            pass
+
         df_render = df_mean.round(4)
+        df_render = _render_mean_pm_std(df_mean.round(4), df_std.round(4))
         # df_render.columns = [c.replace("Perceiver", "Per") if "Perceiver" in c else c
         #                      for c in df_render.columns]
 
         os.makedirs('metrics', exist_ok=True)
-        df_render.to_csv(f'metrics/{base}_rendered.csv')
-        df_render.T.to_csv(f'metrics/{base}_rendered_T.csv')
+        df_render.to_csv(f'metrics/{base}.csv')
+        df_render.T.to_csv(f'metrics/{base}_T.csv')
 
         # print(df_render.T)
         print(df_render)
