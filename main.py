@@ -86,6 +86,8 @@ if __name__ == "__main__":
     parser.add_argument('--num_repeat', type=int, default=None)
     parser.add_argument('--is_weight_sharing', action='store_true')
     parser.add_argument('--use_pos_enc_as_query', action='store_true')
+    parser.add_argument('--use_log_num_latents', action='store_true')
+    parser.add_argument('--num_latents', type=int, default=None)
     parser.add_argument('--num_adapters', type=int, default=None)
 
 

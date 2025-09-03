@@ -10,7 +10,7 @@ import importlib
 from sklearn.metrics import average_precision_score, roc_auc_score, precision_recall_fscore_support
 
 BASELINE_MODELS = ['OCSVM', 'KNN', 'IForest', 'LOF', 'PCA', 'ECOD', 
-                   'DeepSVDD', 'AutoEncoder', 'GOAD', 'ICL', 'NeuTraL']
+                   'DeepSVDD', 'GOAD', 'ICL', 'NeuTraL', ] # 'AutoEncoder'
 
 npz_files = glob.glob(os.path.join('./Data', '*.npz'))
 npz_datanames = [os.path.splitext(os.path.basename(file))[0] for file in npz_files]
@@ -30,7 +30,7 @@ def load_yaml(args):
         for k, v in model_configs[args.dataname].items():
             model_config[k] = v
 
-    if args.model_type in ['Perceiver', 'RIN', 'PAE', 'MemPAE']:
+    if args.model_type in ['Perceiver', 'RIN', 'PAE', 'PAEKNN', 'PVAE','MemPAE']:
         model_config = replace_transformer_config(args, model_config)
     elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
         model_config = replace_mlp_config(args, model_config)
@@ -66,7 +66,13 @@ def build_trainer(model_config):
     elif model_type == 'RINMLP':
         from models.RINMLP.Trainer import Trainer        
     elif model_type == 'PAE':
-        from models.PAE.Trainer import Trainer        
+        from models.PAE.Trainer import Trainer
+    elif model_type == 'PAEKNN':
+        from models.PAEKNN.Trainer import Trainer                
+    elif model_type == 'PVAE':
+        from models.PVAE.Trainer import Trainer                
+    elif model_type == 'AutoEncoder':
+        from models.AutoEncoder.Trainer import Trainer        
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Trainer import Trainer
     else:
@@ -96,9 +102,12 @@ def replace_transformer_config(args, model_config):
     if args.model_type in ['Perceiver', 'RIN']:
         model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
     
-    if args.model_type in ['PAE', 'MemPAE']:
+    if args.model_type in ['PAE', 'MemPAE', 'PAEKNN', 'PVAE']:
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
         model_config['use_pos_enc_as_query'] = args.use_pos_enc_as_query # default False
+        model_config['use_log_num_latents'] = args.use_log_num_latents # default False
+        if args.num_latents is not None:
+            model_config['num_latents'] = args.num_latents
         
         if args.model_type == 'MemPAE': 
             model_config['sim_type'] = args.sim_type if args.sim_type is not None else model_config['sim_type']
