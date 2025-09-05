@@ -17,7 +17,14 @@ class Trainer(object):
         self.train_loader, self.test_loader = get_dataloader(model_config)
         
         model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['data_dim']))) # sqrt(F)
-        model_config['num_memories'] = self.calculate_num_memories() # sqrt(N)
+
+        if model_config['use_small_memory'] == True:
+            model_config['num_memories'] = self.calculate_num_memories() # sqrt(N)
+            model_config['num_memories'] //=  2 # sqrt(N) // 2
+            print("use half of memory size")
+        else: 
+            model_config['num_memories'] = self.calculate_num_memories() # sqrt(N)
+
         self.device = model_config['device']
         self.sche_gamma = model_config['sche_gamma']
         self.learning_rate = model_config['learning_rate']
@@ -33,6 +40,7 @@ class Trainer(object):
             temperature=model_config['temperature'],
             sim_type=model_config['sim_type'],
             use_pos_enc_as_query=model_config['use_pos_enc_as_query'],
+            shrink_thred=model_config['shrink_thred'],
         ).to(self.device)
         self.logger = model_config['logger']
         self.model_config = model_config

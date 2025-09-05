@@ -243,7 +243,6 @@ class PAE(nn.Module):
         else:
             self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d
 
-
         self.num_features = num_features
         self.is_weight_sharing = is_weight_sharing
         self.use_pos_enc_as_query = use_pos_enc_as_query
@@ -255,7 +254,7 @@ class PAE(nn.Module):
         nn.init.trunc_normal_(self.latents_query, std=0.02)
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
-    def forward(self, x, return_weight = False, return_pred = False):
+    def forward(self, x, return_pred = False, return_weight = False):
         batch_size, num_features = x.shape # (B, F)
 
         # feature tokenizer
@@ -264,12 +263,14 @@ class PAE(nn.Module):
 
         # encoder 
         latents_query = self.latents_query.expand(batch_size, -1, -1) # (B, N, D)
-        latents = self.encoder(latents_query, feature_embedding, feature_embedding) 
+        latents, encoder_attn = self.encoder(latents_query, feature_embedding, feature_embedding, return_weight=True) 
 
-
+        self_attns = []
         if self.is_weight_sharing:
             for _ in range(self.depth):
-                latents = self.block(latents)
+                latents, self_attn = self.block(latents, return_weight=True)
+                if return_weight: 
+                    self_attns.append(self_attn)
         else:
             for block in self.block:
                 latents = block(latents)
@@ -280,12 +281,14 @@ class PAE(nn.Module):
             decoder_query = decoder_query + self.pos_encoding
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
-        output = self.decoder(decoder_query, latents, latents)
+        output, decoder_attn = self.decoder(decoder_query, latents, latents, return_weight=True)
         x_hat = self.proj(output)
 
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
 
-        if return_pred:
+        if return_weight:
+            return loss, x, x_hat, encoder_attn, self_attns, decoder_attn
+        elif return_pred:
             return loss, x, x_hat
         else:
             return loss

@@ -15,7 +15,12 @@ def nearest_power_of_two(x: int) -> int:
 class Trainer(object):
     def __init__(self, model_config: dict):
         self.train_loader, self.test_loader = get_dataloader(model_config)
-        model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['data_dim']))) # sqrt(F)
+        if 'num_latents' not in model_config:
+            if model_config['use_log_num_latents']:
+                model_config['num_latents'] = nearest_power_of_two(int(math.log2(model_config['data_dim']))) # log2(F)
+            else:
+                model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['data_dim']))) # sqrt(F)
+        
         self.device = model_config['device']
         self.sche_gamma = model_config['sche_gamma']
         self.learning_rate = model_config['learning_rate']
@@ -34,6 +39,7 @@ class Trainer(object):
         self.epochs = model_config['epochs']
 
     def training(self):
+        print(self.model_config)
         self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
         self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
 

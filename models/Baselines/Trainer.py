@@ -34,14 +34,14 @@ def build_model(model_config):
     elif model_type == 'ECOD':
         from pyod.models.ecod import ECOD
         return ECOD()
-    elif model_type == 'AutoEncoder':
-        from pyod.models.auto_encoder import AutoEncoder        
-        return AutoEncoder(batch_size=batch_size)
+    # elif model_type == 'AutoEncoder':
+    #     from pyod.models.auto_encoder import AutoEncoder        
+    #     return AutoEncoder(batch_size=batch_size)
         # return AutoEncoder(batch_size=batch_size, hidden_neuron_list=[64, 64, 64], )
     elif model_type == 'DeepSVDD':
         from pyod.models.deep_svdd import DeepSVDD
         # return DeepSVDD(batch_size=512, n_features=model_config['data_dim']) # input dimension should be given
-        return DeepSVDD(batch_size=batch_size)
+        return DeepSVDD(batch_size=batch_size, n_features=model_config['data_dim'])
     elif model_type == 'ICL':
         from deepod.models.tabular.icl import ICL
         return ICL(batch_size=batch_size)

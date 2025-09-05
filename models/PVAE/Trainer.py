@@ -16,7 +16,7 @@ class Trainer(object):
     def __init__(self, model_config: dict):
         self.train_loader, self.test_loader = get_dataloader(model_config)
         if 'num_latents' not in model_config:
-            if 'use_log_num_latents' in model_config:
+            if model_config['use_log_num_latents']:
                 model_config['num_latents'] = nearest_power_of_two(int(math.log2(model_config['data_dim']))) # sqrt(F)
             else:
                 model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['data_dim']))) # sqrt(F)

@@ -136,7 +136,6 @@ class Analyzer(object):
             y_abn  = torch.cat(ys_abnorm,  dim=0) if ys_abnorm else torch.empty(0, dtype=torch.long)
             return x_norm, y_norm, x_abn, y_abn
 
-        # gather 4 normal + 4 abnormal
         need = 4
         x_norm, y_norm, x_abn, y_abn = _gather_class_samples(self.test_loader, need_per_class=need)
         if x_norm.shape[0] < need or x_abn.shape[0] < need:
@@ -169,18 +168,24 @@ class Analyzer(object):
         else:
             x_abn, y_abn = x_abn[:need], y_abn[:need]
 
-        x = torch.cat([x_norm, x_abn], dim=0).to(self.device)  # (8, F)
-        y = torch.cat([y_norm, y_abn], dim=0).to(self.device)  # (8,)
+        x = torch.cat([x_norm, x_abn], dim=0).to(self.device)
+        y = torch.cat([y_norm, y_abn], dim=0).to(self.device)
 
         batch_size, num_features = x.shape
         H = int(np.sqrt(num_features))
         assert H * H == num_features, f"{num_features} is not squared number."
 
-
-        _, x, recon = self.model(x, return_pred=True)
+        _, x, recon, encoder_attn, self_attns, decoder_attn = self.model(x, return_weight=True)
 
         base_path = self.model_config['base_path']
         os.makedirs(base_path, exist_ok=True)
+        
+        x_np = x.detach().float().cpu().numpy()
+        recon_np = recon.detach().float().cpu().numpy()
+        y_np = y.detach().cpu().numpy()
+        encoder_attn_np = encoder_attn.detach().float().cpu().numpy()
+        self_attns_np = [sa.detach().float().cpu().numpy() for sa in self_attns]
+        decoder_attn_np = decoder_attn.detach().float().cpu().numpy()
 
         def _norm_with_ref(arr, ref_min, ref_max):
             if ref_max > ref_min:
@@ -189,9 +194,11 @@ class Analyzer(object):
 
         saved_paths = []
         for i in range(batch_size):
-            orig_img  = x[i].detach().float().cpu().numpy().reshape(H, H)
-            recon_img = recon[i].detach().float().cpu().numpy().reshape(H, H)
-
+            label = int(y_np[i])
+            
+            # --- [1] Reconstruction Plot (변경 없음) ---
+            orig_img  = x_np[i].reshape(H, H)
+            recon_img = recon_np[i].reshape(H, H)
             ref_min, ref_max = orig_img.min(), orig_img.max()
             orig_plot  = _norm_with_ref(orig_img,  ref_min, ref_max)
             recon_plot = _norm_with_ref(recon_img, ref_min, ref_max)
@@ -199,7 +206,7 @@ class Analyzer(object):
             plt.figure(figsize=(9, 3), dpi=200)
             plt.subplot(1, 2, 1)
             plt.imshow(orig_plot, cmap='gray', vmin=0, vmax=1)
-            plt.title(f'Original (label={int(y[i].detach().cpu())})')
+            plt.title(f'Original (label={label})')
             plt.axis('off')
             plt.subplot(1, 2, 2)
             plt.imshow(recon_plot, cmap='gray', vmin=0, vmax=1)
@@ -207,19 +214,75 @@ class Analyzer(object):
             plt.axis('off')
 
             plt.tight_layout()
-            out_path = os.path.join(base_path, f'reconstruction_pair_{i}_label{int(y[i].detach().cpu())}.png')
+            out_path = os.path.join(base_path, f'reconstruction_pair_{i}_label{label}.png')
             plt.savefig(out_path)
             plt.close()
-
             saved_paths.append(out_path)
-            if hasattr(self, "logger") and self.logger is not None:
-                self.logger.info(f"[plot_reconstruction] saved: {out_path}")
 
-        return {
-            "num_saved": len(saved_paths),
-            "paths": saved_paths,
-            "labels": [int(v) for v in y.detach().cpu().tolist()],
-        }
+            # --- [2] Encoder Cross-Attention per Head (수정된 부분) ---
+            fig, axes = plt.subplots(2, 2, figsize=(10, 8), dpi=200, constrained_layout=True)
+            fig.suptitle(f'Sample {i} (label={label})\nEncoder Cross-Attention per Head', fontsize=16)
+            
+            vmin, vmax = encoder_attn_np[i].min(), encoder_attn_np[i].max()
+            
+            for h in range(4):
+                ax = axes[h // 2, h % 2]
+                enc_attn_map_head = encoder_attn_np[i][h]
+                im = ax.imshow(enc_attn_map_head, aspect='auto', cmap='viridis', vmin=vmin, vmax=vmax)
+                ax.set_title(f'Head {h+1}')
+                ax.set_xlabel('Input Features')
+                ax.set_ylabel('Latent Queries')
+
+            fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.8, pad=0.02)
+            out_path_enc = os.path.join(base_path, f'attn_encoder_{i}_label{label}.png')
+            fig.savefig(out_path_enc)
+            plt.close(fig)
+            saved_paths.append(out_path_enc)
+
+            # --- [3] Self-Attention Blocks per Head (수정된 부분) ---
+            num_blocks = len(self_attns_np)
+            for j in range(num_blocks):
+                fig, axes = plt.subplots(2, 2, figsize=(10, 8), dpi=200, constrained_layout=True)
+                fig.suptitle(f'Sample {i} (label={label})\nSelf-Attention Block {j+1} per Head', fontsize=16)
+
+                block_attns = self_attns_np[j][i]
+                vmin, vmax = block_attns.min(), block_attns.max()
+
+                for h in range(4):
+                    ax = axes[h // 2, h % 2]
+                    self_attn_map_head = block_attns[h]
+                    im = ax.imshow(self_attn_map_head, aspect='equal', cmap='viridis', vmin=vmin, vmax=vmax)
+                    ax.set_title(f'Head {h+1}')
+                    ax.set_xlabel('Latent Keys')
+                    ax.set_ylabel('Latent Queries')
+
+                fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.8, pad=0.02)
+                out_path_self = os.path.join(base_path, f'attn_self_block{j+1}_{i}_label{label}.png')
+                fig.savefig(out_path_self)
+                plt.close(fig)
+                saved_paths.append(out_path_self)
+
+            # --- [4] Decoder Cross-Attention per Head (수정된 부분) ---
+            fig, axes = plt.subplots(2, 2, figsize=(10, 8), dpi=200, constrained_layout=True)
+            fig.suptitle(f'Sample {i} (label={label})\nDecoder Cross-Attention per Head', fontsize=16)
+
+            vmin, vmax = decoder_attn_np[i].min(), decoder_attn_np[i].max()
+
+            for h in range(4):
+                ax = axes[h // 2, h % 2]
+                dec_attn_map_head = decoder_attn_np[i][h]
+                im = ax.imshow(dec_attn_map_head, aspect='auto', cmap='viridis', vmin=vmin, vmax=vmax)
+                ax.set_title(f'Head {h+1}')
+                ax.set_xlabel('Latent Keys')
+                ax.set_ylabel('Output Queries')
+            
+            fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.8, pad=0.02)
+            out_path_dec = os.path.join(base_path, f'attn_decoder_{i}_label{label}.png')
+            fig.savefig(out_path_dec)
+            plt.close(fig)
+            saved_paths.append(out_path_dec)
+
+ 
     @torch.no_grad()
     def plot_anomaly_histograms(
         self,

@@ -5,6 +5,10 @@ import numpy as np
 import math
 import random
 
+# relu based hard shrinkage function, only works for positive values
+def hard_shrink_relu(input, lambd=0, epsilon=1e-12):
+    output = (F.relu(input-lambd) * input) / (torch.abs(input - lambd) + epsilon)
+    return output
 
 class MemoryUnit(nn.Module):
     def __init__(
@@ -13,13 +17,15 @@ class MemoryUnit(nn.Module):
         hidden_dim: int,
         sim_type: str,    # "cos" or "l2"
         temperature: float = 1.0,
+        shrink_thres: float = 0,
     ):
         super().__init__()
         assert sim_type.lower() in ['cos', 'l2']
-        print(f"Init MemoryUnit of shape {num_memories, hidden_dim} with simtype={sim_type} and t={temperature}")
+        print(f"Init MemoryUnit of shape {num_memories, hidden_dim} with simtype={sim_type} and t={temperature} thres={shrink_thres}")
         self.memories = nn.Parameter(torch.empty(num_memories, hidden_dim))
         self.hidden_dim = hidden_dim
         self.temperature = temperature
+        self.shrink_thres = shrink_thres
         self.sim_type = sim_type.lower()
         self.reset_parameters()
 
@@ -45,6 +51,10 @@ class MemoryUnit(nn.Module):
 
         logits = logits / self.temperature
         weight = F.softmax(logits, dim=-1)                       # (B, K, N)
+
+        if self.shrink_thres > 0:
+            weight = hard_shrink_relu(weight, lambd=self.shrink_thres)
+            weight = F.normalize(weight, p=1, dim=-1)
         read = weight @ self.memories                            # (B, K, D)
         return read  # (B, K, D)
 
@@ -263,6 +273,7 @@ class MemPAE(nn.Module):
         temperature: float = 1,
         sim_type: str = 'cos',
         use_pos_enc_as_query: bool = False,
+        shrink_thred: float = 0.0,
     ):
         super(MemPAE, self).__init__()
         assert num_latents is not None
@@ -270,7 +281,7 @@ class MemPAE(nn.Module):
         print("Init MemPAE with weight_sharing" if is_weight_sharing else "Init MemPAE without weight sharing")
         
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim) # only numerical inputs
-        self.memory = MemoryUnit(num_memories, hidden_dim, sim_type, temperature)
+        self.memory = MemoryUnit(num_memories, hidden_dim, sim_type, temperature, shrink_thred)
         
         if is_weight_sharing:
             self.block = SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
