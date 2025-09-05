@@ -30,7 +30,7 @@ def load_yaml(args):
         for k, v in model_configs[args.dataname].items():
             model_config[k] = v
 
-    if args.model_type in ['Perceiver', 'RIN', 'PAE', 'PAEKNN', 'PVAE','MemPAE']:
+    if args.model_type in ['Perceiver', 'RIN', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE']:
         model_config = replace_transformer_config(args, model_config)
     elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
         model_config = replace_mlp_config(args, model_config)
@@ -70,7 +70,9 @@ def build_trainer(model_config):
     elif model_type == 'PAEKNN':
         from models.PAEKNN.Trainer import Trainer                
     elif model_type == 'PVAE':
-        from models.PVAE.Trainer import Trainer                
+        from models.PVAE.Trainer import Trainer
+    elif model_type == 'PVQVAE':
+        from models.PVQVAE.Trainer import Trainer                
     elif model_type == 'AutoEncoder':
         from models.AutoEncoder.Trainer import Trainer        
     elif model_type in BASELINE_MODELS:
@@ -102,16 +104,25 @@ def replace_transformer_config(args, model_config):
     if args.model_type in ['Perceiver', 'RIN']:
         model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
     
-    if args.model_type in ['PAE', 'MemPAE', 'PAEKNN', 'PVAE']:
+    if args.model_type in ['PAE', 'MemPAE', 'PAEKNN', 'PVAE', 'PVQVAE']:
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
         model_config['use_pos_enc_as_query'] = args.use_pos_enc_as_query # default False
         model_config['use_log_num_latents'] = args.use_log_num_latents # default False
+        
         if args.num_latents is not None:
             model_config['num_latents'] = args.num_latents
         
         if args.model_type == 'MemPAE': 
             model_config['sim_type'] = args.sim_type if args.sim_type is not None else model_config['sim_type']
             model_config['temperature'] = args.temperature if args.temperature is not None else model_config['temperature']
+            model_config['shrink_thred'] = args.shrink_thred if args.shrink_thred is not None else model_config['shrink_thred']
+            model_config['use_small_memory'] = args.use_small_memory # default False
+
+        if args.model_type in ['PVAE', 'PVQVAE']:
+            model_config['beta'] = args.beta if args.beta is not None else model_config['beta'] 
+
+        if args.model_type in ['PVQVAE']:
+            model_config['use_vq_loss_as_score'] = args.use_vq_loss_as_score 
 
     return model_config
 
