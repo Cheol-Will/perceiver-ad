@@ -10,17 +10,6 @@ def hard_shrink_relu(input, lambd=0, epsilon=1e-12):
     output = (F.relu(input-lambd) * input) / (torch.abs(input - lambd) + epsilon)
     return output
 
-class EntropyLoss(nn.Module):
-    def __init__(self, eps = 1e-12):
-        super(EntropyLoss, self).__init__()
-        self.eps = eps
-
-    def forward(self, x):
-        b = x * torch.log(x + self.eps)
-        b = -1.0 * b.sum(dim=1)
-        b = b.mean(dim=1)
-        return b # (B)
-
 class MemoryUnit(nn.Module):
     def __init__(
         self,
@@ -79,7 +68,7 @@ class MemoryUnit(nn.Module):
             weight = hard_shrink_relu(weight, lambd=self.shrink_thres)
             weight = F.normalize(weight, p=1, dim=-1)
         read = weight @ self.memories                            # (B, K, D)
-        return read, weight  # (B, K, D)
+        return read  # (B, K, D)
 
 class MLP(nn.Module):
     """A dense module following attention in Transformer block."""
@@ -281,7 +270,7 @@ class OutputProjection(nn.Module):
         return x
 
 
-class MemPAE(nn.Module):
+class PairMemPAE(nn.Module):
     def __init__(
         self,
         num_features: int,
@@ -298,14 +287,12 @@ class MemPAE(nn.Module):
         use_pos_enc_as_query: bool = False,
         shrink_thred: float = 0.0,
         latent_loss_weight: float = None,
-        entropy_loss_weight: float = None,
     ):
-        super(MemPAE, self).__init__()
+        super().__init__()
         assert num_latents is not None
         assert num_memories is not None
-        print("Init MemPAE with weight_sharing" if is_weight_sharing else "Init MemPAE without weight sharing")
-        print(f"latent_loss_weight={latent_loss_weight} and entropy_loss_weight={entropy_loss_weight}")
-
+        print("Init PairMemPAE with weight_sharing" if is_weight_sharing else "Init PairMemPAE without weight sharing")
+        
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim) # only numerical inputs
         self.memory = MemoryUnit(num_memories, hidden_dim, sim_type, temperature, shrink_thred)
         
@@ -329,15 +316,11 @@ class MemPAE(nn.Module):
         else:
             self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d
 
-        self.entropy_loss_fn = EntropyLoss()
-
         self.num_features = num_features
         self.is_weight_sharing = is_weight_sharing
         self.use_pos_enc_as_query = use_pos_enc_as_query
         self.depth = depth
         self.latent_loss_weight = latent_loss_weight
-        self.entropy_loss_weight = entropy_loss_weight
-        
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -365,7 +348,7 @@ class MemPAE(nn.Module):
                 latents = block(latents)
 
         # memory addressing
-        latents_hat, memory_weight = self.memory(latents) 
+        latents_hat = self.memory(latents) 
 
         # decoder
         if self.use_pos_enc_as_query:
@@ -374,20 +357,14 @@ class MemPAE(nn.Module):
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
 
-        output = self.decoder(decoder_query, latents_hat, latents_hat)
-        x_hat = self.proj(output)
-        loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
+        output1 = self.decoder(decoder_query, latents, latents)
+        x_hat1 = self.proj(output1)
 
-        if self.latent_loss_weight is not None:
-            latent_loss = F.mse_loss(latents_hat, latents, reduction='none').mean(dim=[1,2]) # (B, )
-            loss = loss + self.latent_loss_weight * latent_loss 
+        output2 = self.decoder(decoder_query, latents_hat, latents_hat)
+        x_hat2 = self.proj(output2)
 
-        if self.entropy_loss_weight is not None:
-            entropy_loss = self.entropy_loss_fn(memory_weight)
-            loss = loss + self.entropy_loss_weight * entropy_loss
+        loss1 = F.mse_loss(x_hat1, x, reduction='none').mean(dim=1) # keep batch dim
+        loss2 = F.mse_loss(x_hat2, x, reduction='none').mean(dim=1) # keep batch dim
 
-
-        if return_pred:
-            return loss, x, x_hat
-        else:
-            return loss
+        loss = loss1 + loss2
+        return loss

@@ -2,7 +2,7 @@ import os
 import torch
 import torch.optim as optim
 from DataSet.DataLoader import get_dataloader
-from models.MemPAE.Model import MemPAE
+from models.TripletMemPAE.Model import TripletMemPAE
 from utils import aucPerformance, F1Performance
 import math
 
@@ -28,7 +28,7 @@ class Trainer(object):
         self.device = model_config['device']
         self.sche_gamma = model_config['sche_gamma']
         self.learning_rate = model_config['learning_rate']
-        self.model = MemPAE(
+        self.model = TripletMemPAE(
             num_features=model_config['data_dim'],
             num_heads=model_config['num_heads'],
             depth=model_config['depth'],
@@ -41,8 +41,6 @@ class Trainer(object):
             sim_type=model_config['sim_type'],
             use_pos_enc_as_query=model_config['use_pos_enc_as_query'],
             shrink_thred=model_config['shrink_thred'],
-            latent_loss_weight=model_config['latent_loss_weight'],
-            entropy_loss_weight=model_config['entropy_loss_weight'],
         ).to(self.device)
         self.logger = model_config['logger']
         self.model_config = model_config
