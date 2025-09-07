@@ -53,6 +53,7 @@ class Trainer(object):
         return nearest_power_of_two(int(math.sqrt(n)))
 
     def training(self):
+        print(self.model_config)
         self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
         self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
 

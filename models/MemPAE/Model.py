@@ -16,24 +16,25 @@ class EntropyLoss(nn.Module):
         self.eps = eps
 
     def forward(self, x):
+        # x: (B, N, M)
         b = x * torch.log(x + self.eps)
-        b = -1.0 * b.sum(dim=1)
-        b = b.mean(dim=1)
-        return b # (B)
+        b = -1.0 * b.sum(dim=-1) # (B, N)
+        b = b.mean(dim=-1) # (B, )
+        return b
 
 class MemoryUnit(nn.Module):
     def __init__(
         self,
         num_memories: int,
         hidden_dim: int,
-        sim_type: str,    # "cos" or "l2"
+        sim_type: str,    
         temperature: float = 1.0,
         shrink_thres: float = 0,
     ):
         super().__init__()
         assert sim_type.lower() in ['cos', 'l2', 'attn']
         print(f"Init MemoryUnit of shape {num_memories, hidden_dim} with simtype={sim_type} and t={temperature} thres={shrink_thres}")
-        self.memories = nn.Parameter(torch.empty(num_memories, hidden_dim))
+        self.memories = nn.Parameter(torch.empty(num_memories, hidden_dim)) # (M, D)
         self.hidden_dim = hidden_dim
         self.temperature = temperature
         self.shrink_thres = shrink_thres
@@ -50,17 +51,17 @@ class MemoryUnit(nn.Module):
         nn.init.xavier_uniform_(self.memories)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: (B, K, D), memories: (N, D)
+        # x: (B, N, D), memories: (M, D)
         if self.sim_type == "cos":
-            x_norm = F.normalize(x, dim=-1)                  # (B, K, D)
-            mem_norm = F.normalize(self.memories, dim=-1)    # (N, D)
-            logits = x_norm @ mem_norm.t()                   # (B, K, N)
+            x_norm = F.normalize(x, dim=-1) # (B, N, D)                 
+            mem_norm = F.normalize(self.memories, dim=-1) # (M, D)
+            logits = x_norm @ mem_norm.t() # (B, N, M)
 
         elif self.sim_type == "l2":
-            x_sq = (x ** 2).sum(dim=2, keepdim=True)             # (B, K, 1)
-            m_sq = (self.memories ** 2).sum(dim=1, keepdim=True).t()  # (1, N)
-            dist_sq = x_sq + m_sq - 2 * (x @ self.memories.t())  # (B, K, N)
-            dist_sq = dist_sq.clamp_min(0.) 
+            x_sq = (x ** 2).sum(dim=2, keepdim=True)             
+            m_sq = (self.memories ** 2).sum(dim=1, keepdim=True).t()  
+            dist_sq = x_sq + m_sq - 2 * (x @ self.memories.t())  
+            dist_sq = dist_sq.clamp_min(0.) # to avoid sqrt of negative value 
             logits = -dist_sq                                    
 
         elif self.sim_type == 'attn':
@@ -73,13 +74,14 @@ class MemoryUnit(nn.Module):
             raise ValueError(f"sim_type must be 'cos' or 'l2', got {self.sim_type}")
 
         logits = logits / self.temperature
-        weight = F.softmax(logits, dim=-1)                       # (B, K, N)
+        weight = F.softmax(logits, dim=-1) # (B, N, M)                       
 
+        # apply hard shrink 
         if self.shrink_thres > 0:
             weight = hard_shrink_relu(weight, lambd=self.shrink_thres)
             weight = F.normalize(weight, p=1, dim=-1)
-        read = weight @ self.memories                            # (B, K, D)
-        return read, weight  # (B, K, D)
+        read = weight @ self.memories # (B, N, D)                           
+        return read, weight  
 
 class MLP(nn.Module):
     """A dense module following attention in Transformer block."""
@@ -324,9 +326,10 @@ class MemPAE(nn.Module):
         self.latents_query = nn.Parameter(torch.empty(1, num_latents, hidden_dim))
 
         if use_pos_enc_as_query: 
-            print(f"Init decoder query of shape {(1, 1, hidden_dim)}")
-            self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
+            print(f"Use positional encoding as decoder query ")
+            self.decoder_query = None # 1 x d
         else:
+            print(f"Init decoder query of shape {(1, num_features, hidden_dim)}")
             self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d
 
         self.entropy_loss_fn = EntropyLoss()
@@ -341,7 +344,8 @@ class MemPAE(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        nn.init.trunc_normal_(self.decoder_query, std=0.02)
+        if self.decoder_query is not None:
+            nn.init.trunc_normal_(self.decoder_query, std=0.02)
         nn.init.trunc_normal_(self.latents_query, std=0.02)
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
@@ -365,12 +369,13 @@ class MemPAE(nn.Module):
                 latents = block(latents)
 
         # memory addressing
-        latents_hat, memory_weight = self.memory(latents) 
+        latents_hat, memory_weight = self.memory(latents) # (B, N, D), (B, N, M) 
 
         # decoder
         if self.use_pos_enc_as_query:
-            decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (B, F, D)
-            decoder_query = decoder_query + self.pos_encoding
+            # decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (B, F, D)
+            # decoder_query = decoder_query + self.pos_encoding
+            decoder_query = self.pos_encoding.expand(batch_size, -1, -1)
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
 
@@ -385,7 +390,6 @@ class MemPAE(nn.Module):
         if self.entropy_loss_weight is not None:
             entropy_loss = self.entropy_loss_fn(memory_weight)
             loss = loss + self.entropy_loss_weight * entropy_loss
-
 
         if return_pred:
             return loss, x, x_hat
