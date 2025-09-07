@@ -30,7 +30,7 @@ def load_yaml(args):
         for k, v in model_configs[args.dataname].items():
             model_config[k] = v
 
-    if args.model_type in ['Perceiver', 'RIN', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE']:
+    if args.model_type in ['Perceiver', 'RIN', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE']:
         model_config = replace_transformer_config(args, model_config)
     elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
         model_config = replace_mlp_config(args, model_config)
@@ -61,6 +61,10 @@ def build_trainer(model_config):
         from models.MemAE.Trainer import Trainer
     elif model_type == 'MemPAE':
         from models.MemPAE.Trainer import Trainer        
+    elif model_type == 'TripletMemPAE':
+        from models.TripletMemPAE.Trainer import Trainer        
+    elif model_type == 'PairMemPAE':
+        from models.PairMemPAE.Trainer import Trainer        
     elif model_type == 'MultiMemAE':
         from models.MultiMemAE.Trainer import Trainer
     elif model_type == 'RINMLP':
@@ -104,7 +108,7 @@ def replace_transformer_config(args, model_config):
     if args.model_type in ['Perceiver', 'RIN']:
         model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
     
-    if args.model_type in ['PAE', 'MemPAE', 'PAEKNN', 'PVAE', 'PVQVAE']:
+    if args.model_type in ['PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE']:
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
         model_config['use_pos_enc_as_query'] = args.use_pos_enc_as_query # default False
         model_config['use_log_num_latents'] = args.use_log_num_latents # default False
@@ -112,11 +116,13 @@ def replace_transformer_config(args, model_config):
         if args.num_latents is not None:
             model_config['num_latents'] = args.num_latents
         
-        if args.model_type == 'MemPAE': 
+        if args.model_type in ['MemPAE', 'TripletMemPAE', 'PairMemPAE']: 
             model_config['sim_type'] = args.sim_type if args.sim_type is not None else model_config['sim_type']
             model_config['temperature'] = args.temperature if args.temperature is not None else model_config['temperature']
             model_config['shrink_thred'] = args.shrink_thred if args.shrink_thred is not None else model_config['shrink_thred']
             model_config['use_small_memory'] = args.use_small_memory # default False
+            model_config['latent_loss_weight'] = args.latent_loss_weight # defualt None
+            model_config['entropy_loss_weight'] = args.entropy_loss_weight # defualt None
 
         if args.model_type in ['PVAE', 'PVQVAE']:
             model_config['beta'] = args.beta if args.beta is not None else model_config['beta'] 
