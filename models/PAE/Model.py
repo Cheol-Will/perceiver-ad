@@ -238,9 +238,10 @@ class PAE(nn.Module):
         self.latents_query = nn.Parameter(torch.empty(1, num_latents, hidden_dim))
 
         if use_pos_enc_as_query: 
-            print(f"Init decoder query of shape {(1, 1, hidden_dim)}")
-            self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
+            print(f"Use positional encoding as decoder query ")
+            self.decoder_query = None # 1 x d
         else:
+            print(f"Init decoder query of shape {(1, num_features, hidden_dim)}")
             self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d
 
         self.num_features = num_features
@@ -277,13 +278,12 @@ class PAE(nn.Module):
 
         # decoder
         if self.use_pos_enc_as_query:
-            decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (B, F, D)
-            decoder_query = decoder_query + self.pos_encoding
+            decoder_query = self.pos_encoding.expand(batch_size, -1, -1) # (B, F, D)
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
+            
         output, decoder_attn = self.decoder(decoder_query, latents, latents, return_weight=True)
         x_hat = self.proj(output)
-
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
 
         if return_weight:
