@@ -1,18 +1,21 @@
 default: 
-  data_dir: 'Data/'
-  epochs: 200
-  learning_rate: 0.0001
-  sche_gamma: 0.98
-  batch_size: 512
-  en_nlayers: 3
-  de_nlayers: 3
-  hidden_dim: 256
-  random_seed: 42
-  num_workers: 0
-  preprocess: 'standard'
-  patch_size: 1
-  overlap: 0
+  train_config:
+    data_dir: 'Data/'
+    epochs: 200
+    learning_rate: 0.0001
+    sche_gamma: 0.98
+    batch_size: 512
+    random_seed: 42
+    num_workers: 0
+    preprocess: 'standard'
+    patch_size: 1
+    overlap: 0
   
+  model_config:  
+    en_nlayers: 3
+    de_nlayers: 3
+    hidden_dim: 256
+    
   
 arrhythmia:
   epochs: 100

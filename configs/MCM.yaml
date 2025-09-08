@@ -1,19 +1,21 @@
 default: 
-  data_dir: 'Data/'
-  epochs: 200
-  learning_rate: 0.05
-  sche_gamma: 0.98
-  mask_num: 15
-  lambda: 5
-  batch_size: 512
-  en_nlayers: 3
-  de_nlayers: 3
-  hidden_dim: 256
-  z_dim: 128
-  mask_nlayers: 3
-  random_seed: 42
-  num_workers: 0
-  preprocess: 'standard'
+  train_config:
+    data_dir: 'Data/'
+    epochs: 200
+    learning_rate: 0.05
+    sche_gamma: 0.98
+    batch_size: 512
+    random_seed: 42
+    num_workers: 0
+    preprocess: 'standard'
+  model_config:  
+    mask_num: 15
+    lambda: 5
+    en_nlayers: 3
+    de_nlayers: 3
+    hidden_dim: 256
+    z_dim: 128
+    mask_nlayers: 3
 
 wbc:
   epochs: 200

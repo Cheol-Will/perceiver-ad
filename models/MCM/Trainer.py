@@ -9,18 +9,18 @@ from models.MCM.Score import ScoreFunction
 from utils import aucPerformance, F1Performance
 
 class Trainer(object):
-    def __init__(self, model_config: dict):
-        self.train_loader, self.test_loader = get_dataloader(model_config)
-        self.sche_gamma = model_config['sche_gamma']
-        self.device = model_config['device']
-        self.learning_rate = model_config['learning_rate']
+    def __init__(self, model_config: dict, train_config: dict):
+        self.train_loader, self.test_loader = get_dataloader(train_config)
+        self.sche_gamma = train_config['sche_gamma']
+        self.device = train_config['device']
+        self.learning_rate = train_config['learning_rate']
         self.model = MCM(model_config).to(self.device)
         self.loss_fuc = LossFunction(model_config).to(self.device)
         self.score_func = ScoreFunction(model_config).to(self.device)
-        self.logger = model_config['logger']
-        self.model_config = model_config
-        self.epochs = model_config['epochs']
-        self.path = os.path.join(model_config['base_path'], str(model_config['run']), 'model.pth')
+        self.logger = train_config['logger']
+        self.train_config = train_config
+        self.epochs = train_config['epochs']
+        self.path = os.path.join(train_config['base_path'], str(train_config['run']), 'model.pth')
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
 
     def training(self):

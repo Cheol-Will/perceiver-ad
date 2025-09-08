@@ -8,7 +8,7 @@ from models.MCM.MaskNets import MultiNets, Generator
 class MCM(nn.Module):
     def __init__(self, model_config):
         super(MCM, self).__init__()
-        self.data_dim = model_config['data_dim']
+        self.data_dim = model_config['num_features']
         self.hidden_dim = model_config['hidden_dim']
         self.z_dim = model_config['z_dim']
         self.mask_num = model_config['mask_num']

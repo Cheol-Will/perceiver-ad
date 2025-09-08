@@ -29,7 +29,7 @@ def random_orthogonal_vectors(num_vectors, vector_dim):
 class DRL(nn.Module):
     def __init__(self, model_config):
         super(DRL, self).__init__()
-        self.data_dim = model_config['data_dim']
+        self.data_dim = model_config['num_features']
         self.hidden_dim = model_config['hidden_dim']
 
         self.en_nlayers = model_config['en_nlayers']

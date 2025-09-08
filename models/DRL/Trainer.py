@@ -7,16 +7,17 @@ from utils import aucPerformance, F1Performance
 import numpy as np
 
 class Trainer(object):
-    def __init__(self, model_config: dict):
-        self.train_loader, self.test_loader = get_dataloader(model_config)
-        self.device = model_config['device']
+    def __init__(self, model_config: dict, train_config: dict):
+        self.train_loader, self.test_loader = get_dataloader(train_config)
+        self.device = train_config['device']
         # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.sche_gamma = model_config['sche_gamma']
-        self.learning_rate = model_config['learning_rate']
+        self.sche_gamma = train_config['sche_gamma']
+        self.learning_rate = train_config['learning_rate']
         self.model = DRL(model_config).to(self.device)
-        self.logger = model_config['logger']
+        self.logger = train_config['logger']
         self.model_config = model_config
-        self.epochs = model_config['epochs']
+        self.train_config = train_config
+        self.epochs = train_config['epochs']
 
     def training(self):
         self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split

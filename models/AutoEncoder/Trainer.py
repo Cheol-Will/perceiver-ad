@@ -5,20 +5,19 @@ from models.AutoEncoder.Model import AutoEncoder
 from utils import aucPerformance, F1Performance
 
 class Trainer(object):
-    def __init__(self, model_config: dict):
-        self.train_loader, self.test_loader = get_dataloader(model_config)
+    def __init__(self, model_config: dict, train_config: dict):
+        self.train_loader, self.test_loader = get_dataloader(train_config)
         
-        self.device = model_config['device']
-        self.sche_gamma = model_config['sche_gamma']
-        self.learning_rate = model_config['learning_rate']
+        self.device = train_config['device']
+        self.sche_gamma = train_config['sche_gamma']
+        self.learning_rate = train_config['learning_rate']
         self.model = AutoEncoder(
-            num_features=model_config['data_dim'],
-            depth=model_config['depth'],
-            hidden_dim=model_config['hidden_dim'],
+            **model_config,
         ).to(self.device)
-        self.logger = model_config['logger']
+        self.logger = train_config['logger']
         self.model_config = model_config
-        self.epochs = model_config['epochs']
+        self.train_config = train_config
+        self.epochs = train_config['epochs']
 
     def training(self):
         self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
