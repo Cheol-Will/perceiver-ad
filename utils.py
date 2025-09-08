@@ -18,35 +18,43 @@ mat_files = glob.glob(os.path.join('./Data', '*.mat'))
 mat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in mat_files]
 
 def load_yaml(args):    
+
     dict_to_import = args.model_type + '.yaml'
     if args.model_type in BASELINE_MODELS:
         dict_to_import = 'CLASSIC.yaml'
 
     with open(f'configs/{dict_to_import}', 'r') as f:
-        model_configs = yaml.safe_load(f)
-    model_config = model_configs['default']
-    
-    if args.dataname in model_configs:
-        for k, v in model_configs[args.dataname].items():
-            model_config[k] = v
+        configs = yaml.safe_load(f)
+
+    model_config = configs['default']['model_config']
+    train_config = configs['default']['train_config']
+
+    # Replace hyperparameters with data specific ones. 
+    if args.dataname in configs:
+        for k, v in configs[args.dataname].items():
+            if k in model_config:
+                model_config[k] = v
+            if k in train_config:
+                train_config[k] = v
+
 
     if args.model_type in ['Perceiver', 'RIN', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE']:
         model_config = replace_transformer_config(args, model_config)
     elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
         model_config = replace_mlp_config(args, model_config)
 
-    model_config['model_type'] = args.model_type
-    model_config['data_dim'] = get_input_dim(args, model_config)
-    model_config['model_type'] = args.model_type
-    model_config['dataset_name'] = args.dataname
-    model_config['train_ratio'] = args.train_ratio
-    model_config['base_path'] = args.base_path    
+    train_config['model_type'] = args.model_type
+    train_config['dataset_name'] = args.dataname
+    train_config['train_ratio'] = args.train_ratio
+    train_config['base_path'] = args.base_path    
+    train_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else train_config['learning_rate']
+    model_config['num_features'] = get_input_dim(args, train_config)
 
-    return model_config
+    return model_config, train_config
 
 
-def build_trainer(model_config):
-    model_type = model_config['model_type']
+def build_trainer(model_config, train_config):
+    model_type = train_config['model_type']
     if model_type == 'DRL':
         from models.DRL.Trainer import Trainer
     elif model_type == 'MCM':
@@ -83,7 +91,7 @@ def build_trainer(model_config):
         from models.Baselines.Trainer import Trainer
     else:
         raise ValueError(f"Unknown model type {model_type}")
-    return Trainer(model_config)
+    return Trainer(model_config, train_config)
 
 def get_input_dim(args, model_config):
     if args.dataname in npz_datanames:
@@ -103,7 +111,6 @@ def replace_transformer_config(args, model_config):
     model_config['hidden_dim'] = args.hidden_dim if args.hidden_dim is not None else model_config['hidden_dim']
     model_config['mlp_ratio'] = args.mlp_ratio if args.mlp_ratio is not None else model_config['mlp_ratio']
     model_config['dropout_prob'] = args.dropout_prob if args.dropout_prob is not None else model_config['dropout_prob']
-    model_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else model_config['drop_col_prob']
 
     if args.model_type in ['Perceiver', 'RIN']:
         model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
@@ -111,7 +118,6 @@ def replace_transformer_config(args, model_config):
     if args.model_type in ['PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE']:
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
         model_config['use_pos_enc_as_query'] = args.use_pos_enc_as_query # default False
-        model_config['use_log_num_latents'] = args.use_log_num_latents # default False
         
         if args.num_latents is not None:
             model_config['num_latents'] = args.num_latents
@@ -120,7 +126,6 @@ def replace_transformer_config(args, model_config):
             model_config['sim_type'] = args.sim_type if args.sim_type is not None else model_config['sim_type']
             model_config['temperature'] = args.temperature if args.temperature is not None else model_config['temperature']
             model_config['shrink_thred'] = args.shrink_thred if args.shrink_thred is not None else model_config['shrink_thred']
-            model_config['use_small_memory'] = args.use_small_memory # default False
             model_config['latent_loss_weight'] = args.latent_loss_weight # defualt None
             model_config['entropy_loss_weight'] = args.entropy_loss_weight # defualt None
 
