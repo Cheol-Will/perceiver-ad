@@ -50,7 +50,7 @@ class DisentDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-def load_dataset(data_dir, dataset_name, data_dim):
+def load_dataset(data_dir, dataset_name):
     if dataset_name in npz_datanames:
         path = os.path.join(data_dir, dataset_name+'.npz')
         data=np.load(path)  
@@ -67,29 +67,29 @@ def load_dataset(data_dir, dataset_name, data_dim):
 
         inliers = samples[labels == 0]
         outliers = samples[labels == 1]
-    else:
-        x = []
-        labels = []
-        path = os.path.join(data_dir, dataset_name+'.csv')
-        with (open(path, 'r')) as data_from:
-            csv_reader = csv.reader(data_from)
-            for i in csv_reader:
-                x.append(i[0:data_dim])
-                labels.append(i[data_dim])
+    # else:
+    #     x = []
+    #     labels = []
+    #     path = os.path.join(data_dir, dataset_name+'.csv')
+    #     with (open(path, 'r')) as data_from:
+    #         csv_reader = csv.reader(data_from)
+    #         for i in csv_reader:
+    #             x.append(i[0:data_dim])
+    #             labels.append(i[data_dim])
 
-        for i in range(len(x)):
-            for j in range(data_dim):
-                x[i][j] = float(x[i][j])
-        for i in range(len(labels)):
-            labels[i] = float(labels[i])
+    #     for i in range(len(x)):
+    #         for j in range(data_dim):
+    #             x[i][j] = float(x[i][j])
+    #     for i in range(len(labels)):
+    #         labels[i] = float(labels[i])
 
-        data = np.array(x)
-        target = np.array(labels)
-        inlier_indices = np.where(target == 0)[0]
-        outlier_indices = np.where(target == 1)[0]
+    #     data = np.array(x)
+    #     target = np.array(labels)
+    #     inlier_indices = np.where(target == 0)[0]
+    #     outlier_indices = np.where(target == 1)[0]
 
-        inliers = data[inlier_indices]
-        outliers = data[outlier_indices]
+    #     inliers = data[inlier_indices]
+    #     outliers = data[outlier_indices]
 
     return inliers, outliers
 
@@ -123,8 +123,8 @@ def split_and_preprocess(inliers, outliers, preprocess, ratio=1.0):
 
     return train_data, train_label, test_data, test_label   
 
-def load_and_preprocess(data_dir, dataset_name, data_dim, preprocess):
-    inliers, outliers = load_dataset(data_dir, dataset_name, data_dim)
+def load_and_preprocess(data_dir, dataset_name, preprocess):
+    inliers, outliers = load_dataset(data_dir, dataset_name)
     train_data, train_label, test_data, test_label = split_and_preprocess(inliers, outliers, preprocess, ratio=1.0)
 
     return train_data, train_label, test_data, test_label
