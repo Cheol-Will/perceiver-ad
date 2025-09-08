@@ -13,33 +13,26 @@ def nearest_power_of_two(x: int) -> int:
 
 
 class Trainer(object):
-    def __init__(self, model_config: dict):
-        self.train_loader, self.test_loader = get_dataloader(model_config)
-        if 'num_latents' not in model_config:
-            if model_config['use_log_num_latents']:
-                model_config['num_latents'] = nearest_power_of_two(int(math.log2(model_config['data_dim']))) # log2(F)
-            else:
-                model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['data_dim']))) # sqrt(F)
-        
-        self.device = model_config['device']
-        self.sche_gamma = model_config['sche_gamma']
-        self.learning_rate = model_config['learning_rate']
+    def __init__(self, model_config: dict, train_config: dict):
+        self.train_loader, self.test_loader = get_dataloader(train_config)
+        if model_config['num_latents'] is None:
+            model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['num_features']))) # sqrt(F)
+        self.device = train_config['device']
         self.model = PAE(
-            num_features=model_config['data_dim'],
-            num_heads=model_config['num_heads'],
-            depth=model_config['depth'],
-            hidden_dim=model_config['hidden_dim'],
-            mlp_ratio=model_config['mlp_ratio'],
-            num_latents=model_config['num_latents'],
-            is_weight_sharing=model_config['is_weight_sharing'],
-            use_pos_enc_as_query=model_config['use_pos_enc_as_query'],
+            **model_config
         ).to(self.device)
-        self.logger = model_config['logger']
+
+        self.sche_gamma = train_config['sche_gamma']
+        self.learning_rate = train_config['learning_rate']
+        self.logger = train_config['logger']
+        self.epochs = train_config['epochs']
         self.model_config = model_config
-        self.epochs = model_config['epochs']
+        self.train_config = train_config
 
     def training(self):
         print(self.model_config)
+        print(self.train_config)
+
         self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
         self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
 

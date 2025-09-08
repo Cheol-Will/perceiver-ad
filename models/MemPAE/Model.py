@@ -325,9 +325,10 @@ class MemPAE(nn.Module):
         self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
         self.latents_query = nn.Parameter(torch.empty(1, num_latents, hidden_dim))
 
-        if use_pos_enc_as_query: 
+        if use_pos_enc_as_query:
             print(f"Use positional encoding as decoder query ")
             self.decoder_query = None # 1 x d
+            # self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
         else:
             print(f"Init decoder query of shape {(1, num_features, hidden_dim)}")
             self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d

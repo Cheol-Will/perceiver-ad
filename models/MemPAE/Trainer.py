@@ -13,47 +13,32 @@ def nearest_power_of_two(x: int) -> int:
 
 
 class Trainer(object):
-    def __init__(self, model_config: dict):
-        self.train_loader, self.test_loader = get_dataloader(model_config)
-        
-        model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['data_dim']))) # sqrt(F)
-
-        if model_config['use_small_memory'] == True:
+    def __init__(self, model_config: dict, train_config: dict):
+        self.train_loader, self.test_loader = get_dataloader(train_config)
+        if model_config['num_latents'] is None:
+            model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['num_features']))) # sqrt(F)
+        if model_config['num_memories'] is None:
             model_config['num_memories'] = self.calculate_num_memories() # sqrt(N)
-            model_config['num_memories'] //=  2 # sqrt(N) // 2
-            print("use half of memory size")
-        else: 
-            model_config['num_memories'] = self.calculate_num_memories() # sqrt(N)
-
-        self.device = model_config['device']
-        self.sche_gamma = model_config['sche_gamma']
-        self.learning_rate = model_config['learning_rate']
+        self.device = train_config['device']
         self.model = MemPAE(
-            num_features=model_config['data_dim'],
-            num_heads=model_config['num_heads'],
-            depth=model_config['depth'],
-            hidden_dim=model_config['hidden_dim'],
-            mlp_ratio=model_config['mlp_ratio'],
-            num_latents=model_config['num_latents'],
-            num_memories=model_config['num_memories'],
-            is_weight_sharing=model_config['is_weight_sharing'],
-            temperature=model_config['temperature'],
-            sim_type=model_config['sim_type'],
-            use_pos_enc_as_query=model_config['use_pos_enc_as_query'],
-            shrink_thred=model_config['shrink_thred'],
-            latent_loss_weight=model_config['latent_loss_weight'],
-            entropy_loss_weight=model_config['entropy_loss_weight'],
+            **model_config
         ).to(self.device)
-        self.logger = model_config['logger']
-        self.model_config = model_config
-        self.epochs = model_config['epochs']
 
+        self.sche_gamma = train_config['sche_gamma']
+        self.learning_rate = train_config['learning_rate']
+        self.logger = train_config['logger']
+        self.epochs = train_config['epochs']
+        self.model_config = model_config
+        self.train_config = train_config
+        
     def calculate_num_memories(self):
         n = len(self.train_loader.dataset)
         return nearest_power_of_two(int(math.sqrt(n)))
 
     def training(self):
         print(self.model_config)
+        print(self.train_config)
+
         self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
         self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
 
