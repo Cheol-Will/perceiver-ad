@@ -283,6 +283,7 @@ def render(
     is_temp_tune = False,
     is_synthetic = False,
     synthetic_type = None,
+    is_plot = False,
 ):
     tr, metr = base.split('_')[1], base.split('_')[2]  # e.g., '1.0', 'AUCPR'
     k_mean = f"ratio_{tr}_{metr}_mean"
@@ -331,7 +332,8 @@ def render(
         else:
             plot_name = base
         df_mean = add_rank_columns(df_mean, is_sort=is_sort)
-        plot_avg_rank(df_mean, base, plot_name) 
+        if is_plot: 
+            plot_avg_rank(df_mean, base, plot_name) 
 
     if use_rank:
         df_mean.loc[:, data] = df_mean.loc[:, data].rank(axis=0, ascending=False, method='average')
@@ -429,10 +431,12 @@ def main(args):
     data = [
         'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
         'ionosphere', 'pima', 'wbc', 'wine', 'thyroid',
-        'optdigits', 'pendigits', 'satellite', 'campaign', 'mammography', 
+        'optdigits', 'pendigits', 'satellite', 
+        'campaign', 
+        'mammography', 
+        'satimage-2', # middle
         'nslkdd', # large 
         'fraud', # large
-        'satimage-2', # middle
         'shuttle', # large
         'census', # large
     ]
@@ -451,15 +455,18 @@ def main(args):
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         'PAE-ws-L6-d64-lr0.001', # SOTA!!!
         # 'PAE-ws-L2-d64-lr0.001', # 
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         
+        'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
+
         # temperature: [0.05, 0.1]
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', #  0.6892    3.7500 (SOTA! KNN: 4.2500) # working on large data
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.05', #  0.6892    3.7500 (SOTA! KNN: 4.2500) # working on large data
 
         # 'MemPAE-ws-pos_query+token-d64-lr0.001',
         
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         
         # 'MemPAE-ws-pos_query-ent0.0002-d64-lr0.001',
         # 'MemPAE-ws-pos_query-ent0.001-d64-lr0.001',
@@ -544,8 +551,8 @@ def main(args):
 
     for base in keys:
         render(pivots, data, models, my_models, base, 
-               add_avg_rank=True, use_rank=False, use_std=True, 
-               use_baseline_pr=True, is_temp_tune=True, is_sort=True)
+               add_avg_rank=True, use_rank=False, use_std=False, 
+               use_baseline_pr=True, is_temp_tune=False, is_sort=False)
 
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
@@ -566,6 +573,10 @@ def main(args):
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.05',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.05',
+        
     ]
 
 
