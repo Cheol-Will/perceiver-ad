@@ -30,17 +30,21 @@ class MemoryUnit(nn.Module):
         sim_type: str,    
         temperature: float = 1.0,
         shrink_thres: float = 0,
+        top_k: int = None,
     ):
         super().__init__()
         assert sim_type.lower() in ['cos', 'l2', 'attn']
-        print(f"Init MemoryUnit of shape {num_memories, hidden_dim} with simtype={sim_type} and t={temperature} thres={shrink_thres}")
+        print(f"Init MemoryUnit of shape {num_memories, hidden_dim} \
+              with simtype={sim_type} and t={temperature} thres={shrink_thres}")
+        print(f"top_k={top_k}")
         self.memories = nn.Parameter(torch.empty(num_memories, hidden_dim)) # (M, D)
         self.hidden_dim = hidden_dim
         self.temperature = temperature
         self.shrink_thres = shrink_thres
         self.scale = self.hidden_dim ** 0.5
         self.sim_type = sim_type.lower()
-        
+        self.top_k = top_k
+
         if self.sim_type == 'attn':
             self.q_norm = nn.LayerNorm(hidden_dim)
             self.k_norm = nn.LayerNorm(hidden_dim)
@@ -73,13 +77,19 @@ class MemoryUnit(nn.Module):
         else:
             raise ValueError(f"sim_type must be 'cos' or 'l2', got {self.sim_type}")
 
-        logits = logits / self.temperature
-        weight = F.softmax(logits, dim=-1) # (B, N, M)                       
+        if self.top_k is not None:
+            top_k_logits, top_k_indices = torch.topk(logits, self.top_k, dim=-1)
+            top_k_weights = F.softmax(top_k_logits / self.temperature, dim=-1) # (B, N, K)
+            weight = torch.zeros_like(logits) # (B, N, M)
+            weight = weight.scatter(-1, top_k_indices, top_k_weights)            
+        else:
+            logits = logits / self.temperature
+            weight = F.softmax(logits, dim=-1)
+            
+            if self.shrink_thres > 0:
+                weight = hard_shrink_relu(weight, lambd=self.shrink_thres)
+                weight = F.normalize(weight, p=1, dim=-1)
 
-        # apply hard shrink 
-        if self.shrink_thres > 0:
-            weight = hard_shrink_relu(weight, lambd=self.shrink_thres)
-            weight = F.normalize(weight, p=1, dim=-1)
         read = weight @ self.memories # (B, N, M) @ (M, D) = (B, N, D)                           
         return read, weight  
 
@@ -304,6 +314,7 @@ class MemPAE(nn.Module):
         use_latent_loss_as_score: bool = False,
         entropy_loss_weight: float = None,
         use_entropy_loss_as_score: bool = False,
+        top_k: int = None,
     ):
         super(MemPAE, self).__init__()
         assert num_latents is not None
@@ -319,7 +330,7 @@ class MemPAE(nn.Module):
         print(f"latent_loss_weight={latent_loss_weight} and entropy_loss_weight={entropy_loss_weight}")
 
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim) # only numerical inputs
-        self.memory = MemoryUnit(num_memories, hidden_dim, sim_type, temperature, shrink_thred)
+        self.memory = MemoryUnit(num_memories, hidden_dim, sim_type, temperature, shrink_thred, top_k)
         
         if is_weight_sharing:
             self.block = SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
