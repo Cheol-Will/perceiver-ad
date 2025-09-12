@@ -42,12 +42,14 @@ def load_yaml(args):
         model_config = replace_transformer_config(args, model_config)
     elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
         model_config = replace_mlp_config(args, model_config)
+    
 
     train_config['model_type'] = args.model_type
     train_config['dataset_name'] = args.dataname
     train_config['train_ratio'] = args.train_ratio
     train_config['base_path'] = args.base_path    
     train_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else train_config['learning_rate']
+
     model_config['num_features'] = get_input_dim(args, train_config)
 
     return model_config, train_config
@@ -87,6 +89,8 @@ def build_trainer(model_config, train_config):
         from models.PVQVAE.Trainer import Trainer                
     elif model_type == 'AutoEncoder':
         from models.AutoEncoder.Trainer import Trainer        
+    elif model_type == 'PDRL':
+        from models.PDRL.Trainer import Trainer        
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Trainer import Trainer
     else:
@@ -115,10 +119,11 @@ def replace_transformer_config(args, model_config):
     if args.model_type in ['Perceiver', 'RIN']:
         model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
     
-    if args.model_type in ['PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE']:
+    if args.model_type in ['PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'PDRL']:
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
         model_config['use_pos_enc_as_query'] = args.use_pos_enc_as_query # default False
-        
+        model_config['use_mask_token'] = args.use_mask_token # default False
+            
         if args.num_latents is not None:
             model_config['num_latents'] = args.num_latents
         
@@ -128,6 +133,7 @@ def replace_transformer_config(args, model_config):
             model_config['shrink_thred'] = args.shrink_thred if args.shrink_thred is not None else model_config['shrink_thred']
             model_config['latent_loss_weight'] = args.latent_loss_weight # defualt None
             model_config['entropy_loss_weight'] = args.entropy_loss_weight # defualt None
+            model_config['use_entropy_loss_as_score'] = args.use_entropy_loss_as_score # default False
 
         if args.model_type in ['PVAE', 'PVQVAE']:
             model_config['beta'] = args.beta if args.beta is not None else model_config['beta'] 
