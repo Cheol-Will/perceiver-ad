@@ -459,7 +459,9 @@ def main(args):
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         
         'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-L2-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-L3-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
 
         # temperature: [0.05, 0.1]
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', #  0.6892    3.7500 (SOTA! KNN: 4.2500) # working on large data
