@@ -6,7 +6,7 @@ from models.MCM.MaskNets import MultiNets, Generator
 
 
 class MCM(nn.Module):
-    def __init__(self, model_config):
+    def __init__(self, model_config, train_config):
         super(MCM, self).__init__()
         self.data_dim = model_config['num_features']
         self.hidden_dim = model_config['hidden_dim']
@@ -14,7 +14,7 @@ class MCM(nn.Module):
         self.mask_num = model_config['mask_num']
         self.en_nlayers = model_config['en_nlayers']
         self.de_nlayers = model_config['de_nlayers']
-        self.maskmodel = Generator(MultiNets(), model_config)
+        self.maskmodel = Generator(MultiNets(), model_config, train_config)
 
         encoder = []
         encoder_dim = self.data_dim

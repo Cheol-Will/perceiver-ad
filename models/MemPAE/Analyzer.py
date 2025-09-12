@@ -5,45 +5,180 @@ import numpy as np
 import matplotlib.pyplot as plt
 from DataSet.DataLoader import get_dataloader
 from models.MemPAE.Model import MemPAE
+from models.MemPAE.Trainer import Trainer
 from utils import aucPerformance, F1Performance
 import math
 
-def nearest_power_of_two(x: int) -> int:
-    if x < 1:
-        return 1
-    return 2 ** int(math.floor(math.log2(x)))
+class Analyzer(Trainer):
+    def __init__(self, model_config: dict, train_config: dict, analysis_config: dict):
+        super().__init__(model_config, train_config)
 
-
-class Analyzer(object):
-    def __init__(self, model_config: dict):
-        self.train_loader, self.test_loader = get_dataloader(model_config)
-        model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['data_dim']))) # sqrt(F)
-        model_config['num_memories'] = self.calculate_num_memories() # sqrt(N)
-        self.device = model_config['device']
-        self.sche_gamma = model_config['sche_gamma']
-        self.learning_rate = model_config['learning_rate']
-        self.model = MemPAE(
-            num_features=model_config['data_dim'],
-            num_heads=model_config['num_heads'],
-            depth=model_config['depth'],
-            hidden_dim=model_config['hidden_dim'],
-            mlp_ratio=model_config['mlp_ratio'],
-            num_latents=model_config['num_latents'],
-            num_memories=model_config['num_memories'],
-            is_weight_sharing=model_config['is_weight_sharing'],
-            temperature=model_config['temperature'],
-            sim_type=model_config['sim_type'],
-        ).to(self.device)
-        self.logger = model_config['logger']
+        self.plot_attn = analysis_config['plot_attn'] 
+        self.plot_recon = analysis_config['plot_recon'] 
+        self.cum_memory_weight = True
         self.model_config = model_config
-        self.epochs = model_config['epochs']
-        self.plot_attn = model_config['plot_attn'] # bool
-        self.plot_recon = model_config['plot_recon'] # 
+        self.train_config = train_config
+        self.analysis_config = analysis_config
 
 
-    def calculate_num_memories(self):
-        n = len(self.train_loader.dataset)
-        return nearest_power_of_two(int(math.sqrt(n)))
+    @torch.no_grad()
+    def plot_memory_weight(
+        self,
+    ):
+        """
+        메모리 가중치 사용량을 막대 그래프로 시각화하고 저장합니다.
+        1. 각 잠재 변수(Latent)별로 메모리 슬롯 사용량을 그립니다.
+        2. 모든 잠재 변수를 통합한 전체 메모리 슬롯 사용량을 그립니다.
+        """
+        _, memory_weights_dict = self._accumulate_memory_weight()
+        
+        train_normal_weights = memory_weights_dict['train_normal_memory_weights']
+        test_normal_weights = memory_weights_dict['test_normal_memory_weights']
+        test_abnormal_weights = memory_weights_dict['test_abnormal_memory_weights']
+
+        if train_normal_weights.ndim < 3:
+            print("Warning: Not enough data to plot memory weight analysis.")
+            return
+
+        num_samples, num_latents, num_memories = train_normal_weights.shape
+        
+        base_path = self.train_config['base_path']
+        save_dir = os.path.join(base_path, 'memory_usage_analysis') # 폴더 이름 변경
+        os.makedirs(save_dir, exist_ok=True)
+
+        # ======================================================================
+        # 1. 잠재 변수(Latent)별 메모리 사용량 막대 그래프
+        # ======================================================================
+        for i in range(num_latents):
+            print(f"\n----- Analyzing Memory Usage for Latent {i} -----")
+            
+            if train_normal_weights.shape[0] == 0:
+                print(f"Skipping Latent {i} due to no training data.")
+                continue
+
+            # Latent {i}에 대한 메모리 사용량 (평균 가중치) 계산
+            train_latent_usage = train_normal_weights[:, i, :].mean(axis=0)
+            test_norm_latent_usage = test_normal_weights[:, i, :].mean(axis=0) if test_normal_weights.size > 0 else np.array([])
+            test_abn_latent_usage = test_abnormal_weights[:, i, :].mean(axis=0) if test_abnormal_weights.size > 0 else np.array([])
+
+            fig_bar, axes_bar = plt.subplots(1, 3, figsize=(15, 4), dpi=200, sharey=True)
+
+            def _plot_usage_bar(ax, data: np.ndarray, title: str):
+                ax.set_title(title)
+                if data.size > 0:
+                    mem_indices = np.arange(data.shape[0])
+                    ax.bar(mem_indices, data, width=1.0, alpha=0.85)
+                    if data.shape[0] > 30:
+                        ticks = np.linspace(0, data.shape[0] - 1, 5, dtype=int)
+                        ax.set_xticks(ticks)
+                    ax.set_xlim(-0.5, data.shape[0]-0.5)
+                else:
+                    ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
+                ax.set_xlabel("Memory Index")
+
+            _plot_usage_bar(axes_bar[0], train_latent_usage, "Train (normal)")
+            _plot_usage_bar(axes_bar[1], test_norm_latent_usage, "Test (normal)")
+            _plot_usage_bar(axes_bar[2], test_abn_latent_usage, "Test (abnormal)")
+            axes_bar[0].set_ylabel("Mean Weight (Frequency)")
+
+            fig_bar.suptitle(f"Mean Memory Slot Usage for Latent {i} • {self.train_config['dataset_name'].upper()}", y=1.02, fontsize=11)
+            fig_bar.tight_layout()
+            bar_path = os.path.join(save_dir, f"latent_{i}_memory_usage.png")
+            fig_bar.savefig(bar_path, bbox_inches="tight")
+            plt.close(fig_bar)
+            print(f"Saved Latent {i} memory usage bar plot to {bar_path}")
+
+        # ======================================================================
+        # 2. 전체 Latent 통합 메모리 사용량 막대 그래프
+        # ======================================================================
+        print("\n----- Analyzing Aggregated Memory Usage for All Latents -----")
+        
+        # 전체 Latent에 대해 통합 평균 사용량 계산
+        train_total_usage = train_normal_weights.mean(axis=(0, 1))
+        test_norm_total_usage = test_normal_weights.mean(axis=(0, 1)) if test_normal_weights.size > 0 else np.array([])
+        test_abn_total_usage = test_abnormal_weights.mean(axis=(0, 1)) if test_abnormal_weights.size > 0 else np.array([])
+
+        fig_total_bar, axes_total_bar = plt.subplots(1, 3, figsize=(15, 4), dpi=200, sharey=True)
+
+        # 위에서 정의한 _plot_usage_bar 함수 재사용
+        _plot_usage_bar(axes_total_bar[0], train_total_usage, "Train (normal)")
+        _plot_usage_bar(axes_total_bar[1], test_norm_total_usage, "Test (normal)")
+        _plot_usage_bar(axes_total_bar[2], test_abn_total_usage, "Test (abnormal)")
+        axes_total_bar[0].set_ylabel("Mean Weight (Frequency)")
+
+        fig_total_bar.suptitle(f"Total Mean Memory Slot Usage (All Latents) • {self.train_config['dataset_name'].upper()}", y=1.02, fontsize=11)
+        fig_total_bar.tight_layout()
+        total_bar_path = os.path.join(save_dir, "total_memory_usage.png")
+        fig_total_bar.savefig(total_bar_path, bbox_inches="tight")
+        plt.close(fig_total_bar)
+        print(f"Saved total memory usage bar plot to {total_bar_path}")
+
+        return
+
+    @torch.no_grad()
+    def _accumulate_memory_weight(
+        self,
+    ):
+        self.model.eval()
+
+        def _collect_memory_weight(loader):
+            scores, memory_weights, labels = [], [], []
+            for x, y in loader:
+                x = x.to(self.device)
+                loss, memory_weight = self.model(x, return_memory_weight=True)
+                
+                # loss
+                if isinstance(loss, torch.Tensor):
+                    loss = loss.view(-1).detach().cpu().float().numpy()
+                else:
+                    loss = np.asarray(loss, dtype=np.float32).reshape(-1)
+                
+                # memory weight
+                if isinstance(memory_weight, torch.Tensor):
+                    memory_weight = memory_weight.detach().cpu().float().numpy() # (B, N, M)
+                else:
+                    memory_weight = np.asarray(memory_weight, dtype=np.float32).reshape(-1)
+                
+                # label
+                if y is None:
+                    y_arr = np.zeros(loss.shape[0], dtype=np.int64)
+                else:
+                    y_arr = y.view(-1).detach().cpu().numpy()
+                
+                scores.append(loss)
+                memory_weights.append(memory_weight)
+                labels.append(y_arr)
+
+            if len(scores) == 0:
+                return np.array([]), np.array([])
+            return np.concatenate(scores, axis=0), np.concatenate(memory_weights, axis=0), np.concatenate(labels, axis=0)
+
+        train_scores, train_memory_weights, train_labels = _collect_memory_weight(self.train_loader)
+        test_scores,  test_memory_weights, test_labels  = _collect_memory_weight(self.test_loader)
+        print(train_scores.shape, train_memory_weights.shape, train_labels.shape)
+        print(test_scores.shape,  test_memory_weights.shape, test_labels.shape)
+
+
+        train_normal_scores = train_scores[train_labels == 0] if train_labels.size > 0 else train_scores
+        test_normal_scores   = test_scores[test_labels == 0] if test_labels.size > 0 else np.array([])
+        test_abnormal_scores = test_scores[test_labels != 0] if test_labels.size > 0 else np.array([])
+
+        train_normal_memory_weights = train_memory_weights[train_labels == 0] if train_labels.size > 0 else train_scores
+        test_normal_memory_weights   = test_memory_weights[test_labels == 0] if test_labels.size > 0 else np.array([])
+        test_abnormal_memory_weights = test_memory_weights[test_labels != 0] if test_labels.size > 0 else np.array([])
+
+        scores = {
+            'train_normal_scores': train_normal_scores,
+            'test_normal_scores': test_normal_scores,
+            'test_abnormal_scores': test_abnormal_scores,
+        }
+
+        memory_weights = {
+            'train_normal_memory_weights': train_normal_memory_weights,
+            'test_normal_memory_weights': test_normal_memory_weights,
+            'test_abnormal_memory_weights': test_abnormal_memory_weights,
+        }
+        return scores, memory_weights
 
     @torch.no_grad()
     def _accumulate_attn(
@@ -222,6 +357,7 @@ class Analyzer(object):
             "paths": saved_paths,
             "labels": [int(v) for v in y.detach().cpu().tolist()],
         }
+   
     @torch.no_grad()
     def plot_anomaly_histograms(
         self,
@@ -229,7 +365,7 @@ class Analyzer(object):
         remove_outliers: bool = False,
         outlier_method: str = "percentile",
         low: float = 0.0,
-        high: float = 95.0,
+        high: float = 90.0,
         iqr_k: float = 1.5,
     ):
         self.model.eval()
@@ -298,7 +434,7 @@ class Analyzer(object):
             global_max += eps
         bin_edges = np.linspace(global_min, global_max, bins + 1)
 
-        base_path = self.model_config['base_path']
+        base_path = self.train_config['base_path']
         os.makedirs(base_path, exist_ok=True)
 
         # ----- overlay plot -----
@@ -314,7 +450,7 @@ class Analyzer(object):
             plt.hist(test_abn_plot, bins=bin_edges, alpha=0.45, density=True, label="Test (abnormal)")
             labels_drawn.append("Test (abnormal)")
         title_suffix = " (clipped)" if remove_outliers else ""
-        plt.title(f"Anomaly Score on {self.model_config['dataset_name'].upper()}{title_suffix}")
+        plt.title(f"Anomaly Score on {self.train_config['dataset_name'].upper()}{title_suffix}")
         plt.xlabel("Anomaly score")
         plt.ylabel("Density")
         if labels_drawn:
@@ -340,7 +476,7 @@ class Analyzer(object):
         _plot_single(axes[2], test_abn_plot, "Test (abnormal)")
         axes[0].set_ylabel("Density")
 
-        fig.suptitle(f"Anomaly Score Distributions • {self.model_config['dataset_name'].upper()}{title_suffix}",
+        fig.suptitle(f"Anomaly Score Distributions • {self.train_config['dataset_name'].upper()}{title_suffix}",
                     y=1.02, fontsize=11)
         fig.tight_layout()
         out_grid = os.path.join(base_path, "hist_anomaly_score_1x3.png")
@@ -348,65 +484,3 @@ class Analyzer(object):
         plt.close(fig)
 
         print(f"Saved histogram to {out_overlay}, {out_grid}")
-
-
-    def training(self):
-        self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
-        self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
-
-        optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
-        scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
-        self.model.train()
-        print("Training Start.")
-        num_features = self.model_config['data_dim']
-        self_attention_map  = torch.zeros(num_features, num_features, device=self.device)
-        cross_attention_map = torch.zeros(num_features, num_features, device=self.device)
-        self_count_map      = torch.zeros(num_features, num_features, device=self.device)
-        cross_count_map     = torch.zeros(num_features, num_features, device=self.device)
-
-        for epoch in range(self.epochs):
-            running_loss = 0.0
-            for step, (x_input, y_label) in enumerate(self.train_loader):
-                x_input = x_input.to(self.device)
-                # losses, attns, input_col_idx, target_col_idx = self.model(x_input, return_weight=True)
-                losses = self.model(x_input)
-                loss = losses.mean() # (B) -> scalar
-                # loss = self.model(x_input).mean() # (B) -> scalar
-                running_loss += loss.item()
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-
-                # self._accumulate_attn(
-                #     attns, input_col_idx, target_col_idx,
-                #     self_attention_map, self_count_map,
-                #     cross_attention_map, cross_count_map
-                # )
-
-            scheduler.step()
-            info = 'Epoch:[{}]\t loss={:.4f}\t'
-            running_loss = running_loss / len(self.train_loader)
-            self.logger.info(info.format(epoch,loss.cpu()))
-        print("Training complete.")
-
-        # self._finalize_and_save_attention_maps(
-        #     self_attention_map, self_count_map,
-        #     cross_attention_map, cross_count_map
-        # )
-
-    @torch.no_grad()
-    def evaluate(self):
-        model = self.model
-        model.eval()
-        score, test_label = [], []
-        for step, (x_input, y_label) in enumerate(self.test_loader):
-            x_input = x_input.to(self.device)
-            loss = self.model(x_input)
-            loss = loss.data.cpu()
-            score.append(loss)
-            test_label.append(y_label)
-        score = torch.cat(score, axis=0).numpy()
-        test_label = torch.cat(test_label, axis=0).numpy()
-        rauc, ap = aucPerformance(score, test_label)
-        f1 = F1Performance(score, test_label)
-        return rauc, ap, f1

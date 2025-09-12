@@ -216,10 +216,14 @@ class PAE(nn.Module):
         dropout_prob: float = 0.0,
         num_latents: int = None,
         is_weight_sharing: bool = False,
+        use_mask_token: bool = False,
         use_pos_enc_as_query: bool = False,
     ):
         super(PAE, self).__init__()
         assert num_latents is not None
+        if not use_pos_enc_as_query:
+            assert not use_mask_token
+
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim) # only numerical inputs
         
         if is_weight_sharing:
@@ -237,21 +241,28 @@ class PAE(nn.Module):
         self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
         self.latents_query = nn.Parameter(torch.empty(1, num_latents, hidden_dim))
 
-        if use_pos_enc_as_query: 
-            print(f"Use positional encoding as decoder query ")
-            self.decoder_query = None # 1 x d
+        if use_pos_enc_as_query:
+            if use_mask_token:
+                print(f"Init decoder query of shape {(1, 1, hidden_dim)} and use decoder query + pos_encoding as query token.")
+                self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
+            else:
+                print(f"Do not init decoder query but use positional encoding as decoder query")
+                self.decoder_query = None # 
         else:
             print(f"Init decoder query of shape {(1, num_features, hidden_dim)}")
             self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d
 
+
         self.num_features = num_features
         self.is_weight_sharing = is_weight_sharing
         self.use_pos_enc_as_query = use_pos_enc_as_query
+        self.use_mask_token = use_mask_token
         self.depth = depth
         self.reset_parameters()
 
     def reset_parameters(self):
-        nn.init.trunc_normal_(self.decoder_query, std=0.02)
+        if self.decoder_query is not None:
+            nn.init.trunc_normal_(self.decoder_query, std=0.02)
         nn.init.trunc_normal_(self.latents_query, std=0.02)
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
@@ -278,7 +289,11 @@ class PAE(nn.Module):
 
         # decoder
         if self.use_pos_enc_as_query:
-            decoder_query = self.pos_encoding.expand(batch_size, -1, -1) # (B, F, D)
+            if self.use_mask_token:
+                decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (1, 1, D) -> (B, F, D)
+                decoder_query = decoder_query + self.pos_encoding
+            else:
+                decoder_query = self.pos_encoding.expand(batch_size, -1, -1)
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
             

@@ -41,7 +41,7 @@ def build_model(model_config):
     elif model_type == 'DeepSVDD':
         from pyod.models.deep_svdd import DeepSVDD
         # return DeepSVDD(batch_size=512, n_features=model_config['data_dim']) # input dimension should be given
-        return DeepSVDD(batch_size=batch_size, n_features=model_config['data_dim'])
+        return DeepSVDD(batch_size=batch_size, n_features=model_config['num_features'])
     elif model_type == 'ICL':
         from deepod.models.tabular.icl import ICL
         return ICL(batch_size=batch_size)
@@ -58,14 +58,15 @@ def build_model(model_config):
         raise ValueError(f"Unknown model type is given: {model_type}")
 
 class Trainer(object):
-    def __init__(self, model_config: dict):
+    def __init__(self, model_config: dict, train_config: dict):
         # get dataset and then build model
         # since some model changes random seed.
-        self.device = model_config['device']
-        self.train_set, self.test_set = get_dataset(model_config) #
-        self.model = build_model(model_config)
-        self.logger = model_config['logger']
+        model_config['model_type'] = train_config['model_type']
+        self.train_set, self.test_set = get_dataset(train_config) #
+        self.model = build_model(train_config)
+        self.logger = train_config['logger']
         self.model_config = model_config
+        self.train_config = train_config
 
     @staticmethod
     def _to_numpy(x, dtype=np.float32):

@@ -4,11 +4,11 @@ import numpy as np
 
 
 class Generator(nn.Module):
-    def __init__(self, model, config):
+    def __init__(self, model, model_config, train_config):
         super(Generator, self).__init__()
-        self.masks = model._make_nets(config['data_dim'], config['mask_nlayers'], config['mask_num'])
-        self.mask_num = config['mask_num']
-        self.device = config['device']
+        self.masks = model._make_nets(model_config['num_features'], model_config['mask_nlayers'], model_config['mask_num'])
+        self.mask_num = model_config['mask_num']
+        self.device = train_config['device']
 
     def forward(self, x):
         x = x.type(torch.FloatTensor).to(self.device)

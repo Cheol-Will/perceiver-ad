@@ -80,7 +80,7 @@ class MemoryUnit(nn.Module):
         if self.shrink_thres > 0:
             weight = hard_shrink_relu(weight, lambd=self.shrink_thres)
             weight = F.normalize(weight, p=1, dim=-1)
-        read = weight @ self.memories # (B, N, D)                           
+        read = weight @ self.memories # (B, N, M) @ (M, D) = (B, N, D)                           
         return read, weight  
 
 class MLP(nn.Module):
@@ -297,14 +297,24 @@ class MemPAE(nn.Module):
         is_weight_sharing: bool = True,
         temperature: float = 1,
         sim_type: str = 'cos',
-        use_pos_enc_as_query: bool = False,
         shrink_thred: float = 0.0,
+        use_mask_token: bool = False,
+        use_pos_enc_as_query: bool = False,
         latent_loss_weight: float = None,
+        use_latent_loss_as_score: bool = False,
         entropy_loss_weight: float = None,
+        use_entropy_loss_as_score: bool = False,
     ):
         super(MemPAE, self).__init__()
         assert num_latents is not None
         assert num_memories is not None
+        if use_latent_loss_as_score:
+            assert latent_loss_weight is not None
+        if use_entropy_loss_as_score:
+            assert entropy_loss_weight is not None
+        if not use_pos_enc_as_query:
+            assert not use_mask_token
+
         print("Init MemPAE with weight_sharing" if is_weight_sharing else "Init MemPAE without weight sharing")
         print(f"latent_loss_weight={latent_loss_weight} and entropy_loss_weight={entropy_loss_weight}")
 
@@ -326,9 +336,12 @@ class MemPAE(nn.Module):
         self.latents_query = nn.Parameter(torch.empty(1, num_latents, hidden_dim))
 
         if use_pos_enc_as_query:
-            print(f"Use positional encoding as decoder query ")
-            self.decoder_query = None # 1 x d
-            # self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
+            if use_mask_token:
+                print(f"Init decoder query of shape {(1, 1, hidden_dim)} and use decoder query + pos_encoding as query token.")
+                self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
+            else:
+                print(f"Do not init decoder query but use positional encoding as decoder query")
+                self.decoder_query = None # 
         else:
             print(f"Init decoder query of shape {(1, num_features, hidden_dim)}")
             self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d
@@ -338,9 +351,12 @@ class MemPAE(nn.Module):
         self.num_features = num_features
         self.is_weight_sharing = is_weight_sharing
         self.use_pos_enc_as_query = use_pos_enc_as_query
+        self.use_mask_token = use_mask_token
         self.depth = depth
         self.latent_loss_weight = latent_loss_weight
+        self.use_latent_loss_as_score = use_latent_loss_as_score
         self.entropy_loss_weight = entropy_loss_weight
+        self.use_entropy_loss_as_score = use_entropy_loss_as_score
         
         self.reset_parameters()
 
@@ -350,7 +366,14 @@ class MemPAE(nn.Module):
         nn.init.trunc_normal_(self.latents_query, std=0.02)
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
-    def forward(self, x, return_weight = False, return_pred = False):
+    def forward(
+        self, 
+        x, 
+        return_weight: bool = False, 
+        return_pred: bool = False, 
+        return_memory_weight: bool = False
+    ):
+    
         batch_size, num_features = x.shape # (B, F)
 
         # feature tokenizer
@@ -374,9 +397,11 @@ class MemPAE(nn.Module):
 
         # decoder
         if self.use_pos_enc_as_query:
-            # decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (B, F, D)
-            # decoder_query = decoder_query + self.pos_encoding
-            decoder_query = self.pos_encoding.expand(batch_size, -1, -1)
+            if self.use_mask_token:
+                decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (1, 1, D) -> (B, F, D)
+                decoder_query = decoder_query + self.pos_encoding
+            else:
+                decoder_query = self.pos_encoding.expand(batch_size, -1, -1)
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
 
@@ -384,15 +409,33 @@ class MemPAE(nn.Module):
         x_hat = self.proj(output)
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
 
+        # latent loss
         if self.latent_loss_weight is not None:
-            latent_loss = F.mse_loss(latents_hat, latents, reduction='none').mean(dim=[1,2]) # (B, )
-            loss = loss + self.latent_loss_weight * latent_loss 
+            if self.training:
+                latent_loss = F.mse_loss(latents_hat, latents, reduction='none').mean(dim=[1,2]) # (B, )
+                loss = loss + self.latent_loss_weight * latent_loss 
+            else:
+                if self.use_latent_loss_as_score:   
+                    latent_loss = F.mse_loss(latents_hat, latents, reduction='none').mean(dim=[1,2]) # (B, )
+                    loss = loss + self.latent_loss_weight * latent_loss 
 
-        if self.entropy_loss_weight is not None:
-            entropy_loss = self.entropy_loss_fn(memory_weight)
-            loss = loss + self.entropy_loss_weight * entropy_loss
+        # memory addressing entropy loss
+        if self.entropy_loss_weight is not None:              
+            if self.training:      
+                entropy_loss = self.entropy_loss_fn(memory_weight)
+                loss = loss + self.entropy_loss_weight * entropy_loss
+            else:
+                if self.use_entropy_loss_as_score:
+                    entropy_loss = self.entropy_loss_fn(memory_weight)
+                    loss = loss + self.entropy_loss_weight * entropy_loss
 
         if return_pred:
-            return loss, x, x_hat
+            if return_memory_weight:
+                return loss, x, x_hat, memory_weight
+            else:
+                return loss, x, x_hat
         else:
-            return loss
+            if return_memory_weight:
+                return loss, memory_weight
+            else:
+                return loss

@@ -14,7 +14,7 @@ class Trainer(object):
         self.sche_gamma = train_config['sche_gamma']
         self.device = train_config['device']
         self.learning_rate = train_config['learning_rate']
-        self.model = MCM(model_config).to(self.device)
+        self.model = MCM(model_config, train_config).to(self.device)
         self.loss_fuc = LossFunction(model_config).to(self.device)
         self.score_func = ScoreFunction(model_config).to(self.device)
         self.logger = train_config['logger']
