@@ -8,12 +8,11 @@ learning_rate=0.001
 model_type="PAE"
 for data in "${data_list[@]}"; do
     echo "Running $model_type data=$data dim=$hidden_dim learning_rate=$learning_rate weight sharing"
-    exp_name="$model_type-ws-np-L$depth-d$hidden_dim-lr$learning_rate"
+    exp_name="$model_type-ws-L$depth-d$hidden_dim-lr$learning_rate"
     python main.py \
         --dataname "$data" \
         --model_type $model_type \
         --is_weight_sharing \
-        --not_use_power_of_two \
         --depth $depth \
         --hidden_dim "$hidden_dim" \
         --learning_rate "$learning_rate" \
