@@ -451,9 +451,9 @@ def main(args):
         'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
 
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
-        'MemPAE-ws-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
-
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
+
+        'MemPAE-ws-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
         'MemPAE-ws-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
 
 
