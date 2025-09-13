@@ -9,8 +9,8 @@ from utils import get_logger, load_yaml
 BASELINE_MODELS = ['OCSVM', 'KNN', 'IForest', 'LOF', 'PCA', 'ECOD', 
                    'DeepSVDD', 'AutoEncoder', 'GOAD', 'ICL', 'NeuTraL']
 
-def build_analyzer(model_config):
-    model_type = model_config['model_type']
+def build_analyzer(model_config, train_config, analysis_config):
+    model_type = train_config['model_type']
     if model_type == 'Perceiver':
         from models.Perceiver.Analyzer import Analyzer
     elif model_type == 'MemAE':
@@ -23,16 +23,16 @@ def build_analyzer(model_config):
         from models.Baselines.Analyzer import Analyzer
     else:
         raise ValueError(f"Unknown model type {model_type}")
-    return Analyzer(model_config)
+    return Analyzer(model_config, train_config, analysis_config)
 
 
-def train_test(model_config, run):
-    model_config['run'] = run
-    model_config['logger'].info(f"[run {run}]" + '-'*60)
-    trainer = build_analyzer(model_config)    
+def train_test(model_config, train_config, analysis_config, run):
+    train_config['run'] = run
+    train_config['logger'].info(f"[run {run}]" + '-'*60)
+    trainer = build_analyzer(model_config, train_config, analysis_config)    
     trainer.training()
     mse_rauc, mse_ap, mse_f1 = trainer.evaluate()
-    model_config['logger'].info(f"[run {run}] AUC-ROC: {mse_rauc:.4f} | AUC-PR: {mse_ap:.4f} | F1: {mse_f1:.4f}")
+    train_config['logger'].info(f"[run {run}] AUC-ROC: {mse_rauc:.4f} | AUC-PR: {mse_ap:.4f} | F1: {mse_f1:.4f}")
     results_dict = {
         'run': run,
         'AUC-ROC': float(mse_rauc),
@@ -40,10 +40,12 @@ def train_test(model_config, run):
         'f1': float(mse_f1),
     }
 
-    if model_config['plot_recon']:
+    if analysis_config['plot_recon']:
         trainer.plot_reconstruction()
-    if model_config['plot_histogram']:
+    if analysis_config['plot_histogram']:
         trainer.plot_anomaly_histograms(remove_outliers=True)
+    if analysis_config['plot_memory_weight']:
+        trainer.plot_memory_weight()
         
     return results_dict
 
@@ -56,15 +58,19 @@ def main(args):
         return
 
     logger = get_logger(os.path.join(args.base_path, 'log.log'))
-    model_config = load_yaml(args)
-    model_config['logger'] = logger
-    model_config['device'] = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    if model_config['num_workers'] > 0:
+
+    model_config, train_config = load_yaml(args)
+    train_config['logger'] = logger
+    train_config['device'] = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    train_config['base_path'] = args.base_path
+    if train_config['num_workers'] > 0:
         torch.multiprocessing.set_start_method('spawn', force=True)
 
-    model_config['plot_attn'] = args.plot_attn
-    model_config['plot_recon'] = args.plot_recon
-    model_config['plot_histogram'] = args.plot_histogram
+    analysis_config = {}
+    analysis_config['plot_attn'] = args.plot_attn
+    analysis_config['plot_recon'] = args.plot_recon
+    analysis_config['plot_histogram'] = args.plot_histogram
+    analysis_config['plot_memory_weight'] = args.plot_memory_weight
     
     start = time.time()    
     all_results = []
@@ -72,7 +78,7 @@ def main(args):
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         np.random.seed(seed)
-        result = train_test(model_config, seed)
+        result = train_test(model_config, train_config, analysis_config, seed)
         all_results.append(result)
     end = time.time()
     total_time = end - start
@@ -110,7 +116,7 @@ if __name__ == "__main__":
     parser.add_argument('--hidden_dim', type=int, default=None)
     parser.add_argument('--learning_rate', type=float, default=None)
 
-    # 
+    # Experiment
     parser.add_argument('--mlp_ratio', type=float, default=None)
     parser.add_argument('--dropout_prob', type=float, default=None)
     parser.add_argument('--drop_col_prob', type=float, default=None)
@@ -118,11 +124,22 @@ if __name__ == "__main__":
     parser.add_argument('--sim_type', type=str, default=None)
     parser.add_argument('--num_repeat', type=int, default=None)
     parser.add_argument('--is_weight_sharing', action='store_true')
+    parser.add_argument('--use_pos_enc_as_query', action='store_true')
+    parser.add_argument('--num_latents', type=int, default=None)
     parser.add_argument('--num_adapters', type=int, default=None)
+    parser.add_argument('--use_vq_loss_as_score', action='store_true')    
+    parser.add_argument('--beta', type=float, default=None)
+    parser.add_argument('--shrink_thred', type=float, default=None)
+    parser.add_argument('--latent_loss_weight', type=float, default=None)
+    parser.add_argument('--entropy_loss_weight', type=float, default=None)
+    parser.add_argument('--use_entropy_loss_as_score', action='store_true')    
+    parser.add_argument('--use_mask_token', action='store_true')    
+
     # Analysis arguments
     parser.add_argument('--plot_attn', action='store_true')
     parser.add_argument('--plot_recon', action='store_true')
     parser.add_argument('--plot_histogram', action='store_true')
+    parser.add_argument('--plot_memory_weight', action='store_true')
 
 
     args = parser.parse_args()
