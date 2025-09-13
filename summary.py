@@ -435,7 +435,7 @@ def main(args):
         'campaign', 
         'mammography', 
         'satimage-2', # middle
-        # 'nslkdd', # large 
+        'nslkdd', # large 
         # 'fraud', # large
         # 'shuttle', # large
         # 'census', # large
@@ -456,17 +456,19 @@ def main(args):
         'PAE-ws-L6-d64-lr0.001', # SOTA!!!
         # 'PAE-ws-L2-d64-lr0.001', # 
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-top1-L4-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
-
-
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         # 'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
+
+        # 'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-top1-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
+
+        #########################################
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
 
         # 'MemPAE-ws-pos_query-ent0.001-d64-lr0.001',
         # 'MemPAE-ws-pos_query+token-ent0.001-L2-d64-lr0.001-t0.1',
@@ -480,10 +482,9 @@ def main(args):
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         
-        # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-L2-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-L3-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
 
         # 'MemPAE-ws-pos_query+token-np-top5-L3-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
