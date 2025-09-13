@@ -456,13 +456,21 @@ def main(args):
         'PAE-ws-L6-d64-lr0.001', # SOTA!!!
         # 'PAE-ws-L2-d64-lr0.001', # 
 
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
+        'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
         
         'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-L2-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-L3-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
+
+        'MemPAE-ws-pos_query+token-np-top5-L3-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-top5-L5-d64-lr0.001-t0.1', # 
+
 
         # temperature: [0.05, 0.1]
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', #  0.6892    3.7500 (SOTA! KNN: 4.2500) # working on large data
