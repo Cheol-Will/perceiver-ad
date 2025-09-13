@@ -41,7 +41,7 @@ class MemoryUnit(nn.Module):
         self.hidden_dim = hidden_dim
         self.temperature = temperature
         self.shrink_thres = shrink_thres
-        self.scale = self.hidden_dim ** 0.5
+        self.scale = self.hidden_dim**(-0.5)
         self.sim_type = sim_type.lower()
         self.top_k = top_k
 
