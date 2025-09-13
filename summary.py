@@ -457,6 +457,9 @@ def main(args):
         # 'PAE-ws-L2-d64-lr0.001', # 
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         
+        'MemPAE-ws-pos_query-use_ent_score-ent0.001-d64-lr0.001',
+        'MemPAE-ws-pos_query-use_ent_score-ent0.0002-d64-lr0.001',
+
         # 'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
@@ -492,6 +495,7 @@ def main(args):
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L6-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L7-d64-lr0.001-t0.1',
         #########################################
+
 
 
 
