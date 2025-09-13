@@ -2,7 +2,7 @@
 set -euo pipefail
 
 data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography "satimage-2" nslkdd fraud  shuttle census) # from MCM
-depth=4
+depth=6
 hidden_dim=64
 learning_rate=0.001
 entropy_loss_weight=0.0005
