@@ -398,8 +398,8 @@ def render(
         df_render = df_render.round(4)
 
 
-        # df_render.columns = [c.replace("_anomalis", "ab") if "Perceiver" in c else c
-        #                     for c in df_render.columns]
+    df_render.index = [c.replace("MemPAE-ws-pos_query+token", "MP") if "MemPAE-ws-pos_query+token" in c else c
+                        for c in df_render.index]
 
     os.makedirs('metrics', exist_ok=True)
     df_render.to_csv(f'metrics/{base}.csv')
@@ -460,6 +460,8 @@ def main(args):
         'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-top1-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
 
 
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
@@ -481,7 +483,7 @@ def main(args):
         # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-L2-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-L3-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
 
         # 'MemPAE-ws-pos_query+token-np-top5-L3-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
