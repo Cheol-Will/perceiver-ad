@@ -398,7 +398,7 @@ def render(
         df_render = df_render.round(4)
 
 
-    df_render.index = [c.replace("MemPAE-ws-pos_query+token", "MP") if "MemPAE-ws-pos_query+token" in c else c
+    df_render.index = [c.replace("pos_query+token", "pos") if "MemPAE-ws-pos_query+token" in c else c
                         for c in df_render.index]
 
     os.makedirs('metrics', exist_ok=True)
@@ -449,8 +449,15 @@ def main(args):
         'PAE-ws-pos_query+token-np-L4-d64-lr0.001',
 
         'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
+
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
+        'MemPAE-ws-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
+
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
+
+
+
         ##################################################################################        
 
         # 'MemAE-d64-lr0.05', # 0.6834    4.8750 (KNN: 4.1875)
