@@ -435,22 +435,34 @@ def main(args):
         'campaign', 
         'mammography', 
         'satimage-2', # middle
-        # 'nslkdd', # large 
-        # 'fraud', # large
-        # 'shuttle', # large
-        # 'census', # large
+        'nslkdd', # large 
+        'fraud', # large
+        'shuttle', # large
+        'census', # large
     ]
     data.sort()
 
     my_models = [
+        ##################################################################################
+        'PAE-np-L4-d64-lr0.001',
+        'PAE-ws-np-L4-d64-lr0.001',
+        'PAE-ws-pos_query+token-np-L4-d64-lr0.001',
+
+        'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
+        ##################################################################################        
+
+        # 'MemAE-d64-lr0.05', # 0.6834    4.8750 (KNN: 4.1875)
+        # 'PDRL-ws-pos_query+token-d64-lr0.001',
+
+
         # 'Perceiver-d16-dcol0.5',
         # 'RIN-d16-dcol0.1',
 
-        # 'MemAE-d64-lr0.05', # 0.6834    4.8750 (KNN: 4.1875)
         # 'MemAE-d256-lr0.001', # 0.6751
         # 'MemAE-d256-lr0.01-t0.1', # 0.6893    5.1875 (KNN: 4.0000)
         # 'MemAE-l2-d128-lr0.005', # 0.6744    4.8750 (KNN: 4.1250)
-        # 'PDRL-ws-pos_query+token-d64-lr0.001',
 
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         # 'PAE-ws-L6-d64-lr0.001', # SOTA!!!
@@ -478,31 +490,26 @@ def main(args):
         # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
 
 
-        #########################################
-        'PAE-np-L4-d64-lr0.001',
-        'PAE-ws-np-L4-d64-lr0.001',
-        'PAE-ws-pos_query+token-np-L4-d64-lr0.001',
 
-        'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L6-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L6-d64-lr0.001-t0.1',
-        #########################################
 
+        ##################################################################################        
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L6-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L6-d64-lr0.001-t0.1',
+        ##################################################################################        
+
+        ##################################################################################        
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L4-d64-lr0.001-t0.1',
-
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L7-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L7-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L7-d64-lr0.001-t0.1',
+        ##################################################################################        
 
 
-
-        #########################################
+        ##################################################################################        
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
 
         # 'MemPAE-ws-pos_query-ent0.001-d64-lr0.001',
