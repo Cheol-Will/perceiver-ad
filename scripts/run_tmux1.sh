@@ -5,7 +5,7 @@ data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc 
 depth=4
 hidden_dim=64
 learning_rate=0.001
-entropy_loss_weight=0.0001
+entropy_loss_weight=0.005
 model_type="MemPAE"
 
 for data in "${data_list[@]}"; do

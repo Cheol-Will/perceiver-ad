@@ -1,0 +1,106 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "num_latents": 4,
+        "num_memories": 16,
+        "depth": 4,
+        "hidden_dim": 64,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 1,
+        "sim_type": "cos",
+        "shrink_thred": 0,
+        "use_entropy_loss_as_score": true,
+        "top_k": null,
+        "is_weight_sharing": true,
+        "use_pos_enc_as_query": false,
+        "use_mask_token": false,
+        "latent_loss_weight": null,
+        "entropy_loss_weight": 0.001,
+        "num_features": 21
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "not_use_power_of_two": false,
+        "model_type": "MemPAE",
+        "dataset_name": "cardiotocography",
+        "train_ratio": 1.0,
+        "base_path": "results/MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001/cardiotocography/1.0",
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.754290803783491,
+        "AUC-PR": 0.6951868772050528,
+        "f1": 0.6015021459227469
+    },
+    "total_time": 157.7462821006775,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.745455539814159,
+            "AUC-PR": 0.6862640031395375,
+            "f1": 0.5836909871244635
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.7375593774740614,
+            "AUC-PR": 0.6915627644288111,
+            "f1": 0.5793991416309013
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.7641073586399434,
+            "AUC-PR": 0.6969127279601031,
+            "f1": 0.592274678111588
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.7731910704612692,
+            "AUC-PR": 0.7166221170866278,
+            "f1": 0.6244635193133047
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.7529871036293179,
+            "AUC-PR": 0.6911184688046459,
+            "f1": 0.5987124463519313
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.7682403433476395,
+            "AUC-PR": 0.7179317529771464,
+            "f1": 0.6373390557939914
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.7461274428101172,
+            "AUC-PR": 0.6914069636206877,
+            "f1": 0.5944206008583691
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.7585420225842744,
+            "AUC-PR": 0.6993103301647483,
+            "f1": 0.6094420600858369
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.7193841410058752,
+            "AUC-PR": 0.64273578084114,
+            "f1": 0.5708154506437768
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.7773136380682528,
+            "AUC-PR": 0.71800386302708,
+            "f1": 0.6244635193133047
+        }
+    ]
+}
