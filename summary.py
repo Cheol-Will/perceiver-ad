@@ -456,17 +456,20 @@ def main(args):
         'PAE-ws-L6-d64-lr0.001', # SOTA!!!
         # 'PAE-ws-L2-d64-lr0.001', # 
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
-        'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
+        # 'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
 
-        'MemPAE-ws-pos_query-ent0.001-d64-lr0.001',
-        'MemPAE-ws-pos_query+token-ent0.001-L2-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-ent0.001-L3-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query-ent0.001-d64-lr0.001',
+        # 'MemPAE-ws-pos_query+token-ent0.001-L2-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-ent0.001-L3-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-attn-pos_query+token-L4-d64-lr0.001',
 
-        'MemPAE-ws-attn-pos_query+token-L4-d64-lr0.001',
-        
+        'MemPAE-ws-pos_query+token-ent0.001-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-ent0.0001-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L5-d64-lr0.005-t0.1',
+
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         
