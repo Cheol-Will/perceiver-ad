@@ -435,10 +435,10 @@ def main(args):
         'campaign', 
         'mammography', 
         'satimage-2', # middle
-        'nslkdd', # large 
-        'fraud', # large
-        'shuttle', # large
-        'census', # large
+        # 'nslkdd', # large 
+        # 'fraud', # large
+        # 'shuttle', # large
+        # 'census', # large
     ]
     data.sort()
 
@@ -484,12 +484,12 @@ def main(args):
         'PAE-ws-pos_query+token-np-L4-d64-lr0.001',
 
         'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L6-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L6-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L6-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L6-d64-lr0.001-t0.1',
         #########################################
 
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
