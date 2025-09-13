@@ -435,10 +435,10 @@ def main(args):
         'campaign', 
         'mammography', 
         'satimage-2', # middle
-        'nslkdd', # large 
-        'fraud', # large
-        'shuttle', # large
-        'census', # large
+        # 'nslkdd', # large 
+        # 'fraud', # large
+        # 'shuttle', # large
+        # 'census', # large
     ]
     data.sort()
 
@@ -456,19 +456,24 @@ def main(args):
         'PAE-ws-L6-d64-lr0.001', # SOTA!!!
         # 'PAE-ws-L2-d64-lr0.001', # 
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-top1-L4-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
+
+
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         # 'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
 
         # 'MemPAE-ws-pos_query-ent0.001-d64-lr0.001',
         # 'MemPAE-ws-pos_query+token-ent0.001-L2-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-ent0.001-L3-d64-lr0.001-t0.1',
         # 'MemPAE-ws-attn-pos_query+token-L4-d64-lr0.001',
 
-        'MemPAE-ws-pos_query+token-ent0.001-L5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-ent0.0001-L5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-L5-d64-lr0.005-t0.1',
+        # 'MemPAE-ws-pos_query+token-ent0.001-L5-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-ent0.0001-L5-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-L5-d64-lr0.005-t0.1',
 
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
@@ -478,9 +483,9 @@ def main(args):
         # 'MemPAE-ws-pos_query+token-np-L3-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
 
-        'MemPAE-ws-pos_query+token-np-top5-L3-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-top5-L5-d64-lr0.001-t0.1', # 
+        # 'MemPAE-ws-pos_query+token-np-top5-L3-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-top5-L5-d64-lr0.001-t0.1', # 
 
         # temperature: [0.05, 0.1]
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', #  0.6892    3.7500 (SOTA! KNN: 4.2500) # working on large data
