@@ -5,7 +5,7 @@ data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc 
 depth=7
 hidden_dim=64
 learning_rate=0.001
-entropy_loss_weight=0.0005
+entropy_loss_weight=0.001
 temperature=0.1
 model_type="MemPAE"
 
