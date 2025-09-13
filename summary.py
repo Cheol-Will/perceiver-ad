@@ -465,6 +465,8 @@ def main(args):
         'MemPAE-ws-pos_query+token-ent0.001-L2-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-ent0.001-L3-d64-lr0.001-t0.1',
 
+        'MemPAE-ws-attn-pos_query+token-L4-d64-lr0.001',
+
         
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
