@@ -474,9 +474,11 @@ def main(args):
         'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         # 'PAE-ws-L6-d64-lr0.001', # SOTA!!!
         # 'PAE-ws-L2-d64-lr0.001', # 
+        'MemPAE-ws-d64-lr0.001',
+        'MemPAE-ws-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-d64-lr0.001',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-
-
+        
         'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
 
         'MemPAE-ws-pos_query-ent0.0002-d64-lr0.001-t0.1',
