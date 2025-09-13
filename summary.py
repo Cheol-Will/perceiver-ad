@@ -455,6 +455,12 @@ def main(args):
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         'PAE-ws-L6-d64-lr0.001', # SOTA!!!
         # 'PAE-ws-L2-d64-lr0.001', # 
+<<<<<<< HEAD
+=======
+
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
+>>>>>>> 24475cce91cfc6e3cb6d6686aca1d2dd2c567191
         
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
@@ -648,8 +654,8 @@ def main(args):
         #     # 'dependency_anomalies_/',
         #     # f'{args.synthetic_type}_anomalies_',
         # ]
-        # anomaly_type = 'local_anomalies_'
-        anomaly_type = 'dependency_anomalies_'
+        anomaly_type = 'local_anomalies_'
+        # anomaly_type = 'dependency_anomalies_'
 
         irrelevant_features_list = [
             '',  
