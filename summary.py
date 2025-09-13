@@ -455,10 +455,10 @@ def main(args):
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         # 'PAE-ws-L6-d64-lr0.001', # SOTA!!!
         # 'PAE-ws-L2-d64-lr0.001', # 
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        
-        'MemPAE-ws-pos_query-use_ent_score-ent0.001-d64-lr0.001',
-        'MemPAE-ws-pos_query-use_ent_score-ent0.0002-d64-lr0.001',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',        
+
+        # 'MemPAE-ws-pos_query-use_ent_score-ent0.001-d64-lr0.001',
+        # 'MemPAE-ws-pos_query-use_ent_score-ent0.0002-d64-lr0.001',
 
         # 'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
@@ -479,23 +479,28 @@ def main(args):
 
 
         #########################################
+        'PAE-np-L4-d64-lr0.001',
+        'PAE-ws-np-L4-d64-lr0.001',
+        'PAE-ws-pos_query+token-np-L4-d64-lr0.001',
+
         'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L7-d64-lr0.001-t0.1',
 
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L6-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L7-d64-lr0.001-t0.1',
 
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L6-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L7-d64-lr0.001-t0.1',
         #########################################
 
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L4-d64-lr0.001-t0.1',
+
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L7-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L7-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L7-d64-lr0.001-t0.1',
 
 
 
