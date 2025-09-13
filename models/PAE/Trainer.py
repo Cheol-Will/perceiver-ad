@@ -16,7 +16,10 @@ class Trainer(object):
     def __init__(self, model_config: dict, train_config: dict):
         self.train_loader, self.test_loader = get_dataloader(train_config)
         if model_config['num_latents'] is None:
-            model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['num_features']))) # sqrt(F)
+            if train_config['not_use_power_of_two']:
+                model_config['num_latents'] = int(math.sqrt(model_config['num_features'])) # sqrt(F)
+            else:
+                model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['num_features'])))
         self.device = train_config['device']
         self.model = PAE(
             **model_config
