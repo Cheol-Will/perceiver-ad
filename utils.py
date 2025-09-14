@@ -51,6 +51,7 @@ def load_yaml(args):
     train_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else train_config['learning_rate']
     train_config['not_use_power_of_two'] = args.not_use_power_of_two # default False -> use power of two
     train_config['num_memories_not_use_power_of_two'] = args.num_memories_not_use_power_of_two # defualt None
+    train_config['num_memories_twice'] = args.num_memories_twice # defualt None
 
     model_config['num_features'] = get_input_dim(args, train_config)
 
