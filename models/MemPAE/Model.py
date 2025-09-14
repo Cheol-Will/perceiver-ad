@@ -382,7 +382,8 @@ class MemPAE(nn.Module):
         x, 
         return_weight: bool = False, 
         return_pred: bool = False, 
-        return_memory_weight: bool = False
+        return_memory_weight: bool = False,
+        return_latents: bool = False,
     ):
     
         batch_size, num_features = x.shape # (B, F)
@@ -439,6 +440,10 @@ class MemPAE(nn.Module):
                 if self.use_entropy_loss_as_score:
                     entropy_loss = self.entropy_loss_fn(memory_weight)
                     loss = loss + self.entropy_loss_weight * entropy_loss
+
+        # for analysis
+        if return_latents:
+            return latents, latents_hat
 
         if return_pred:
             if return_memory_weight:

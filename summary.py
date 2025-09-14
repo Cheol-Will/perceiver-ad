@@ -398,7 +398,7 @@ def render(
         df_render = df_render.round(4)
 
 
-    df_render.index = [c.replace("pos_query+token", "pos") if "MemPAE-ws-pos_query+token" in c else c
+    df_render.index = [c.replace("pos_query+token", "pos") if "pos_query+token" in c else c
                         for c in df_render.index]
 
     os.makedirs('metrics', exist_ok=True)
@@ -476,12 +476,18 @@ def main(args):
         # 'MemPAE-ws-d64-lr0.001',
         # 'MemPAE-pos_query+token-d64-lr0.001-t0.1',
        
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
+        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # auc good
+        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.2', # not good
+        # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not bad
+        # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not good
+        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
+        
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
-        'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # auc good
-        'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.2',
+        'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # possible
+        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # 
+        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # possible
         # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2',
-
         # 'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
         # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
