@@ -96,7 +96,7 @@ if __name__ == "__main__":
     parser.add_argument('--entropy_loss_weight', type=float, default=None)
     parser.add_argument('--use_entropy_loss_as_score', action='store_true')    
     parser.add_argument('--use_mask_token', action='store_true')    
-    parser.add_argument('--not_use_power_of_two', action='store_true')    
+    parser.add_argument('--num_memories_not_use_power_of_two', action='store_true')    
     parser.add_argument('--top_k', type=int, default=None)    
 
     args = parser.parse_args()

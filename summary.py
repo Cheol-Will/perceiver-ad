@@ -471,28 +471,36 @@ def main(args):
         # 'MemAE-d256-lr0.01-t0.1', # 0.6893    5.1875 (KNN: 4.0000)
         # 'MemAE-l2-d128-lr0.005', # 0.6744    4.8750 (KNN: 4.1250)
 
-        'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        'PAE-L4-d64-lr0.001',
+        # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        'MemPAE-ws-d64-lr0.001',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
+
+
+        # 'PAE-ws-L4-d64-lr0.001',
         
-        
-        
+        # 'MemPAE-ws-use_ent_score-ent0.005-L4-d64-lr0.001',
+        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001',
+        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
+
+        # 'MemPAE-ws-use_ent_score-ent0.005-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
+
+        # 'MemPAE-ws-use_ent_score-ent0.0001-L4-d64-lr0.001',
+
+
         # 'PAE-ws-L6-d64-lr0.001', # SOTA!!!
         # 'PAE-ws-L2-d64-lr0.001', # 
-        'MemPAE-ws-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-d64-lr0.001',
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001',
         
-        'MemPAE-ws-d64-lr0.001',
-        'MemPAE-ws-use_ent_score-ent0.005-L4-d64-lr0.001',
-        'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001',
-        'MemPAE-ws-use_ent_score-ent0.0001-L4-d64-lr0.001',
-        'MemPAE-ws-use_ent_score-ent0.001-L6-d64-lr0.001',
-
-
-        'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
+       
+        # 'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-top5-L4-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-top1-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-top1-L4-d64-lr0.001-t0.1',
 
-        'MemPAE-ws-pos_query-ent0.0002-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query-ent0.0002-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
 
 
