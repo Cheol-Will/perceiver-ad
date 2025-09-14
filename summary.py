@@ -475,9 +475,9 @@ def main(args):
         'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         'MemPAE-ws-d64-lr0.001',
         'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         
-        # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
         # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.01',
 
         # 'MemPAE-ws-use_ent_score-ent0.005-L4-d64-lr0.001-t0.1',
