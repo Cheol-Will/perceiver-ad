@@ -470,11 +470,11 @@ def main(args):
         # 'MemAE-l2-d128-lr0.005', # 0.6744    4.8750 (KNN: 4.1250)
 
         # 'PAE-L4-d64-lr0.001', # 1.2
-        # 'PAE-L6-d64-lr0.001', # Need to check 
-        'PAE-ws-L6-d64-lr0.001', # 1.2 
-        'MemAE-d64-lr0.005-t0.1',
+        'PAE-L6-d64-lr0.001', # Need to check 
+        # 'PAE-ws-L6-d64-lr0.001', # 1.2 
+        # 'MemAE-d64-lr0.005-t0.1',
         # 'PAE-ws-d64-lr0.001', # 1.2
-        'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # GOOD!!!!!!!!!!!!!!!!
         # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
         
