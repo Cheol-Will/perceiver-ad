@@ -443,7 +443,7 @@ class MemPAE(nn.Module):
 
         # for analysis
         if return_latents:
-            return latents, latents_hat
+            return loss, latents, latents_hat
 
         if return_pred:
             if return_memory_weight:

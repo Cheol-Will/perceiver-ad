@@ -476,17 +476,21 @@ def main(args):
         # 'MemPAE-ws-d64-lr0.001',
         # 'MemPAE-pos_query+token-d64-lr0.001-t0.1',
        
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # auc good
+
+
+        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # auc good
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.2', # not good
         # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not bad
         # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not good
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
         
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
-        'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # possible
-        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # 
-        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # possible
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
+        # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # almost same
+        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # almost same
+
+        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # not possible
         # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2',
         # 'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
