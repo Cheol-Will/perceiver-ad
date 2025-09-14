@@ -473,22 +473,25 @@ def main(args):
 
         'PAE-L4-d64-lr0.001',
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        'MemPAE-ws-d64-lr0.001',
-        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-pos_query+token-d64-lr0.001-t0.1',
+        # 'MemPAE-d64-lr0.001-t0.1
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-d64-lr0.001', # can prove query = pos_encoding  
+        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # can prove weight sharing
        
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # auc good
-        # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # ok
+        'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # ok
         'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # ok
         'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # ok
+        'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
         
+        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
+        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
         
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
 
         # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # bad
         # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # bad
-        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.2', # bad
         # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not bad
         # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not good
@@ -572,7 +575,6 @@ def main(args):
         ##################################################################################        
 
         ##################################################################################        
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L7-d64-lr0.001-t0.1',
