@@ -4,10 +4,6 @@ import torch.nn.functional as F
 import math
 
 class MemoryUnit(nn.Module):
-    """
-      z: (B, D), memories: (N, D)
-      sim_type: "cos" | "l2"
-    """
     def __init__(
         self,
         num_memories: int,
@@ -17,7 +13,7 @@ class MemoryUnit(nn.Module):
     ):
         super().__init__()
         assert sim_type.lower() in ['cos', 'l2']
-        print(f"Init MemoryUnit with {sim_type}")
+        print(f"Init MemoryUnit with sim_type={sim_type} and t={temperature}")
         self.memories = nn.Parameter(torch.empty(num_memories, hidden_dim))
         self.hidden_dim = hidden_dim
         self.temperature = temperature
@@ -61,29 +57,29 @@ def make_mlp(sizes, bias=False, act=nn.LeakyReLU(0.2, inplace=True), last_act=No
 
 
 class MemAE(nn.Module):
-    def __init__(self, model_config):
+    def __init__(self, 
+        num_features: int,
+        hidden_dim: int,
+        en_nlayers: int,
+        de_nlayers: int,
+        num_memories: int = None,
+        temperature: float = 1,
+        sim_type: str = 'cos',     
+    ):
         super().__init__()
-        self.data_dim = model_config['data_dim']
-        self.hidden_dim = model_config['hidden_dim']
-        self.en_nlayers = model_config['depth']
-        self.de_nlayers = model_config['depth']
-        self.num_memories = model_config['num_memories']
-        self.temperature = model_config['temperature'] 
-        self.sim_type = model_config['sim_type']
-
-        if self.en_nlayers == 1:
-            en_sizes = [self.data_dim, self.hidden_dim]
+        assert num_memories is not None
+        if en_nlayers == 1:
+            en_sizes = [num_features, hidden_dim]
         else:
-            en_sizes = [self.data_dim] + [self.hidden_dim] * self.en_nlayers
+            en_sizes = [num_features] + [hidden_dim] * en_nlayers
         self.encoder = make_mlp(en_sizes, bias=False)
-
-        self.memory = MemoryUnit(self.num_memories, self.hidden_dim, temperature=self.temperature, sim_type=self.sim_type)
-
         if self.de_nlayers == 1:
-            de_sizes = [self.hidden_dim, self.data_dim]
+            de_sizes = [hidden_dim, num_features]
         else:
-            de_sizes = [self.hidden_dim] * self.de_nlayers + [self.data_dim]
+            de_sizes = [hidden_dim] * de_nlayers + [num_features]
         self.decoder = make_mlp(de_sizes, bias=False, last_act=None)
+
+        self.memory = MemoryUnit(num_memories, hidden_dim, temperature=temperature, sim_type=sim_type)
 
     def forward(self, x: torch.Tensor, return_pred = False):
         """

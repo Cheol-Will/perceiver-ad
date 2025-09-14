@@ -14,22 +14,27 @@ def nearest_power_of_two(x: int) -> int:
 class Trainer(object):
     def __init__(self, model_config: dict, train_config: dict):
         self.train_loader, self.test_loader = get_dataloader(train_config)
+        if model_config['num_memories'] is None:
+            num_train = self.get_num_train()
+            if train_config['num_memories_not_use_power_of_two']:
+                model_config['num_memories'] = int(math.sqrt(num_train))
+            else:
+                model_config['num_memories'] = nearest_power_of_two(int(math.sqrt(num_train)))
         self.device = train_config['device']
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = MemAE(**model_config).to(self.device)
+
         self.sche_gamma = train_config['sche_gamma']
         self.learning_rate = train_config['learning_rate']
-        
-        model_config['num_memories'] = self.calculate_num_memories() # sqrt(N)
-        self.model = MemAE(model_config).to(self.device)
         self.logger = train_config['logger']
+        self.epochs = train_config['epochs']
         self.model_config = model_config
         self.train_config = train_config
-        self.epochs = train_config['epochs']
+        
+    def get_num_train(self):
+        num_train = len(self.train_loader.dataset)
+        return num_train
 
-    def calculate_num_memories(self):
-        n = len(self.train_loader.dataset)
-        return nearest_power_of_two(int(math.sqrt(n)))
-
+    
     def training(self):
         self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
         self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split

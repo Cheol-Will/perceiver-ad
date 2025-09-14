@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
 from DataSet.DataLoader import get_dataloader
@@ -19,17 +20,96 @@ class Analyzer(Trainer):
         self.model_config = model_config
         self.train_config = train_config
         self.analysis_config = analysis_config
+    
+    @torch.no_grad()
+    def plot_latent_diff(
+        self,
+    ):
+        _, memory_weights_dict = self._accumulate_latent_diff()
+        
+        train_normal_latent_losses = memory_weights_dict['train_normal_latent_losses']
+        test_normal_latent_losses = memory_weights_dict['test_normal_latent_losses']
+        test_abnormal_latent_losses = memory_weights_dict['test_abnormal_latent_losses']
 
+        base_path = self.train_config['base_path']
+        save_dir = os.path.join(base_path, 'memory_usage_analysis') 
+        os.makedirs(save_dir, exist_ok=True)
+
+        return
+
+    @torch.no_grad()
+    def _accumulate_latent_diff(
+        self,
+    ):
+        self.model.eval()
+
+        def _collect_latent_diff(loader):
+            scores, latent_losses, labels = [], [], []
+            for x, y in loader:
+                x = x.to(self.device)
+                loss, z, z_hat = self.model(x, return_latents=True)
+                latent_loss = F.mse_loss(z_hat, z, reduction='none').mean(dim=[1,2]) # (B, )
+
+                
+                # loss
+                if isinstance(loss, torch.Tensor):
+                    loss = loss.view(-1).detach().cpu().float().numpy()
+                else:
+                    loss = np.asarray(loss, dtype=np.float32).reshape(-1)
+                
+                # memory weight
+                if isinstance(latent_loss, torch.Tensor):
+                    latent_loss = latent_loss.view(-1).detach().cpu().float().numpy() # (B, N, M)
+                else:
+                    latent_loss = np.asarray(latent_loss, dtype=np.float32).reshape(-1)
+                
+                # label
+                if y is None:
+                    y_arr = np.zeros(loss.shape[0], dtype=np.int64)
+                else:
+                    y_arr = y.view(-1).detach().cpu().numpy()
+                
+                scores.append(loss)
+                latent_losses.append(latent_loss)
+                labels.append(y_arr)
+
+            if len(scores) == 0:
+                return np.array([]), np.array([])
+            return np.concatenate(scores, axis=0), np.concatenate(latent_losses, axis=0), np.concatenate(labels, axis=0)
+
+        train_scores, latent_losses, train_labels = _collect_latent_diff(self.train_loader)
+        test_scores,  latent_losses, test_labels  = _collect_latent_diff(self.test_loader)
+        print(train_scores.shape, latent_losses.shape, train_labels.shape)
+        print(test_scores.shape,  latent_losses.shape, test_labels.shape)
+
+
+        train_normal_scores = train_scores[train_labels == 0] if train_labels.size > 0 else train_scores
+        test_normal_scores   = test_scores[test_labels == 0] if test_labels.size > 0 else np.array([])
+        test_abnormal_scores = test_scores[test_labels != 0] if test_labels.size > 0 else np.array([])
+
+        train_normal_latent_losses = latent_losses[train_labels == 0] if train_labels.size > 0 else train_scores
+        test_normal_latent_losses   = latent_losses[test_labels == 0] if test_labels.size > 0 else np.array([])
+        test_abnormal_latent_losses = latent_losses[test_labels != 0] if test_labels.size > 0 else np.array([])
+
+        scores = {
+            'train_normal_scores': train_normal_scores,
+            'test_normal_scores': test_normal_scores,
+            'test_abnormal_scores': test_abnormal_scores,
+        }
+
+        memory_weights = {
+            'train_normal_latent_losses': train_normal_latent_losses,
+            'test_normal_latent_losses': test_normal_latent_losses,
+            'test_abnormal_latent_losses': test_abnormal_latent_losses,
+        }
+        return scores, memory_weights
+
+        
 
     @torch.no_grad()
     def plot_memory_weight(
         self,
     ):
-        """
-        메모리 가중치 사용량을 막대 그래프로 시각화하고 저장합니다.
-        1. 각 잠재 변수(Latent)별로 메모리 슬롯 사용량을 그립니다.
-        2. 모든 잠재 변수를 통합한 전체 메모리 슬롯 사용량을 그립니다.
-        """
         _, memory_weights_dict = self._accumulate_memory_weight()
         
         train_normal_weights = memory_weights_dict['train_normal_memory_weights']
@@ -43,20 +123,11 @@ class Analyzer(Trainer):
         num_samples, num_latents, num_memories = train_normal_weights.shape
         
         base_path = self.train_config['base_path']
-        save_dir = os.path.join(base_path, 'memory_usage_analysis') # 폴더 이름 변경
+        save_dir = os.path.join(base_path, 'memory_usage_analysis') 
         os.makedirs(save_dir, exist_ok=True)
 
-        # ======================================================================
-        # 1. 잠재 변수(Latent)별 메모리 사용량 막대 그래프
-        # ======================================================================
         for i in range(num_latents):
-            print(f"\n----- Analyzing Memory Usage for Latent {i} -----")
             
-            if train_normal_weights.shape[0] == 0:
-                print(f"Skipping Latent {i} due to no training data.")
-                continue
-
-            # Latent {i}에 대한 메모리 사용량 (평균 가중치) 계산
             train_latent_usage = train_normal_weights[:, i, :].mean(axis=0)
             test_norm_latent_usage = test_normal_weights[:, i, :].mean(axis=0) if test_normal_weights.size > 0 else np.array([])
             test_abn_latent_usage = test_abnormal_weights[:, i, :].mean(axis=0) if test_abnormal_weights.size > 0 else np.array([])
@@ -88,19 +159,12 @@ class Analyzer(Trainer):
             plt.close(fig_bar)
             print(f"Saved Latent {i} memory usage bar plot to {bar_path}")
 
-        # ======================================================================
-        # 2. 전체 Latent 통합 메모리 사용량 막대 그래프
-        # ======================================================================
-        print("\n----- Analyzing Aggregated Memory Usage for All Latents -----")
-        
-        # 전체 Latent에 대해 통합 평균 사용량 계산
         train_total_usage = train_normal_weights.mean(axis=(0, 1))
         test_norm_total_usage = test_normal_weights.mean(axis=(0, 1)) if test_normal_weights.size > 0 else np.array([])
         test_abn_total_usage = test_abnormal_weights.mean(axis=(0, 1)) if test_abnormal_weights.size > 0 else np.array([])
 
         fig_total_bar, axes_total_bar = plt.subplots(1, 3, figsize=(15, 4), dpi=200, sharey=True)
 
-        # 위에서 정의한 _plot_usage_bar 함수 재사용
         _plot_usage_bar(axes_total_bar[0], train_total_usage, "Train (normal)")
         _plot_usage_bar(axes_total_bar[1], test_norm_total_usage, "Test (normal)")
         _plot_usage_bar(axes_total_bar[2], test_abn_total_usage, "Test (abnormal)")
