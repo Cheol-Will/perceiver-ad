@@ -383,8 +383,6 @@ def render(
             '26_optdigits_42': 'opt',
             '42_WBC_42' : 'wbd',
 
-
-
         }
         def apply_aliases(column_name, aliases_dict):
             new_name = column_name
@@ -471,24 +469,31 @@ def main(args):
         # 'MemAE-d256-lr0.01-t0.1', # 0.6893    5.1875 (KNN: 4.0000)
         # 'MemAE-l2-d128-lr0.005', # 0.6744    4.8750 (KNN: 4.1250)
 
-        'PAE-L4-d64-lr0.001',
+        'PAE-L4-d64-lr0.001', # 
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'MemPAE-d64-lr0.001-t0.1
+        # 'MemPAE-d64-lr0.001-t0.1',
+        # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # ok
+
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # ok
+
+        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001',
+        # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', 
 
         # 'MemPAE-ws-d64-lr0.001', # can prove query = pos_encoding  
         # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # can prove weight sharing
        
-        'MemPAE-large_mem-L4-d64-lr0.001-t0.1', # basic form
-        'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # to prove weight sharing
-        'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # ent score
+        # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1', # basic form
+        # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # to prove weight sharing
+        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # ent score
 
 
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
+        # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # ok
+        # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # ok
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # auc good
-        'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # ok
-        'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # ok
         
         # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
         # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
@@ -499,7 +504,6 @@ def main(args):
         # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # bad
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.2', # bad
         # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not bad
-        # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not good
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
         
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
@@ -523,7 +527,6 @@ def main(args):
         # 'MemPAE-ws-use_ent_score-ent0.005-L4-d64-lr0.001-t0.1',
         # 'PAE-ws-L4-d64-lr0.001',
         # 'MemPAE-ws-use_ent_score-ent0.005-L4-d64-lr0.001',
-        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001',
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
 
         # 'MemPAE-ws-use_ent_score-ent0.005-L4-d64-lr0.001-t0.1', 
