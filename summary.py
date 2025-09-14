@@ -469,14 +469,25 @@ def main(args):
         # 'MemAE-d256-lr0.01-t0.1', # 0.6893    5.1875 (KNN: 4.0000)
         # 'MemAE-l2-d128-lr0.005', # 0.6744    4.8750 (KNN: 4.1250)
 
-        # 'PAE-L4-d64-lr0.001', # 1.2
-        # 'PAE-L6-d64-lr0.001', # Need to check
         'PAE-ws-L6-d64-lr0.001', # 1.2 
-        'MemAE-d64-lr0.005-t0.1',
-        # 'PAE-ws-d64-lr0.001', # 1.2
+        'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # GOOD!!!!!!!!!!!!!!!!
 
-        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # 0.9
+        # 'PAE-L4-d64-lr0.001', # 1.2
+        # 'PAE-L6-d64-lr0.001', # Need to check 
+        # 'MemAE-d64-lr0.005-t0.1',
+        # 'PAE-ws-d64-lr0.001', # 1.2
+        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # BAD
+        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
+        
+        # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2',
+        # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Previous
+
+        # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
+
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 1.1
+        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
         # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # 0.1
 
         # 'MemPAE-d64-lr0.001-t0.1',
@@ -484,7 +495,6 @@ def main(args):
         # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # 1.0
 
-        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
 
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # ok
@@ -498,208 +508,6 @@ def main(args):
         # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1', # basic form
         # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # to prove weight sharing
         # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # ent score
-
-        # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # ok
-        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # auc good
-        
-        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
-        
-        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
-
-        # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # bad
-        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # bad
-        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.2', # bad
-        # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not bad
-        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
-        
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
-        # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # almost same
-        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # almost same
-
-        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # not possible
-        # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2',
-        # 'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
-       
-        # 'MemPAE-ws-pos_query+token-ent0.001-L5-d64-lr0.001-t0.1',
-   
-        # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.05',
-        # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
-
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.01',
-        # 'MemPAE-ws-use_ent_score-ent0.005-L4-d64-lr0.001-t0.1',
-        # 'PAE-ws-L4-d64-lr0.001',
-        # 'MemPAE-ws-use_ent_score-ent0.005-L4-d64-lr0.001',
-        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
-
-        # 'MemPAE-ws-use_ent_score-ent0.005-L4-d64-lr0.001-t0.1', 
-        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
-
-        # 'MemPAE-ws-use_ent_score-ent0.0001-L4-d64-lr0.001',
-
-
-        # 'PAE-ws-L6-d64-lr0.001', # SOTA!!!
-        # 'PAE-ws-L2-d64-lr0.001', # 
-        # 'MemPAE-ws-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001',
-        
-       
-        # 'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-top5-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-top1-L4-d64-lr0.001-t0.1',
-
-        # 'MemPAE-ws-pos_query-ent0.0002-d64-lr0.001-t0.1',
-
-
-        # 'MemPAE-ws-pos_query+token-ent0.0001-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-
-
-        # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',        
-        # 'MemPAE-ws-pos_query-use_ent_score-ent0.001-d64-lr0.001',
-        # 'MemPAE-ws-pos_query-use_ent_score-ent0.0002-d64-lr0.001',
-
-        # 'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
-
-        # 'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top1-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top1-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top5-L3-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top5-L5-d64-lr0.001-t0.1', # 
-        # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.01-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.05-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.005-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
-
-
-
-
-        ##################################################################################        
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L6-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L6-d64-lr0.001-t0.1',
-        ##################################################################################        
-
-        ##################################################################################        
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L7-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L7-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0005-L7-d64-lr0.001-t0.1',
-        ##################################################################################        
-
-
-        ##################################################################################        
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
-
-        # 'MemPAE-ws-pos_query-ent0.001-d64-lr0.001',
-        # 'MemPAE-ws-pos_query+token-ent0.001-L2-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-ent0.001-L3-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-attn-pos_query+token-L4-d64-lr0.001',
-
-        # 'MemPAE-ws-pos_query+token-ent0.0001-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-L5-d64-lr0.005-t0.1',
-
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
-        
-        # 'MemPAE-ws-pos_query+token-np-L2-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-L3-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-L5-d64-lr0.001-t0.1',
-
-        # 'MemPAE-ws-pos_query+token-np-top5-L3-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top5-L5-d64-lr0.001-t0.1', # 
-
-        # temperature: [0.05, 0.1]
-        # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', #  0.6892    3.7500 (SOTA! KNN: 4.2500) # working on large data
-        # 'MemPAE-ws-pos_query-d64-lr0.001-t0.05', #  0.6892    3.7500 (SOTA! KNN: 4.2500) # working on large data
-
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001',
-        
-        
-        # 'MemPAE-ws-pos_query-ent0.0002-d64-lr0.001',
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01',
-       
-        # 'MemPAE-ws-pos_query-d64-lr0.001-t0.05', #  0.6892    3.7500 (SOTA! KNN: 4.2500) # working on large data
-        # 'MemPAE-ws-pos_query-ent0.0002-d64-lr0.001',
-        # 'MemPAE-ws-pos_query-ent0.001-d64-lr0.001',
-        # 'MemPAE-ws-pos_query-use_ent_score-ent0.0002-d64-lr0.001',
-        # 'MemPAE-ws-pos_query-use_ent_score-ent0.001-d64-lr0.001',
-
-        # # 'PAE-ws-L2-d64-lr0.001',
-        # 'MemPAE-ws-pos_query-L6-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query-L2-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query-ent0.001-d64-lr0.001-t0.1',
-
-        # 'PAE-ws-pos_query-d64-lr0.001',
-        # 'PAE-ws-d64-lr0.001-log', # N = log2(F) 
-
-        # 'MemPAE-ws-d64-lr0.001', #  0.6892    3.7500 (SOTA! KNN: 4.2500) # working on large data
-        # 'MemPAE-ws-d64-lr0.001', #  
-
-        # 'MemPAE-ws-pos_query-ent0.05-d64-lr0.001',
-        # 'MemPAE-ws-pos_query-ent0.01-d64-lr0.001',
-
-        # 'MemPAE-ws-pos_query-ent0.05-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-ent0.05-d64-lr0.001',
-        
-        # 'MemPAE-ws-pos_query-ent0.01-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-ent0.1-d64-lr0.001',
-
-        # 'PAE-ws-pos_query-d64-lr0.001',
-
-        # 'PairMemPAE-ws-d32-lr0.001',
-        # 'PairMemPAE-ws-d64-lr0.001',
-        # 'PairMemPAE-ws-d32-lr0.005',
-        # 'PairMemPAE-ws-d64-lr0.005',
-        # 'TripletMemPAE-ws-d64-lr0.001',
-        # 'TripletMemPAE-ws-d64-lr0.005',
-        # 'TripletMemPAE-ws-d32-lr0.001',
-        # 'TripletMemPAE-ws-d32-lr0.005', 
-        # 'PAE-ws-d64-lr0.005', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'PAE-ws-d32-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'PAE-ws-d32-lr0.005', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'PAE-ws-d16-lr0.001', 
-        # 'PAE-ws-d16-lr0.005', 
-        # 'PAE-d64-lr0.001', # 0.6867    3.8125  (SOTA! KNN: 4.2500)
-        # 'PAE-ws-pos_query-d64-lr0.001', # 0.6836    4.0000 (SOTA! KNN: 4.3125)
-        # 'PAE-pos_query-d64-lr0.001', # Not done
-
-        # 'MemPAE-ws-d64-lr0.001-smem',
-        # 'MemPAE', # 0.6878    3.8125 (SOTA! KNN: 4.1875)
-        # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-d64-lr0.0005', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-d64-lr0.002', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-d64-lr0.003', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-attn-d64-lr0.001', 
-        # 'MemPAE-ws-l2-d64-lr0.001', 
-        # 'MemPAE-ws-d64-lr0.005', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-d32-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-d32-lr0.005', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-d64-lr0.001-t0.1', #  0.6892    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-pos_query-d64-lr0.001', # working on
-        # 'MemPAE-ws-pos_query-d64-lr0.001-thres0.0025',
-
-        # 'PAEKNN-ws-d64-lr0.001',
-        # 'PVAE-ws-d64-lr0.001',
-        # 'PVAE-ws-d64-lr0.001-beta0.25',
-        # 'PVAE-ws-d32-lr0.001',
-        # 'PVAE-ws-d32-lr0.001-besta0.25',
-
-        # 'PVQVAE-ws-d64-lr0.001-beta1-vq',
-        # 'PVQVAE-ws-d64-lr0.001-beta1.0',
-        # 'PVQVAE-ws-d32-lr0.001-beta1.0',
-        # 'PVQVAE-ws-d64-lr0.001-beta0.25',
     ]
 
     results = collect_results()
@@ -722,17 +530,20 @@ def main(args):
 
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
 
-        # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        # 'MemPAE-ws-pos-large_mem-L4-d64-lr0.001-t0.1',
         'PAE-ws-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
+
+        # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.05',
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.05',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.05',
         
     ]
 
@@ -744,40 +555,43 @@ def main(args):
             'IForest', 
             'LOF', 
             'OCSVM', 
-            'ECOD', 
+            # 'ECOD', # remove due to local
             'KNN', 
-            'PCA',  # KNN: 0.6918, LOF: 0.6612
+            'PCA',  
             'AutoEncoder', 
-            # 'DeepSVDD', 'GOAD', 
-            # 'NeuTraL', 'ICL', 
+            # 'DeepSVDD', 'GOAD', # not important baseline 
+            # 'NeuTraL', 'ICL', # not important baseline
+            # Below three are important.
             'MCM', 'DRL',
             'Disent',
         ]
 
         # success case: cardio, sat (maybe)
         dataname_list = [
+            '26_optdigits',
+            '23_mammography', # 11k
+            '32_shuttle', # 49k
+            '18_ionosphere', # 0.3k   
+            '38_thyroid', # 3k
+        
 
             # only care about dependency anomaly
             # note that local anomaly requires 
             # some density estimation or retrieval modules.
-            # '45_wine', # 0.1k
+           
+
+            # above nope small data. not good at all
+            #  '45_wine', # 0.1k
             # '14_glass',
             # '42_wbc',
 
-
-            # above nope small data. not good at all
-            '18_ionosphere', # 0.3k   
-            '4_breastw', # 0.6k
-            '29_pima', # 0.7k
-            '6_cardio', # 1.8k
-            '7_cardiotocography', # 2k
-            '38_thyroid', # 3k
-            '26_optdigits',
-            '31_satimage-2', # 5k
-            '30_satellite', # 6k
-            '23_mammography', # 11k
-            '5_campaign',
-            '32_shuttle', # 49k
+            # '4_breastw', # 0.6k
+            # '29_pima', # 0.7k
+            # '6_cardio', # 1.8k
+            # '7_cardiotocography', # 2k
+            # '31_satimage-2', # 5k
+            # '30_satellite', # 6k
+            # '5_campaign',
 
             # here cut
             # below nope
@@ -797,9 +611,10 @@ def main(args):
         #     # 'dependency_anomalies_/',
         #     # f'{args.synthetic_type}_anomalies_',
         # ]
-        # anomaly_type = 'local_anomalies_'
-        anomaly_type = 'dependency_anomalies_'
-
+        anomaly_type_list = [
+            'local_anomalies_',
+            'dependency_anomalies_',
+        ]
         irrelevant_features_list = [
             '',  
             # 'irrelevant_features_0.1_',
@@ -808,50 +623,18 @@ def main(args):
         ]
 
         suffix = '_42'
-        synthetic_data = []
 
-        for dataname in dataname_list:
-            for feature in irrelevant_features_list:
-                file_name = f"{anomaly_type}{feature}{dataname}{suffix}"
-                synthetic_data.append(file_name)
-        # synthetic_data = [
-        #     'shuttle',
-        #     # '32_shuttle_irrelevant_features_0.1_42',
-        #     # '32_shuttle_irrelevant_features_0.3_42',
-        #     '32_shuttle_irrelevant_features_0.5_42',
-
-        #     'breastw',
-        #     # '4_breastw_irrelevant_features_0.1_42',
-        #     # '4_breastw_irrelevant_features_0.3_42',
-        #     '4_breastw_irrelevant_features_0.5_42',
-
-        #     'cardio',
-        #     # '6_cardio_irrelevant_features_0.1_42',
-        #     # '6_cardio_irrelevant_features_0.3_42',
-        #     '6_cardio_irrelevant_features_0.5_42',
-
-        #     'wbc',
-        #     # '42_wbc_irrelevant_features_0.1_42',
-        #     # '42_wbc_irrelevant_features_0.3_42',
-        #     '42_wbc_irrelevant_features_0.5_42',
-
-        #     'wine',
-        #     # '45_wine_irrelevant_features_0.1_42',
-        #     # '45_wine_irrelevant_features_0.3_42',
-        #     '45_wine_irrelevant_features_0.5_42',
-
-        # ]
-
-        for base in keys:
-            df_render = render(pivots, synthetic_data, models, my_models, base,
-                add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
-                use_alias=True, is_temp_tune=True, is_synthetic=True, synthetic_type=anomaly_type)
-            # df_render['loc_diff_st'] = df_render['loc_st'] - df_render['loc_if_0.5_st'] 
-            # df_render['dep_diff_st'] = df_render['dep_st'] - df_render['dep_if_0.5_st']
-            # df_render['dep_diff_pm'] = df_render['dep_pm'] - df_render['dep_if_0.5_pm'] 
-            # df_render['loc_diff_pm'] = df_render['loc_pm'] - df_render['loc_if_0.5_pm'] 
-
-            # print(df_render)
+        for anomaly_type in anomaly_type_list:
+            synthetic_data = []
+            for dataname in dataname_list:
+                for feature in irrelevant_features_list:
+                    file_name = f"{anomaly_type}{feature}{dataname}{suffix}"
+                    synthetic_data.append(file_name)
+      
+            for base in keys:
+                df_render = render(pivots, synthetic_data, models, my_models, base,
+                    add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
+                    use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
