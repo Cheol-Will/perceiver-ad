@@ -147,9 +147,10 @@ def replace_transformer_config(args, model_config):
     return model_config
 
 def replace_mlp_config(args, model_config):
-    model_config['depth'] = args.depth if args.depth is not None else model_config['depth']
+    # model_config['depth'] = args.depth if args.depth is not None else model_config['depth']
+    # model_config['depth'] = args.depth if args.depth is not None else model_config['depth']
     model_config['hidden_dim'] = args.hidden_dim if args.hidden_dim is not None else model_config['hidden_dim']
-    model_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else model_config['drop_col_prob']
+    # model_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else model_config['drop_col_prob']
 
     if args.model_type in ['MemAE', 'MultiMemAE']:
         model_config['sim_type'] = args.sim_type if args.sim_type is not None else model_config['sim_type']

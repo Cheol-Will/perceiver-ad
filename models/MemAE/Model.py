@@ -73,7 +73,7 @@ class MemAE(nn.Module):
         else:
             en_sizes = [num_features] + [hidden_dim] * en_nlayers
         self.encoder = make_mlp(en_sizes, bias=False)
-        if self.de_nlayers == 1:
+        if de_nlayers == 1:
             de_sizes = [hidden_dim, num_features]
         else:
             de_sizes = [hidden_dim] * de_nlayers + [num_features]
