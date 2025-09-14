@@ -18,7 +18,7 @@ for data in "${data_list[@]}"; do
         --use_pos_enc_as_query \
         --use_mask_token \
         --num_memories_not_use_power_of_two \
-        --num_memories_not_use_power_of_two \
+        --num_memories_twice \
         --depth $depth \
         --hidden_dim "$hidden_dim" \
         --learning_rate "$learning_rate" \
