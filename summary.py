@@ -473,15 +473,23 @@ def main(args):
 
         'PAE-L4-d64-lr0.001',
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'MemPAE-ws-d64-lr0.001',
+        'MemPAE-ws-d64-lr0.001',
+        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
         # 'MemPAE-pos_query+token-d64-lr0.001-t0.1',
        
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # rank good
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # auc good
+        # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # ok
+        'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # ok
+        'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # ok
+        
+        
+        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
 
-
-        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # auc good
-        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.2', # not good
+        # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # bad
+        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # bad
+        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
+        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.2', # bad
         # 'MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not bad
         # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # not good
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001',
