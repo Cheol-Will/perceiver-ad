@@ -790,7 +790,6 @@ def main(args):
             #################      
             ]
 
-        
         # prefix_list = [
         #     # 'cluster_anomalies_',
         #     # 'global_anomalies_',
@@ -798,8 +797,8 @@ def main(args):
         #     # 'dependency_anomalies_/',
         #     # f'{args.synthetic_type}_anomalies_',
         # ]
-        anomaly_type = 'local_anomalies_'
-        # anomaly_type = 'dependency_anomalies_'
+        # anomaly_type = 'local_anomalies_'
+        anomaly_type = 'dependency_anomalies_'
 
         irrelevant_features_list = [
             '',  
