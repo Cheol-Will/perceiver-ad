@@ -528,7 +528,7 @@ def main(args):
         'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
 
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'PAE-ws-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        'PAE-ws-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
@@ -562,21 +562,23 @@ def main(args):
 
         # success case: cardio, sat (maybe)
         dataname_list = [
+            '26_optdigits',
+            '23_mammography', # 11k
+            '32_shuttle', # 49k
+
+            '18_ionosphere', # 0.3k   
+            '38_thyroid', # 3k
+        
 
             # only care about dependency anomaly
             # note that local anomaly requires 
             # some density estimation or retrieval modules.
-            # '45_wine', # 0.1k
-            # '14_glass',
-            # '42_wbc',
-
+           
 
             # above nope small data. not good at all
-            '18_ionosphere', # 0.3k   
-            '38_thyroid', # 3k
-            '26_optdigits',
-            '23_mammography', # 11k
-            '32_shuttle', # 49k
+            #  '45_wine', # 0.1k
+            # '14_glass',
+            # '42_wbc',
 
             # '4_breastw', # 0.6k
             # '29_pima', # 0.7k
