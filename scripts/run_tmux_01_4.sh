@@ -10,8 +10,8 @@ temperature=0.1
 model_type="MemPAE"
 
 for data in "${data_list[@]}"; do
-    echo "Running $model_type data=$data dim=$hidden_dim learning_rate=$learning_rate weight sharing"
     exp_name="$model_type-use_ent_score-ent$entropy_loss_weight-L$depth-d$hidden_dim-lr$learning_rate-t$temperature"
+    echo "Run $exp_name on $data"
     python main.py \
         --dataname "$data" \
         --model_type $model_type \
