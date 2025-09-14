@@ -472,11 +472,16 @@ def main(args):
         # 'PAE-L4-d64-lr0.001', # 1.2
         # 'PAE-L6-d64-lr0.001', # Need to check
         'PAE-ws-L6-d64-lr0.001', # 1.2 
-        'MemAE-d64-lr0.005-t0.1',
+        # 'MemAE-d64-lr0.005-t0.1',
         # 'PAE-ws-d64-lr0.001', # 1.2
 
-        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # 0.9
+        'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # GOOD!!!!!!!!!!!!!!!!
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Previous
+
+        # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
+
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 1.1
+        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
         # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # 0.1
 
         # 'MemPAE-d64-lr0.001-t0.1',
@@ -484,7 +489,6 @@ def main(args):
         # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # 1.0
 
-        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
 
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # ok
