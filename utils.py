@@ -50,6 +50,7 @@ def load_yaml(args):
     train_config['base_path'] = args.base_path    
     train_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else train_config['learning_rate']
     train_config['not_use_power_of_two'] = args.not_use_power_of_two # default False -> use power of two
+    train_config['num_memories_not_use_power_of_two'] = args.num_memories_not_use_power_of_two # defualt None
 
     model_config['num_features'] = get_input_dim(args, train_config)
 
@@ -136,7 +137,6 @@ def replace_transformer_config(args, model_config):
             model_config['entropy_loss_weight'] = args.entropy_loss_weight # defualt None
             model_config['use_entropy_loss_as_score'] = args.use_entropy_loss_as_score # default False
             model_config['top_k'] = args.top_k # None
-            model_config['num_memories_not_use_power_of_two'] = args.num_memories_not_use_power_of_two # defualt None
 
         if args.model_type in ['PVAE', 'PVQVAE']:
             model_config['beta'] = args.beta if args.beta is not None else model_config['beta'] 

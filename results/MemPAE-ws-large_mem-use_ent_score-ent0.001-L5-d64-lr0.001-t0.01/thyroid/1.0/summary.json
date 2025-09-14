@@ -1,0 +1,107 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "num_latents": 2,
+        "num_memories": 42,
+        "depth": 5,
+        "hidden_dim": 64,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.01,
+        "sim_type": "cos",
+        "shrink_thred": 0,
+        "use_entropy_loss_as_score": true,
+        "top_k": null,
+        "is_weight_sharing": true,
+        "use_pos_enc_as_query": false,
+        "use_mask_token": false,
+        "latent_loss_weight": null,
+        "entropy_loss_weight": 0.001,
+        "num_features": 6
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "not_use_power_of_two": false,
+        "model_type": "MemPAE",
+        "dataset_name": "thyroid",
+        "train_ratio": 1.0,
+        "base_path": "results/MemPAE-ws-large_mem-use_ent_score-ent0.001-L5-d64-lr0.001-t0.01/thyroid/1.0",
+        "num_memories_not_use_power_of_two": true,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9778038803179057,
+        "AUC-PR": 0.754591726285962,
+        "f1": 0.7000000000000001
+    },
+    "total_time": 342.0495796203613,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9768641888733054,
+            "AUC-PR": 0.7404343139717136,
+            "f1": 0.6774193548387096
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9768291257597008,
+            "AUC-PR": 0.79623330562533,
+            "f1": 0.7741935483870968
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9808146330060776,
+            "AUC-PR": 0.7882592212338626,
+            "f1": 0.7204301075268817
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9895570359981299,
+            "AUC-PR": 0.8519425523224132,
+            "f1": 0.7849462365591398
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9803295932678822,
+            "AUC-PR": 0.7575291407687367,
+            "f1": 0.7204301075268817
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9804990649836373,
+            "AUC-PR": 0.7517137341715642,
+            "f1": 0.6989247311827957
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9589644693782141,
+            "AUC-PR": 0.6461850686155589,
+            "f1": 0.5698924731182796
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9772440392706874,
+            "AUC-PR": 0.7414212199621976,
+            "f1": 0.7419354838709677
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.9716222533894343,
+            "AUC-PR": 0.6907549819235312,
+            "f1": 0.6021505376344086
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.9853143992519868,
+            "AUC-PR": 0.7814437242647125,
+            "f1": 0.7096774193548387
+        }
+    ]
+}
