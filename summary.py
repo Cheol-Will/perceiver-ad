@@ -472,7 +472,7 @@ def main(args):
         # 'PAE-L4-d64-lr0.001', # 1.2
         # 'PAE-L6-d64-lr0.001', # Need to check 
         'PAE-ws-L6-d64-lr0.001', # 1.2 
-        # 'MemAE-d64-lr0.005-t0.1',
+        'MemAE-d64-lr0.005-t0.1',
         # 'PAE-ws-d64-lr0.001', # 1.2
 
         'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # GOOD!!!!!!!!!!!!!!!!
@@ -524,17 +524,20 @@ def main(args):
 
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
 
+        # 'MemPAE-ws-pos-large_mem-L4-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
+
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        'PAE-ws-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        # 'PAE-ws-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.05',
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.05',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.05',
         
     ]
 
@@ -546,12 +549,13 @@ def main(args):
             'IForest', 
             'LOF', 
             'OCSVM', 
-            'ECOD', 
+            # 'ECOD', # remove due to local
             'KNN', 
-            'PCA',  # KNN: 0.6918, LOF: 0.6612
+            'PCA',  
             'AutoEncoder', 
-            # 'DeepSVDD', 'GOAD', 
-            # 'NeuTraL', 'ICL', 
+            # 'DeepSVDD', 'GOAD', # not important baseline 
+            # 'NeuTraL', 'ICL', # not important baseline
+            # Below three are important.
             'MCM', 'DRL',
             'Disent',
         ]
@@ -569,17 +573,18 @@ def main(args):
 
             # above nope small data. not good at all
             '18_ionosphere', # 0.3k   
-            '4_breastw', # 0.6k
-            '29_pima', # 0.7k
-            '6_cardio', # 1.8k
-            '7_cardiotocography', # 2k
             '38_thyroid', # 3k
             '26_optdigits',
-            '31_satimage-2', # 5k
-            '30_satellite', # 6k
             '23_mammography', # 11k
-            '5_campaign',
             '32_shuttle', # 49k
+
+            # '4_breastw', # 0.6k
+            # '29_pima', # 0.7k
+            # '6_cardio', # 1.8k
+            # '7_cardiotocography', # 2k
+            # '31_satimage-2', # 5k
+            # '30_satellite', # 6k
+            # '5_campaign',
 
             # here cut
             # below nope
@@ -647,7 +652,7 @@ def main(args):
         for base in keys:
             df_render = render(pivots, synthetic_data, models, my_models, base,
                 add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
-                use_alias=True, is_temp_tune=True, is_synthetic=True, synthetic_type=anomaly_type)
+                use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
             # df_render['loc_diff_st'] = df_render['loc_st'] - df_render['loc_if_0.5_st'] 
             # df_render['dep_diff_st'] = df_render['dep_st'] - df_render['dep_if_0.5_st']
             # df_render['dep_diff_pm'] = df_render['dep_pm'] - df_render['dep_if_0.5_pm'] 
