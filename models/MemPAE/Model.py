@@ -304,7 +304,7 @@ class MemPAE(nn.Module):
         dropout_prob: float = 0.0,
         num_latents: int = None,
         num_memories: int = None,
-        is_weight_sharing: bool = True,
+        is_weight_sharing: bool = False,
         temperature: float = 1,
         sim_type: str = 'cos',
         shrink_thred: float = 0.0,
