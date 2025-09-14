@@ -474,8 +474,12 @@ def main(args):
         'PAE-ws-L6-d64-lr0.001', # 1.2 
         'MemAE-d64-lr0.005-t0.1',
         # 'PAE-ws-d64-lr0.001', # 1.2
-
+        'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # GOOD!!!!!!!!!!!!!!!!
+        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
+        
+        # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2',
+        # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Previous
 
         # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
@@ -525,10 +529,10 @@ def main(args):
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
 
         # 'MemPAE-ws-pos-large_mem-L4-d64-lr0.001-t0.1',
+        'PAE-ws-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
 
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        'PAE-ws-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
@@ -565,7 +569,6 @@ def main(args):
             '26_optdigits',
             '23_mammography', # 11k
             '32_shuttle', # 49k
-
             '18_ionosphere', # 0.3k   
             '38_thyroid', # 3k
         
@@ -606,9 +609,10 @@ def main(args):
         #     # 'dependency_anomalies_/',
         #     # f'{args.synthetic_type}_anomalies_',
         # ]
-        # anomaly_type = 'local_anomalies_'
-        anomaly_type = 'dependency_anomalies_'
-
+        anomaly_type_list = [
+            'local_anomalies_',
+            'dependency_anomalies_',
+        ]
         irrelevant_features_list = [
             '',  
             # 'irrelevant_features_0.1_',
@@ -617,50 +621,18 @@ def main(args):
         ]
 
         suffix = '_42'
-        synthetic_data = []
 
-        for dataname in dataname_list:
-            for feature in irrelevant_features_list:
-                file_name = f"{anomaly_type}{feature}{dataname}{suffix}"
-                synthetic_data.append(file_name)
-        # synthetic_data = [
-        #     'shuttle',
-        #     # '32_shuttle_irrelevant_features_0.1_42',
-        #     # '32_shuttle_irrelevant_features_0.3_42',
-        #     '32_shuttle_irrelevant_features_0.5_42',
-
-        #     'breastw',
-        #     # '4_breastw_irrelevant_features_0.1_42',
-        #     # '4_breastw_irrelevant_features_0.3_42',
-        #     '4_breastw_irrelevant_features_0.5_42',
-
-        #     'cardio',
-        #     # '6_cardio_irrelevant_features_0.1_42',
-        #     # '6_cardio_irrelevant_features_0.3_42',
-        #     '6_cardio_irrelevant_features_0.5_42',
-
-        #     'wbc',
-        #     # '42_wbc_irrelevant_features_0.1_42',
-        #     # '42_wbc_irrelevant_features_0.3_42',
-        #     '42_wbc_irrelevant_features_0.5_42',
-
-        #     'wine',
-        #     # '45_wine_irrelevant_features_0.1_42',
-        #     # '45_wine_irrelevant_features_0.3_42',
-        #     '45_wine_irrelevant_features_0.5_42',
-
-        # ]
-
-        for base in keys:
-            df_render = render(pivots, synthetic_data, models, my_models, base,
-                add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
-                use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
-            # df_render['loc_diff_st'] = df_render['loc_st'] - df_render['loc_if_0.5_st'] 
-            # df_render['dep_diff_st'] = df_render['dep_st'] - df_render['dep_if_0.5_st']
-            # df_render['dep_diff_pm'] = df_render['dep_pm'] - df_render['dep_if_0.5_pm'] 
-            # df_render['loc_diff_pm'] = df_render['loc_pm'] - df_render['loc_if_0.5_pm'] 
-
-            # print(df_render)
+        for anomaly_type in anomaly_type_list:
+            synthetic_data = []
+            for dataname in dataname_list:
+                for feature in irrelevant_features_list:
+                    file_name = f"{anomaly_type}{feature}{dataname}{suffix}"
+                    synthetic_data.append(file_name)
+      
+            for base in keys:
+                df_render = render(pivots, synthetic_data, models, my_models, base,
+                    add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
+                    use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
