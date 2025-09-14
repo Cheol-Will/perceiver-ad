@@ -6,7 +6,7 @@ depth=5
 hidden_dim=64
 learning_rate=0.001
 entropy_loss_weight=0.001
-temperature=0.01
+temperature=0.1
 model_type="MemPAE"
 
 for data in "${data_list[@]}"; do
