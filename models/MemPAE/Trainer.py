@@ -22,7 +22,7 @@ class Trainer(object):
                 model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['num_features']))) 
         if model_config['num_memories'] is None:
             num_train = self.get_num_train()
-            if train_config['not_use_power_of_two']:
+            if train_config['num_memories_not_use_power_of_two']:
                 model_config['num_memories'] = int(math.sqrt(num_train))
             else:
                 model_config['num_memories'] = nearest_power_of_two(int(math.sqrt(num_train)))

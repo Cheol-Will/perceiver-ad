@@ -136,6 +136,7 @@ def replace_transformer_config(args, model_config):
             model_config['entropy_loss_weight'] = args.entropy_loss_weight # defualt None
             model_config['use_entropy_loss_as_score'] = args.use_entropy_loss_as_score # default False
             model_config['top_k'] = args.top_k # None
+            model_config['num_memories_not_use_power_of_two'] = args.num_memories_not_use_power_of_two # defualt None
 
         if args.model_type in ['PVAE', 'PVQVAE']:
             model_config['beta'] = args.beta if args.beta is not None else model_config['beta'] 
