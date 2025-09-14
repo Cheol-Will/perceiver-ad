@@ -2,11 +2,11 @@
 set -euo pipefail
 
 data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography "satimage-2" nslkdd fraud  shuttle census) # from MCM
-depth=4
+depth=5
 hidden_dim=64
 learning_rate=0.001
-entropy_loss_weight=0.005
-temperature=0.1
+entropy_loss_weight=0.001
+temperature=0.05
 model_type="MemPAE"
 
 for data in "${data_list[@]}"; do
