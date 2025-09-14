@@ -432,11 +432,11 @@ def main(args):
         'optdigits', 'pendigits', 'satellite', 
         'campaign', 
         'mammography', 
-        'satimage-2', # middle
-        'nslkdd', # large 
-        'fraud', # large
-        'shuttle', # large
-        'census', # large
+        # 'satimage-2', # middle
+        # 'nslkdd', # large 
+        # 'fraud', # large
+        # 'shuttle', # large
+        # 'census', # large
     ]
     data.sort()
 
@@ -469,13 +469,22 @@ def main(args):
         # 'MemAE-d256-lr0.01-t0.1', # 0.6893    5.1875 (KNN: 4.0000)
         # 'MemAE-l2-d128-lr0.005', # 0.6744    4.8750 (KNN: 4.1250)
 
-        'PAE-L4-d64-lr0.001', # 
-        # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        # 'PAE-L4-d64-lr0.001', # 1.2
+        # 'PAE-L6-d64-lr0.001', # Need to check
+        'PAE-ws-L6-d64-lr0.001', # 1.2 
+        'MemAE-d64-lr0.005-t0.1',
+        # 'PAE-ws-d64-lr0.001', # 1.2
+
+        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # 0.9
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 1.1
+        # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # 0.1
+
         # 'MemPAE-d64-lr0.001-t0.1',
         # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # ok
+        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # 1.0
+
+        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
 
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # ok
@@ -490,8 +499,6 @@ def main(args):
         # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # to prove weight sharing
         # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # ent score
 
-
-        # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # ok
         # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # ok
         # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # auc good
         
