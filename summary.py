@@ -432,11 +432,11 @@ def main(args):
         'optdigits', 'pendigits', 'satellite', 
         'campaign', 
         'mammography', 
-        # 'satimage-2', # middle
-        # 'nslkdd', # large 
-        # 'fraud', # large
-        # 'shuttle', # large
-        # 'census', # large
+        'satimage-2', # middle
+        'nslkdd', # large 
+        'fraud', # large
+        'shuttle', # large
+        'census', # large
     ]
     data.sort()
 
