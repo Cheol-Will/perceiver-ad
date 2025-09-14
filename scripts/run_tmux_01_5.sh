@@ -4,16 +4,26 @@ set -euo pipefail
 #!/bin/bash
 data_list=(
     ##################################
-    local_anomalies_18_Ionosphere_42
-    local_anomalies_38_thyroid_42
-    local_anomalies_32_shuttle_42
-    local_anomalies_26_optdigits_42
-    local_anomalies_23_mammography_42
+    global_anomalies_18_Ionosphere_42
+    global_anomalies_38_thyroid_42
+    global_anomalies_32_shuttle_42
+    global_anomalies_26_optdigits_42
+    global_anomalies_23_mammography_42
+    cluster_anomalies_18_Ionosphere_42
+    cluster_anomalies_38_thyroid_42
+    cluster_anomalies_32_shuttle_42
+    cluster_anomalies_26_optdigits_42
+    cluster_anomalies_23_mammography_42
     dependency_anomalies_18_Ionosphere_42
     dependency_anomalies_38_thyroid_42
     dependency_anomalies_32_shuttle_42
     dependency_anomalies_26_optdigits_42
     dependency_anomalies_23_mammography_42
+    local_anomalies_18_Ionosphere_42
+    local_anomalies_38_thyroid_42
+    local_anomalies_32_shuttle_42
+    local_anomalies_26_optdigits_42
+    local_anomalies_23_mammography_42
     ##################################
 )
 
