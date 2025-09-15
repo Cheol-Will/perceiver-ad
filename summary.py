@@ -442,72 +442,32 @@ def main(args):
 
     my_models = [
         ##################################################################################
-        # 'PAE-np-L4-d64-lr0.001',
-        # 'PAE-ws-np-L4-d64-lr0.001',
-        # 'PAE-ws-pos_query+token-np-L4-d64-lr0.001',
+        # 'PAE-ws-L6-d64-lr0.001', #  Final architecture for PAE [temp]
+        # 'PAE-L6-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-ws-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-L4-d64-lr0.001', # Final architecture for PAE
+        
+        # 'MemPAE-ws-pos_query-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
+        # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
+        # 'MemPAE-pos_query-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
 
-        # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
-
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
-
-        # 'MemPAE-ws-np-use_ent_score-ent0.001-L6-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-np-use_ent_score-ent0.0001-L5-d64-lr0.001-t0.1',
-
-
+        # MemPAE with small memory Ablation
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
+        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
+        # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
 
         ##################################################################################        
-
-        # 'MemAE-d64-lr0.05', # 0.6834    4.8750 (KNN: 4.1875)
-        # 'PDRL-ws-pos_query+token-d64-lr0.001',
-
-
-        # 'Perceiver-d16-dcol0.5',
-        # 'RIN-d16-dcol0.1',
-
-        # 'MemAE-d256-lr0.001', # 0.6751
-        # 'MemAE-d256-lr0.01-t0.1', # 0.6893    5.1875 (KNN: 4.0000)
-        # 'MemAE-l2-d128-lr0.005', # 0.6744    4.8750 (KNN: 4.1250)
-
-        'PAE-ws-L6-d64-lr0.001', # 1.2 
-        'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # GOOD!!!!!!!!!!!!!!!!
-
-        # 'PAE-L4-d64-lr0.001', # 1.2
-        # 'PAE-L6-d64-lr0.001', # Need to check 
-        # 'MemAE-d64-lr0.005-t0.1',
-        # 'PAE-ws-d64-lr0.001', # 1.2
-        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2', # BAD
-        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
-        
-        # 'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2',
-        # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Previous
-
-        # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
-
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 1.1
-        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # bad
-        # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # 0.1
-
-        # 'MemPAE-d64-lr0.001-t0.1',
-        # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # Final architecture for MemPAE
+        # 'MemPAE-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # need to check
         # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', # 1.0
-
-
+        # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # ok
+        # 'MemPAE-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # 0.1
+        ##################################################################################        
 
-        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001',
-        # 'MemPAE-use_ent_score-ent0.001-L5-d64-lr0.001-t0.1', 
-
-        # 'MemPAE-ws-d64-lr0.001', # can prove query = pos_encoding  
-        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1', # can prove weight sharing
-       
-        # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1', # basic form
-        # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # to prove weight sharing
-        # 'MemPAE-ws-pos_query+token-large_mem-use_ent_score-ent0.001-L4-d64-lr0.001-t0.1', # ent score
     ]
 
     results = collect_results()
@@ -530,14 +490,18 @@ def main(args):
 
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
 
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+
         # 'MemPAE-ws-pos-large_mem-L4-d64-lr0.001-t0.1',
-        'PAE-ws-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
+        # 'PAE-ws-L4-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        # 'PAE-ws-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        # 'PAE-L4-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        # 'PAE-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
+        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
 
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-pos_query-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.05',
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
