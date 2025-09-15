@@ -442,21 +442,19 @@ def main(args):
 
     my_models = [
         ##################################################################################
-        # 'PAE-ws-L6-d64-lr0.001', #  Final architecture for PAE [temp]
-        # 'PAE-L6-d64-lr0.001', # Final architecture for PAE
-        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
-        # 'PAE-ws-d64-lr0.001', # Final architecture for PAE
-        # 'PAE-L4-d64-lr0.001', # Final architecture for PAE
-        
-        # 'MemPAE-ws-pos_query-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-pos_query-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-
+        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        'PAE-ws-d64-lr0.001', # Final architecture for PAE
+        'PAE-L4-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        ##################################################################################
         # MemPAE with small memory Ablation
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
         'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
-        # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
+        'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
+        'MemPAE-d64-lr0.001-t0.1', # tmux 1
+
+        # 'MemPAE-ws-pos_query-d64-lr0.001', # without toekn bad no temperature.
+
 
         ##################################################################################        
         # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # Final architecture for MemPAE
