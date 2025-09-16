@@ -332,7 +332,7 @@ class MemPAE(nn.Module):
         entropy_loss_weight: float = None,
         use_entropy_loss_as_score: bool = False,
         top_k: int = None,
-        is_attn_memory_sharing: bool = False,
+        is_recurrent: bool = False,
     ):
         super(MemPAE, self).__init__()
         assert num_latents is not None
@@ -386,6 +386,7 @@ class MemPAE(nn.Module):
         self.use_latent_loss_as_score = use_latent_loss_as_score
         self.entropy_loss_weight = entropy_loss_weight
         self.use_entropy_loss_as_score = use_entropy_loss_as_score
+        self.is_recurrent = is_recurrent
         
         self.reset_parameters()
 
@@ -420,13 +421,18 @@ class MemPAE(nn.Module):
             for _ in range(self.depth):
                 latents, attn_weight_self = self.block(latents, return_weight=True)
                 attn_weight_self_list.append(attn_weight_self)
+                if self.is_recurrent:
+                    latents, _ = self.memory(latents)
         else:
             for block in self.block:
                 latents ,attn_weight_self = block(latents, return_weight=True)
                 attn_weight_self_list.append(attn_weight_self)
 
-        # memory addressing
-        latents_hat, memory_weight = self.memory(latents) # (B, N, D), (B, N, M) 
+        if self.is_recurrent:
+            latents_hat = latents # addressing is already performed
+        else:    
+            # memory addressing
+            latents_hat, memory_weight = self.memory(latents) # (B, N, D), (B, N, M) 
 
         # decoder
         if self.use_pos_enc_as_query:

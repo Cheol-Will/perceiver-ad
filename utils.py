@@ -137,6 +137,7 @@ def replace_transformer_config(args, model_config):
             model_config['latent_loss_weight'] = args.latent_loss_weight # defualt None
             model_config['entropy_loss_weight'] = args.entropy_loss_weight # defualt None
             model_config['use_entropy_loss_as_score'] = args.use_entropy_loss_as_score # default False
+            model_config['is_recurrent'] = args.is_recurrent # default False
             model_config['top_k'] = args.top_k # None
 
         if args.model_type in ['PVAE', 'PVQVAE']:
