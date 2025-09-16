@@ -61,6 +61,8 @@ class Analyzer(Trainer):
         reg_abs_values = df['reg_abs'].values.reshape(1, -1)  
         cos_sim = cosine_similarity(reg_abs_values, df.T)  
         df.loc['cosine_similarity', :] = cos_sim.flatten() 
+        df = df.round(4)
+
         base_path = self.train_config['base_path']
         path = os.path.join(base_path, 'attn_regression_comparison.csv')
         df.to_csv(path, index=True)
