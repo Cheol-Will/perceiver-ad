@@ -405,7 +405,7 @@ def render(
 
     print(base)
     print(df_render)
-    # print(df_render.T)
+    print(df_render.T)
     print()
 
     return df_render
@@ -443,15 +443,15 @@ def main(args):
     my_models = [
         ##################################################################################
         'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
-        'PAE-ws-d64-lr0.001', # Final architecture for PAE
-        'PAE-L4-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-ws-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-L4-d64-lr0.001', # Final architecture for PAE
         # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
         ##################################################################################
         # MemPAE with small memory Ablation
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
-        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
-        'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
-        'MemPAE-d64-lr0.001-t0.1', # tmux 1
+        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
+        # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
 
         # 'MemPAE-ws-pos_query-d64-lr0.001', # without toekn bad no temperature.
 
@@ -474,7 +474,7 @@ def main(args):
 
     for base in keys:
         render(pivots, data, models, my_models, base, 
-               add_avg_rank=True, use_rank=False, use_std=False, 
+               add_avg_rank=True, use_rank=False, use_std=True, 
                use_baseline_pr=True, is_temp_tune=False, is_sort=False)
 
     models = [

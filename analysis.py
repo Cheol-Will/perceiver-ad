@@ -46,7 +46,11 @@ def train_test(model_config, train_config, analysis_config, run):
         trainer.plot_anomaly_histograms(remove_outliers=True)
     if analysis_config['plot_memory_weight']:
         trainer.plot_memory_weight()
-        
+    if analysis_config['compare_regresssion_with_attn']:
+        trainer.compare_regresssion_with_attn()
+    
+
+
     return results_dict
 
 
@@ -71,6 +75,7 @@ def main(args):
     analysis_config['plot_recon'] = args.plot_recon
     analysis_config['plot_histogram'] = args.plot_histogram
     analysis_config['plot_memory_weight'] = args.plot_memory_weight
+    analysis_config['compare_regresssion_with_attn'] = args.compare_regresssion_with_attn
     
     start = time.time()    
     all_results = []
@@ -134,13 +139,17 @@ if __name__ == "__main__":
     parser.add_argument('--entropy_loss_weight', type=float, default=None)
     parser.add_argument('--use_entropy_loss_as_score', action='store_true')    
     parser.add_argument('--use_mask_token', action='store_true')    
+    parser.add_argument('--not_use_power_of_two', action='store_true')    
+    parser.add_argument('--num_memories_not_use_power_of_two', action='store_true')    
+    parser.add_argument('--num_memories_twice', action='store_true')    
+    parser.add_argument('--top_k', type=int, default=None)    
 
     # Analysis arguments
     parser.add_argument('--plot_attn', action='store_true')
     parser.add_argument('--plot_recon', action='store_true')
     parser.add_argument('--plot_histogram', action='store_true')
     parser.add_argument('--plot_memory_weight', action='store_true')
-
+    parser.add_argument('--compare_regresssion_with_attn', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:

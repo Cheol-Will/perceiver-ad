@@ -380,7 +380,7 @@ class MemPAE(nn.Module):
     def forward(
         self, 
         x, 
-        return_weight: bool = False, 
+        return_attn_weight: bool = False, 
         return_pred: bool = False, 
         return_memory_weight: bool = False,
         return_latents: bool = False,
@@ -394,15 +394,18 @@ class MemPAE(nn.Module):
 
         # encoder 
         latents_query = self.latents_query.expand(batch_size, -1, -1) # (B, N, D)
-        latents = self.encoder(latents_query, feature_embedding, feature_embedding) 
+        latents, attn_weight_enc = self.encoder(latents_query, feature_embedding, feature_embedding, return_weight=True) 
 
         # self attention
+        attn_weight_self_list = []
         if self.is_weight_sharing:
             for _ in range(self.depth):
-                latents = self.block(latents)
+                latents, attn_weight_self = self.block(latents, return_weight=True)
+                attn_weight_self_list.append(attn_weight_self)
         else:
             for block in self.block:
-                latents = block(latents)
+                latents ,attn_weight_self = block(latents, return_weight=True)
+                attn_weight_self_list.append(attn_weight_self)
 
         # memory addressing
         latents_hat, memory_weight = self.memory(latents) # (B, N, D), (B, N, M) 
@@ -417,7 +420,7 @@ class MemPAE(nn.Module):
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
 
-        output = self.decoder(decoder_query, latents_hat, latents_hat)
+        output, attn_weight_dec = self.decoder(decoder_query, latents_hat, latents_hat, return_weight=True)
         x_hat = self.proj(output)
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
 
@@ -444,6 +447,10 @@ class MemPAE(nn.Module):
         # for analysis
         if return_latents:
             return loss, latents, latents_hat
+
+        if return_attn_weight:
+            return loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec
+
 
         if return_pred:
             if return_memory_weight:

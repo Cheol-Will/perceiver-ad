@@ -3,12 +3,11 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-from DataSet.DataLoader import get_dataloader
-from models.MemPAE.Model import MemPAE
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics.pairwise import cosine_similarity
 from models.MemPAE.Trainer import Trainer
-from utils import aucPerformance, F1Performance
-import math
 
 class Analyzer(Trainer):
     def __init__(self, model_config: dict, train_config: dict, analysis_config: dict):
@@ -21,6 +20,99 @@ class Analyzer(Trainer):
         self.train_config = train_config
         self.analysis_config = analysis_config
     
+    @torch.no_grad()
+    def compare_regresssion_with_attn(
+        self,
+    ):
+
+        attn_feature_feature = self.get_attn_weights() # (H, F, F)
+        attn_label_feature = attn_feature_feature[:, -1, :-1].cpu().numpy() # last feature contains label in supervised setting.
+        print(attn_label_feature.shape)
+        # perform linear regression on X[:, :-1] and X[:, -1] and get weights.
+        X_all, y_all = [], []
+        for X, y in self.train_loader:
+            X_all.append(X[:, :-1])
+            y_all.append(X[:, -1]) # last feature contains label in supervised setting.
+        X_all = torch.cat(X_all, dim=0).cpu().numpy()
+        y_all = torch.cat(y_all, dim=0).cpu().numpy()
+        reg = LinearRegression().fit(X_all, y_all)
+        coef = reg.coef_
+        head_columns = [f'head{i+1}' for i in range(attn_label_feature.shape[0])]
+        columns = ['reg'] + head_columns
+    
+        # Stack regression coefficients and average attention for all heads
+        print(coef.shape)
+        print(attn_label_feature.shape)
+        data = np.vstack([coef, attn_label_feature])
+
+        # Create the DataFrame (F, H+1)
+        df = pd.DataFrame(data.T, columns=columns)
+        df['reg_abs'] = df['reg'].abs()
+        df['reg_abs'] = df['reg_abs'] / df['reg_abs'].sum()
+        df['head_sum'] = df[head_columns].sum(axis=1)
+        num_features = df.shape[0]
+        df.index = [f'feature_{i}' for i in range(num_features)]
+
+        # sort for convenience
+        cols_order = ['reg', 'reg_abs'] + head_columns + ['head_sum']
+        df = df[cols_order]
+
+        # put cosine similaity for each column with Reg_abs
+        reg_abs_values = df['reg_abs'].values.reshape(1, -1)  
+        cos_sim = cosine_similarity(reg_abs_values, df.T)  
+        df.loc['cosine_similarity', :] = cos_sim.flatten() 
+        base_path = self.train_config['base_path']
+        path = os.path.join(base_path, 'attn_regression_comparison.csv')
+        df.to_csv(path, index=True)
+        
+        print('attn_regression_comparison\n', df)
+        return        
+
+
+    @torch.no_grad()
+    def get_attn_weights(
+        self,
+    ):  
+        '''
+        Get feature-feature attention weights.
+        W_enc, W_self_1, ..., W_self_L, W_dec
+        W_enc: (B, H, N, F)
+        W_self_i: (B, H, N, N)
+        W_dec: (B, H, F, N)
+
+        return: (H, F, F)
+        '''
+        running_attn_feature_feature = None
+        total_samples = 0
+
+        for (X, y) in self.train_loader:
+            X_input = X.to(self.device)
+
+            loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
+                self.model(X_input, return_attn_weight=True)
+
+            W_self_total = attn_weight_self_list[0]
+            for W in attn_weight_self_list[1:]:
+                W_self_total = torch.einsum("bhij,bhjk->bhik", W, W_self_total)
+
+            attn_feature_feature = torch.einsum("bhfn,bhnn->bhfn",
+                                    attn_weight_dec, W_self_total)
+            attn_feature_feature = torch.einsum("bhfn,bhnk->bhfk",
+                                    attn_feature_feature, attn_weight_enc)
+            # (3) head average + batch sum
+            batch_size = attn_feature_feature.shape[0]
+
+            if running_attn_feature_feature is None:
+                running_attn_feature_feature = attn_feature_feature.sum(dim=0)  # (H, F, F)
+            else:
+                running_attn_feature_feature += attn_feature_feature.sum(dim=0)
+
+            total_samples += batch_size
+
+        running_attn_feature_feature = running_attn_feature_feature / total_samples
+        return running_attn_feature_feature  # (H, F, F)
+
+
     @torch.no_grad()
     def plot_latent_diff(
         self,
