@@ -1,11 +1,11 @@
 #!/bin/bash
 
-data_list=(house)
+data_list=(wine_quality california house)
 # data_list=(california)
 # data_list=(wine_quality)
 model_type='MemPAE'
 hidden_dim=64
-num_heads=2
+num_heads=4
 learning_rate=0.001
 temperature=0.1
 for data in "${data_list[@]}"; do

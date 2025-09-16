@@ -405,7 +405,7 @@ def render(
 
     print(base)
     print(df_render)
-    print(df_render.T)
+    # print(df_render.T)
     print()
 
     return df_render
@@ -475,7 +475,7 @@ def main(args):
     for base in keys:
         render(pivots, data, models, my_models, base, 
                add_avg_rank=True, use_rank=False, use_std=True, 
-               use_baseline_pr=True, is_temp_tune=False, is_sort=False)
+               use_baseline_pr=True, is_temp_tune=False, is_sort=True, is_plot=True)
 
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
@@ -499,7 +499,7 @@ def main(args):
 
         # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
         # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        'MemPAE-ws-pos_query-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
         # 'MemPAE-ws-pos_query-d64-lr0.001-t0.05',
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
@@ -509,6 +509,13 @@ def main(args):
         
     ]
 
+    dataname_list = [
+        '26_optdigits',
+        '23_mammography', # 11k
+        '32_shuttle', # 49k
+        '18_ionosphere', # 0.3k   
+        '38_thyroid', # 3k
+    ]
 
     # todo: make name shorter.
     if args.synthetic:
@@ -530,11 +537,11 @@ def main(args):
 
         # success case: cardio, sat (maybe)
         dataname_list = [
-            # '26_optdigits',
-            # '23_mammography', # 11k
-            # '32_shuttle', # 49k
+            '26_optdigits',
+            '23_mammography', # 11k
+            '32_shuttle', # 49k
             '18_ionosphere', # 0.3k   
-            # '38_thyroid', # 3k
+            '38_thyroid', # 3k
         
 
             # only care about dependency anomaly
@@ -600,10 +607,34 @@ def main(args):
                 df_render = render(pivots, synthetic_data, models, my_models, base,
                     add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
                     use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
+    if args.contamination:
+        models=[ 
+            'MCM', 'DRL', 'Disent',
+        ]
+        contamination_ratio = [
+            'contamination_0.01_',
+            'contamination_0.03_',
+            'contamination_0.05_',
+        ]
+        suffix = '_42'
+        for dataname in dataname_list:
+            synthetic_data = []
+            for contamination in contamination_ratio:
+                file_name = f"{contamination}{dataname}{suffix}"
+                synthetic_data.append(file_name)
+      
+            for base in keys:
+                df_render = render(pivots, synthetic_data, models, my_models, base,
+                    add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
+                    use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=contamination)
+
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--synthetic', action='store_true')
+    parser.add_argument('--contamination', action='store_true')
     parser.add_argument('--synthetic_type', type=str, default='dependency')
     args = parser.parse_args()
     main(args)
