@@ -463,6 +463,10 @@ def main(args):
         'MemPAE-ws-cross_attn-pos_query+token-use_ent_score-ent0.01-d64-lr0.001',
         'MemPAE-ws-cross_attn-pos_query+token-use_ent_score-ent0.001-d64-lr0.001',
         'MemPAE-ws-cross_attn-pos_query+token-d64-lr0.001',
+        'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001',
+        'MemPAE-ws-cross_attn-rin-pos_query+token-d32-lr0.001',
+        'MemPAE-ws-cross_attn-rin-pos_query+token-d32-lr0.005',
+        'MemPAE-ws-cross_attn-rin-pos_query+token-d64-lr0.005',
 
         # 'MemPAE-ws-pos_query-d64-lr0.001', # without toekn bad no temperature.
 
