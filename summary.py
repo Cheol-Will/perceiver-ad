@@ -399,6 +399,10 @@ def render(
     df_render.index = [c.replace("pos_query+token", "pos") if "pos_query+token" in c else c
                         for c in df_render.index]
 
+                        
+    df_render.index = [c.replace("MemPAE-ws-cross_attn", "MPCA") if "MemPAE-ws-cross_attn" in c else c
+                        for c in df_render.index]
+
     os.makedirs('metrics', exist_ok=True)
     if is_synthetic:
         file_name = f'{base}_{synthetic_type}'
@@ -459,14 +463,14 @@ def main(args):
 
 
         'MemPAE-ws-cross_attn-rin-pos_query+token-d64-lr0.001',
-        'MemPAE-ws-rin-pos_query+token-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-rin-pos_query+token-d64-lr0.001-t0.1',
         'MemPAE-ws-cross_attn-pos_query+token-use_ent_score-ent0.01-d64-lr0.001',
         'MemPAE-ws-cross_attn-pos_query+token-use_ent_score-ent0.001-d64-lr0.001',
         'MemPAE-ws-cross_attn-pos_query+token-d64-lr0.001',
         'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001',
         'MemPAE-ws-cross_attn-rin-pos_query+token-d32-lr0.001',
-        'MemPAE-ws-cross_attn-rin-pos_query+token-d32-lr0.005',
-        'MemPAE-ws-cross_attn-rin-pos_query+token-d64-lr0.005',
+        # 'MemPAE-ws-cross_attn-rin-pos_query+token-d32-lr0.005',
+        # 'MemPAE-ws-cross_attn-rin-pos_query+token-d64-lr0.005',
         'MemPAE-ws-cross_attn-rin-pos_query+token-L6-d32-lr0.001',
         'MemPAE-ws-cross_attn-rin-pos_query+token-L6-d64-lr0.001',
 
