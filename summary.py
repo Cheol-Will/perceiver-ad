@@ -457,6 +457,13 @@ def main(args):
         'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
         'MemPAE-d64-lr0.001-t0.1', # tmux 1
 
+
+        'MemPAE-ws-cross_attn-rin-pos_query+token-d64-lr0.001',
+        'MemPAE-ws-rin-pos_query+token-d64-lr0.001-t0.1',
+        'MemPAE-ws-cross_attn-pos_query+token-use_ent_score-ent0.01-d64-lr0.001',
+        'MemPAE-ws-cross_attn-pos_query+token-use_ent_score-ent0.001-d64-lr0.001',
+        'MemPAE-ws-cross_attn-pos_query+token-d64-lr0.001',
+
         # 'MemPAE-ws-pos_query-d64-lr0.001', # without toekn bad no temperature.
 
 
@@ -479,7 +486,7 @@ def main(args):
     for base in keys:
         render(pivots, data, models, my_models, base, 
                add_avg_rank=True, use_rank=False, use_std=False, 
-               use_baseline_pr=True, is_temp_tune=False, is_sort=True, is_plot=True)
+               use_baseline_pr=True, is_temp_tune=False, is_sort=False, is_plot=True)
 
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
