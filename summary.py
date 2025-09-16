@@ -400,8 +400,12 @@ def render(
                         for c in df_render.index]
 
     os.makedirs('metrics', exist_ok=True)
-    df_render.to_csv(f'metrics/{base}.csv')
-    df_render.T.to_csv(f'metrics/{base}_T.csv')
+    if is_synthetic:
+        file_name = f'{base}_{synthetic_type}'
+    else:
+        file_name = base
+    df_render.to_csv(f'metrics/{file_name}.csv')
+    df_render.T.to_csv(f'metrics/{file_name}_T.csv')
 
     print(base)
     print(df_render)
@@ -583,9 +587,6 @@ def main(args):
         anomaly_type_list = [
             'local_anomalies_',
             'dependency_anomalies_',
-            'contamination_0.01_',
-            'contamination_0.03_',
-            'contamination_0.05_',
         ]
         irrelevant_features_list = [
             '',  
