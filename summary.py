@@ -453,9 +453,9 @@ def main(args):
         ##################################################################################
         # MemPAE with small memory Ablation
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
-        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
-        # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
+        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
+        'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
+        'MemPAE-d64-lr0.001-t0.1', # tmux 1
 
         # 'MemPAE-ws-pos_query-d64-lr0.001', # without toekn bad no temperature.
 
@@ -478,7 +478,7 @@ def main(args):
 
     for base in keys:
         render(pivots, data, models, my_models, base, 
-               add_avg_rank=True, use_rank=False, use_std=True, 
+               add_avg_rank=True, use_rank=False, use_std=False, 
                use_baseline_pr=True, is_temp_tune=False, is_sort=True, is_plot=True)
 
     models = [
@@ -606,7 +606,7 @@ def main(args):
       
             for base in keys:
                 df_render = render(pivots, synthetic_data, models, my_models, base,
-                    add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
+                    add_avg_rank=True, use_rank=False, use_std=False, use_baseline_pr=False, 
                     use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
     if args.contamination:
         models=[ 

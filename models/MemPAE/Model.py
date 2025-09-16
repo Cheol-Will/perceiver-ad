@@ -16,12 +16,19 @@ class EntropyLoss(nn.Module):
         self.eps = eps
 
     def forward(self, x):
-        # x: (B, N, M)
-        b = x * torch.log(x + self.eps)
-        b = -1.0 * b.sum(dim=-1) # (B, N)
-        b = b.mean(dim=-1) # (B, )
-        return b
-
+        if x.dim() == 3:
+            # x: (B, N, M)
+            b = x * torch.log(x + self.eps)
+            b = -1.0 * b.sum(dim=-1) # (B, N)
+            b = b.mean(dim=-1) # (B, )
+            return b
+        elif x.dim() == 4:
+            # x: (B, H, N, M)
+            b = x * torch.log(x + self.eps)
+            b = -1.0 * b.sum(dim=-1) # (B, H, N)
+            b = b.mean(dim=-1).mean(dim=-1) # (B, )
+            return b
+        
 class MemoryUnit(nn.Module):
     def __init__(
         self,
@@ -31,9 +38,12 @@ class MemoryUnit(nn.Module):
         temperature: float = 1.0,
         shrink_thres: float = 0,
         top_k: int = None,
+        num_heads: int = None,
     ):
         super().__init__()
-        assert sim_type.lower() in ['cos', 'l2', 'attn']
+        assert sim_type.lower() in ['cos', 'l2', 'attn', 'cross_attn']
+        if sim_type.lower() == 'attn':
+            assert num_heads is not None
         print(f"Init MemoryUnit of shape {num_memories, hidden_dim} \
               with simtype={sim_type} and t={temperature} thres={shrink_thres}")
         print(f"top_k={top_k}")
@@ -45,10 +55,11 @@ class MemoryUnit(nn.Module):
         self.sim_type = sim_type.lower()
         self.top_k = top_k
 
-        if self.sim_type == 'attn':
+        if self.sim_type == 'cross_attn':
+            self.cross_attn = MultiHeadAttention(dim=hidden_dim, num_heads=num_heads)
+        elif self.sim_type == 'attn':
             self.q_norm = nn.LayerNorm(hidden_dim)
             self.k_norm = nn.LayerNorm(hidden_dim)
-
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -68,14 +79,20 @@ class MemoryUnit(nn.Module):
             dist_sq = dist_sq.clamp_min(0.) # to avoid sqrt of negative value 
             logits = -dist_sq                                    
 
-        elif self.sim_type == 'attn':
+        elif self.sim_type == 'attn':            
             q = self.q_norm(x) 
             k = self.k_norm(self.memories)
             q = q * self.scale
             logits = q @ k.t()
 
+        elif self.sim_type == 'cross_attn':
+            batch_size = x.shape[0]
+            memories = self.memories.unsqueeze(0).expand(batch_size, -1, -1) # (B, M, D)
+            read, weight = self.cross_attn(x, memories, memories, return_weight=True)
+            return read, weight
+        
         else:
-            raise ValueError(f"sim_type must be 'cos' or 'l2', got {self.sim_type}")
+            raise ValueError(f"Unknown sim_type is given: {self.sim_type}")
 
         if self.top_k is not None:
             top_k_logits, top_k_indices = torch.topk(logits, self.top_k, dim=-1)
@@ -315,6 +332,7 @@ class MemPAE(nn.Module):
         entropy_loss_weight: float = None,
         use_entropy_loss_as_score: bool = False,
         top_k: int = None,
+        is_attn_memory_sharing: bool = False,
     ):
         super(MemPAE, self).__init__()
         assert num_latents is not None
@@ -330,7 +348,7 @@ class MemPAE(nn.Module):
         print(f"latent_loss_weight={latent_loss_weight} and entropy_loss_weight={entropy_loss_weight}")
 
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim) # only numerical inputs
-        self.memory = MemoryUnit(num_memories, hidden_dim, sim_type, temperature, shrink_thred, top_k)
+        self.memory = MemoryUnit(num_memories, hidden_dim, sim_type, temperature, shrink_thred, top_k, num_heads)
         
         if is_weight_sharing:
             self.block = SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
