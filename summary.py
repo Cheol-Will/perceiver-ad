@@ -438,13 +438,13 @@ def main(args):
         'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
         'ionosphere', 'pima', 'wbc', 'wine', 'thyroid',
         'optdigits', 'pendigits', 'satellite', 
-        'campaign', 
-        'mammography', 
-        'satimage-2', # middle
-        'nslkdd', # large 
-        'fraud', # large
-        'shuttle', # large
-        'census', # large
+        # 'campaign', 
+        # 'mammography', 
+        # 'satimage-2', # middle
+        # 'nslkdd', # large 
+        # 'fraud', # large
+        # 'shuttle', # large
+        # 'census', # large
     ]
     data.sort()
 
@@ -461,21 +461,11 @@ def main(args):
         'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
         'MemPAE-d64-lr0.001-t0.1', # tmux 1
 
+        ##################################################################################        
+        'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
+        'MemPAE-ws-cross_attn-rin-pos_query+token-L3-d64-lr0.001', # possible
 
-        'MemPAE-ws-cross_attn-rin-pos_query+token-d64-lr0.001',
-        # 'MemPAE-ws-rin-pos_query+token-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-cross_attn-pos_query+token-use_ent_score-ent0.01-d64-lr0.001',
-        'MemPAE-ws-cross_attn-pos_query+token-use_ent_score-ent0.001-d64-lr0.001',
-        'MemPAE-ws-cross_attn-pos_query+token-d64-lr0.001',
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001',
-        'MemPAE-ws-cross_attn-rin-pos_query+token-d32-lr0.001',
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-d32-lr0.005',
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-d64-lr0.005',
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-L6-d32-lr0.001',
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-L6-d64-lr0.001',
-
-        # 'MemPAE-ws-pos_query-d64-lr0.001', # without toekn bad no temperature.
-
+        'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', # possible
 
         ##################################################################################        
         # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # Final architecture for MemPAE
