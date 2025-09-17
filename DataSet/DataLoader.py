@@ -3,7 +3,8 @@ from DataSet.MyDataset import MyDataset, DisentDataset, load_and_preprocess
 
 def get_dataset(train_config: dict):
     dataset_name = train_config['dataset_name']
-    train_data, train_label, test_data, test_label = load_and_preprocess(train_config['data_dir'], dataset_name, train_config['preprocess'])
+    contamination_ratio = train_config['contamination_ratio'] if 'contamination_ratio' in train_config else None
+    train_data, train_label, test_data, test_label = load_and_preprocess(train_config['data_dir'], dataset_name, train_config['preprocess'], contamination_ratio)
     train_set = MyDataset(train_data, train_label)
     test_set = MyDataset(test_data, test_label)
 

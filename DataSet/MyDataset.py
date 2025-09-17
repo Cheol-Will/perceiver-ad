@@ -94,7 +94,7 @@ def load_dataset(data_dir, dataset_name):
     return inliers, outliers
 
 
-def split_and_preprocess(inliers, outliers, preprocess, ratio=1.0):
+def split_and_preprocess(inliers, outliers, preprocess, ratio=1.0, contamination_ratio=None):
     """
     Shuffle, split, and apply preprocessor. 
     """
@@ -108,6 +108,30 @@ def split_and_preprocess(inliers, outliers, preprocess, ratio=1.0):
     test_label = np.zeros(test_data.shape[0])
     test_label[-len(outliers):] = 1
 
+    if contamination_ratio is not None:
+        # extract test outlier and put it in train_data with label=0
+        # following contamination ratio.
+        num_inliers_train = len(train_data)
+        num_outliers_to_add = int(np.ceil(
+            (contamination_ratio * num_inliers_train) / (1 - contamination_ratio)
+        ))
+
+        if num_outliers_to_add > len(outliers):
+            raise ValueError("Not enough data for contamination.")
+
+        outliers_to_add = outliers[:num_outliers_to_add]
+        remaining_outliers = outliers[num_outliers_to_add:]
+
+        train_data = np.concatenate([train_data, outliers_to_add], axis=0)
+        train_label = np.zeros(len(train_data))
+
+        test_inliers = inliers[num_split:]
+        test_data = np.concatenate([test_inliers, remaining_outliers], axis=0)
+        
+        test_label = np.zeros(len(test_data))
+        if len(remaining_outliers) > 0:
+            test_label[-len(remaining_outliers):] = 1
+        print(f"Train data is contaminated with ratio={contamination_ratio}")
 
     # preprocessing
     if preprocess == 'standard':
@@ -123,8 +147,9 @@ def split_and_preprocess(inliers, outliers, preprocess, ratio=1.0):
 
     return train_data, train_label, test_data, test_label   
 
-def load_and_preprocess(data_dir, dataset_name, preprocess):
+def load_and_preprocess(data_dir, dataset_name, preprocess, contamination_ratio=None):
     inliers, outliers = load_dataset(data_dir, dataset_name)
-    train_data, train_label, test_data, test_label = split_and_preprocess(inliers, outliers, preprocess, ratio=1.0)
+    train_data, train_label, test_data, test_label = split_and_preprocess(
+        inliers, outliers, preprocess, ratio=1.0, contamination_ratio=contamination_ratio)
 
     return train_data, train_label, test_data, test_label
