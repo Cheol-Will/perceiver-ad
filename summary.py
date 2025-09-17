@@ -502,18 +502,32 @@ def main(args):
         'Disent',
     ]
     my_models = [
-        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
     ]
 
     dataname_list = [
-        '26_optdigits',
-        '23_mammography', # 11k
-        '32_shuttle', # 49k
-        '18_ionosphere', # 0.3k   
-        '38_thyroid', # 3k
+        '32_shuttle', # 49k: 9 numeric
+        '5_campaign', # 41k: 
+        '23_mammography', # 11k: 5 numeric and 1 binary
+        '30_satellite', # 6k: image
+        '31_satimage-2', # 5k: image
+        '26_optdigits', # 5k: image
+        '38_thyroid', # 3k: medical: 1 catgorical and 5 numeric
+        '7_cardiotocography',
+        '18_ionosphere', # 0.3k: frequency and purse data
+        '6_cardio', # 1.8k
+        '29_pima', # 0.7k
+        '4_breastw', # 0.6k
+     
+        # exclude too small dataset.
+        # '45_wine',
+        # '42_wbc',
+        # '14_glass',
+        # '13_fraud', 
+        # '9_census',
     ]
 
     # todo: make name shorter.
@@ -554,7 +568,9 @@ def main(args):
         ]
 
         suffix = '_42'
-
+        keys = [
+            'ratio_1.0_AUCPR',
+        ]
         for anomaly_type in anomaly_type_list:
             synthetic_data = []
             for dataname in dataname_list:
@@ -576,9 +592,10 @@ def main(args):
             'cardio', 
             'cardiotocography',
             'pima', 
-            'wbc', 
-            'wine', 
-            'campaign', 
+
+            # 'wbc', 
+            # 'wine', 
+            # 'campaign', 
             # "satimage-2",
         ]
         contamination_ratio = [

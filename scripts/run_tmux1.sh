@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 model_list=(KNN MCM DRL Disent) 
-data_list=(cardio cardiotocography pima wbc wine campaign) # from MCM
+data_list=(arrhythmia breastw glass cardio cardiotocography pima wbc wine campaign) # from MCM
 depth=4
 hidden_dim=64
 learning_rate=0.001
