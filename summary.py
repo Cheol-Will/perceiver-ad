@@ -459,9 +459,9 @@ def main(args):
         ##################################################################################
         # MemPAE with small memory Ablation
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
-        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
-        # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
+        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
+        'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
+        'MemPAE-d64-lr0.001-t0.1', # tmux 1
 
         ##################################################################################        
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
@@ -578,7 +578,7 @@ def main(args):
             'pima', 
             'wbc', 
             'wine', 
-            # 'campaign', 
+            'campaign', 
             # "satimage-2",
         ]
         contamination_ratio = [

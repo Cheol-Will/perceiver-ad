@@ -130,6 +130,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_memories_not_use_power_of_two', action='store_true')    
     parser.add_argument('--num_memories_twice', action='store_true')    
     parser.add_argument('--is_recurrent', action='store_true')    
+    parser.add_argument('--contamination_ratio', type=float, default=None)    
     parser.add_argument('--top_k', type=int, default=None)    
 
     # Analysis arguments

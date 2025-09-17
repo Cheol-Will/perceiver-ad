@@ -62,6 +62,21 @@ class Analyzer(Trainer):
         print("Saving")
         torch.save(self.model.state_dict(), parameter_path)
 
+    def plot_attn(self,):
+        
+        # get attention per head
+        attn_feature_feature = self.get_attn_weights(use_self_attn=True) # (H, F, F)
+        
+        
+        attn_feature_feature = self.get_attn_weights(use_self_attn=False) # (H, F, F)
+
+        # calculate corr matrix in trainset.
+        # 
+
+
+        return
+
+
     @torch.no_grad()
     def plot_combined_tsne(self, figsize=(10, 8)):
         """
@@ -296,67 +311,67 @@ class Analyzer(Trainer):
 
 
     @torch.no_grad()
-    def compare_regresssion_with_attn(
-        self,
-    ):
+    def compare_regresssion_with_attn(self):
+        attn_with_self = self.get_attn_weights(use_self_attn=True)
+        attn_no_self = self.get_attn_weights(use_self_attn=False)
 
-        attn_feature_feature = self.get_attn_weights() # (H, F, F)
-        attn_label_feature = attn_feature_feature[:, -1, :-1].cpu().numpy() # last feature contains label in supervised setting.
-        print(attn_label_feature.shape)
-        # perform linear regression on X[:, :-1] and X[:, -1] and get weights.
+        attn_label_with_self = attn_with_self[:, -1, :-1].cpu().numpy()
+        attn_label_no_self = attn_no_self[:, -1, :-1].cpu().numpy()
+
         X_all, y_all = [], []
         for X, y in self.train_loader:
             X_all.append(X[:, :-1])
-            y_all.append(X[:, -1]) # last feature contains label in supervised setting.
+            y_all.append(X[:, -1])
         X_all = torch.cat(X_all, dim=0).cpu().numpy()
         y_all = torch.cat(y_all, dim=0).cpu().numpy()
+        
         reg = LinearRegression().fit(X_all, y_all)
         coef = reg.coef_
-        head_columns = [f'head{i+1}' for i in range(attn_label_feature.shape[0])]
-        columns = ['reg'] + head_columns
-    
-        # Stack regression coefficients and average attention for all heads
-        print(coef.shape)
-        print(attn_label_feature.shape)
-        data = np.vstack([coef, attn_label_feature])
 
-        # Create the DataFrame (F, H+1)
+        num_heads = attn_with_self.shape[0]
+        head_cols_self = [f'head{i+1}_self' for i in range(num_heads)]
+        head_cols_no_self = [f'head{i+1}_no_self' for i in range(num_heads)]
+        columns = ['reg'] + head_cols_self + head_cols_no_self
+
+        data = np.vstack([coef, attn_label_with_self, attn_label_no_self])
         df = pd.DataFrame(data.T, columns=columns)
-        df['reg_abs'] = df['reg'].abs()
-        df['reg_abs'] = df['reg_abs'] / df['reg_abs'].sum()
-        df['head_sum'] = df[head_columns].sum(axis=1)
         num_features = df.shape[0]
         df.index = [f'feature_{i}' for i in range(num_features)]
 
-        # sort for convenience
-        cols_order = ['reg', 'reg_abs'] + head_columns + ['head_sum']
+        df['reg_abs'] = df['reg'].abs()
+        df['reg_abs'] = df['reg_abs'] / df['reg_abs'].sum()
+        df['head_sum_self'] = df[head_cols_self].abs().sum(axis=1)
+        df['head_sum_no_self'] = df[head_cols_no_self].abs().sum(axis=1)
+
+        cols_order = ['reg', 'reg_abs'] + head_cols_self + ['head_sum_self'] + head_cols_no_self + ['head_sum_no_self']
         df = df[cols_order]
 
-        # put cosine similaity for each column with Reg_abs
-        reg_abs_values = df['reg_abs'].values.reshape(1, -1)  
-        cos_sim = cosine_similarity(reg_abs_values, df.T)  
-        rank_corr = []
-        for col in df.columns:
-            rho, _ = spearmanr(df['reg_abs'].values, df[col].values)
-            rank_corr.append(rho)
-        rank_corr = np.array(rank_corr).reshape(1, -1)
+        reg_abs_values = df['reg_abs'].values
+        cos_sim_list, rank_corr_list = [], []
         
-        df.loc['rank_correlation', :] = rank_corr.flatten() 
-        df.loc['cosine_similarity', :] = cos_sim.flatten() 
+        for col in df.columns:
+            col_values = df[col].values
+            sim = cosine_similarity(reg_abs_values.reshape(1, -1), col_values.reshape(1, -1))[0, 0]
+            cos_sim_list.append(sim)
+            rho, _ = spearmanr(reg_abs_values, col_values)
+            rank_corr_list.append(rho)
+
+        df.loc['rank_correlation', :] = rank_corr_list
+        df.loc['cosine_similarity', :] = cos_sim_list
         df = df.round(4)
 
         base_path = self.train_config['base_path']
         path = os.path.join(base_path, 'attn_regression_comparison.csv')
         df.to_csv(path, index=True)
         
-        print('attn_regression_comparison\n', df)
-        return        
-
+        print('Attention vs. Regression Comparison\n', df)
+        return df
 
     @torch.no_grad()
     def get_attn_weights(
         self,
-    ):  
+        use_self_attn: bool = True,
+    ):
         '''
         Get feature-feature attention weights.
         W_enc, W_self_1, ..., W_self_L, W_dec
@@ -366,36 +381,48 @@ class Analyzer(Trainer):
 
         return: (H, F, F)
         '''
+        self.model.eval() # Set the model to evaluation mode
         running_attn_feature_feature = None
         total_samples = 0
 
         for (X, y) in self.train_loader:
             X_input = X.to(self.device)
 
+            # Get attention weights from the model
             loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
                 self.model(X_input, return_attn_weight=True)
 
-            W_self_total = attn_weight_self_list[0]
-            for W in attn_weight_self_list[1:]:
-                W_self_total = torch.einsum("bhij,bhjk->bhik", W, W_self_total)
+            B, H, N, _ = attn_weight_enc.shape # Batch, Head, Node, Feature
 
+            if use_self_attn and attn_weight_self_list:
+                identity = torch.eye(N, device=self.device).expand(B, H, N, N)
+                W_self_total = attn_weight_self_list[0] + identity
+
+                for W in attn_weight_self_list[1:]:
+                    W_with_residual = W + identity
+                    W_self_total = torch.einsum("bhij,bhjk->bhik", W_with_residual, W_self_total)
+            else:
+                # for W_dec x W_enc
+                W_self_total = torch.eye(N, device=self.device).expand(B, H, N, N)
+            
+            # Compose all weights: W_dec @ W_self @ W_enc
             attn_feature_feature = torch.einsum("bhfn,bhnn->bhfn",
-                                    attn_weight_dec, W_self_total)
+                                                attn_weight_dec, W_self_total)
             attn_feature_feature = torch.einsum("bhfn,bhnk->bhfk",
-                                    attn_feature_feature, attn_weight_enc)
-            # (3) head average + batch sum
+                                                attn_feature_feature, attn_weight_enc)
+            
+            # Accumulate attention weights across all batches
             batch_size = attn_feature_feature.shape[0]
-
             if running_attn_feature_feature is None:
-                running_attn_feature_feature = attn_feature_feature.sum(dim=0)  # (H, F, F)
+                running_attn_feature_feature = attn_feature_feature.sum(dim=0) # (H, F, F)
             else:
                 running_attn_feature_feature += attn_feature_feature.sum(dim=0)
-
+            
             total_samples += batch_size
 
+        # Average the weights over all samples
         running_attn_feature_feature = running_attn_feature_feature / total_samples
-        return running_attn_feature_feature  # (H, F, F)
-
+        return running_attn_feature_feature # (H, F, F)
 
     @torch.no_grad()
     def plot_latent_diff(
