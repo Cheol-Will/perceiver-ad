@@ -467,7 +467,11 @@ def main(args):
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L3-d64-lr0.001', # possible
         # 'MemPAE-ws-cross_attn-rin-L4-d64-lr0.001',
-        'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', # possible
+        
+        'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', # possible 
+        # 'MemPAE-ws-cross_attn-rin-pos_query+token-large_mem-L2-d64-lr0.001',
+        
+        
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L3-d64-lr0.001', # possible
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
 
