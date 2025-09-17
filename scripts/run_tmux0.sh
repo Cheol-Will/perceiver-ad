@@ -18,9 +18,10 @@ set -euo pipefail
 #     contamination_0.03_23_mammography_42
 #     contamination_0.05_23_mammography_42
 # )
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography "satimage-2" nslkdd fraud  shuttle census) # from MCM
+# data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography "satimage-2" nslkdd fraud  shuttle census) # from MCM
+data_list=(census) # from MCM
 sim_type='cross_attn'
-depth=3
+depth=2
 hidden_dim=64
 learning_rate=0.001
 temperature=0.1
