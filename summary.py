@@ -502,9 +502,8 @@ def main(args):
         'Disent',
     ]
     my_models = [
-        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
     ]
 

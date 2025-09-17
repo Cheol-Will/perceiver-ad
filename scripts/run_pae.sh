@@ -1,52 +1,64 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography nslkdd fraud "satimage-2" shuttle census) # from MCM
-# data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere hepatitis pima wbc wine thyroid optdigits pendigits satellite campaign mammography) # from MCM
-# data_list=(dependency_anomalies_32_shuttle_42 global_anomalies_32_shuttle_42 cluster_anomalies_32_shuttle_42 local_anomalies_32_shuttle_42)
+#!/bin/bash
+data_list=(
+    ##################################
+    # local_anomalies_45_wine_42
+    # local_anomalies_14_glass_42
+    # local_anomalies_42_WBC_42
+    # local_anomalies_18_Ionosphere_42
+    # local_anomalies_4_breastw_42
+    # local_anomalies_29_Pima_42
+    # local_anomalies_6_cardio_42
+    # local_anomalies_7_Cardiotocography_42
+    # local_anomalies_38_thyroid_42
+    # local_anomalies_26_optdigits_42
+    # local_anomalies_31_satimage-2_42
+    # local_anomalies_30_satellite_42
+    # local_anomalies_23_mammography_42
+    # local_anomalies_5_campaign_42
+    # local_anomalies_32_shuttle_42
+    # local_anomalies_13_fraud_42
+    # local_anomalies_9_census_42
+    ##################################
 
-train_ratio_list=(1.0)
+    ##################################
+    dependency_anomalies_45_wine_42
+    dependency_anomalies_14_glass_42
+    dependency_anomalies_42_WBC_42
+    dependency_anomalies_18_Ionosphere_42
+    dependency_anomalies_4_breastw_42
+    dependency_anomalies_29_Pima_42
+    dependency_anomalies_6_cardio_42
+    dependency_anomalies_7_Cardiotocography_42
+    dependency_anomalies_38_thyroid_42
+    dependency_anomalies_26_optdigits_42
+    dependency_anomalies_31_satimage-2_42
+    # dependency_anomalies_30_satellite_42
+    # dependency_anomalies_23_mammography_42
+    # dependency_anomalies_5_campaign_42
+    # dependency_anomalies_32_shuttle_42
+    # dependency_anomalies_13_fraud_42
+    # dependency_anomalies_9_census_42
+    ##################################
+)
 
-# perceiver -------------------------
-hidden_dim_list=(64)
-learning_rate_list=(0.001)
+
+hidden_dim=64
+learning_rate=0.001
+temperature=0.1
 model_type="PAE"
-depth=6
 for data in "${data_list[@]}"; do
-    for hidden_dim in "${hidden_dim_list[@]}"; do
-        for learning_rate in "${learning_rate_list[@]}"; do
-            echo "Running $model_type data=$data dim=$hidden_dim learning_rate=$learning_rate weight sharing"
-            exp_name="$model_type-ws-L$depth-d$hidden_dim-lr$learning_rate"
-            python main.py \
-                --dataname "$data" \
-                --model_type $model_type \
-                --exp_name "$exp_name"\
-                --hidden_dim "$hidden_dim" \
-                --learning_rate "$learning_rate"\
-                --depth "$depth"\
-                --is_weight_sharing
-        done
-    done
-done
-
-# perceiver -------------------------
-hidden_dim_list=(64)
-learning_rate_list=(0.001)
-model_type="PAE"
-depth=2
-for data in "${data_list[@]}"; do
-    for hidden_dim in "${hidden_dim_list[@]}"; do
-        for learning_rate in "${learning_rate_list[@]}"; do
-            echo "Running $model_type data=$data dim=$hidden_dim learning_rate=$learning_rate weight sharing"
-            exp_name="$model_type-ws-L$depth-d$hidden_dim-lr$learning_rate"
-            python main.py \
-                --dataname "$data" \
-                --model_type $model_type \
-                --exp_name "$exp_name"\
-                --hidden_dim "$hidden_dim" \
-                --learning_rate "$learning_rate"\
-                --depth "$depth"\
-                --is_weight_sharing
-        done
-    done
+    exp_name="$model_type-ws-pos_query+token-d$hidden_dim-lr$learning_rate"
+    echo "$exp_name on $data"
+    python main.py \
+        --dataname "$data" \
+        --model_type $model_type \
+        --is_weight_sharing \
+        --use_pos_enc_as_query \
+        --use_mask_token \
+        --hidden_dim "$hidden_dim" \
+        --learning_rate "$learning_rate" \
+        --exp_name "$exp_name"
 done
