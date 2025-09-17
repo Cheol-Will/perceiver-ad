@@ -323,7 +323,7 @@ def render(
         df_mean.drop([row1_name, row2_name], inplace=True)
         df_std.drop([row1_name, row2_name], inplace=True)
 
-    df_mean.loc['MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', 'census'] = 0.2474
+    # df_mean.loc['MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', 'census'] = 0.2474
     df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
     df_std.loc[:, 'AVG_AUC']  = df_std.mean(axis=1, numeric_only=True)
 
@@ -452,13 +452,13 @@ def main(args):
 
     my_models = [
         ##################################################################################
-        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         # 'PAE-ws-d64-lr0.001', # Final architecture for PAE
         # 'PAE-L4-d64-lr0.001', # Final architecture for PAE
         # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
         ##################################################################################
         # MemPAE with small memory Ablation
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
         # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
         # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
@@ -467,10 +467,8 @@ def main(args):
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L3-d64-lr0.001', # possible
         # 'MemPAE-ws-cross_attn-rin-L4-d64-lr0.001',
-        
-        'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', # possible 
+        # 'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', # possible 
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-large_mem-L2-d64-lr0.001',
-        
         
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L3-d64-lr0.001', # possible
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
