@@ -32,7 +32,7 @@ class Trainer(object):
                 model_config['num_memories'] = int(math.sqrt(num_train))
             else:
                 if train_config['memory_ratio'] is not None:
-                    model_config['num_memories'] = train_config['memory_ratio'] * nearest_power_of_two(int(math.sqrt(num_train)))
+                    model_config['num_memories'] = int(train_config['memory_ratio'] * nearest_power_of_two(int(math.sqrt(num_train))))
                 else:
                     model_config['num_memories'] = nearest_power_of_two(int(math.sqrt(num_train)))
 
