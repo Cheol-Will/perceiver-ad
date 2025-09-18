@@ -172,7 +172,7 @@ class Analyzer(Trainer):
                 W_self_total = torch.eye(N, device=self.device).expand(B, H, N, N)
                 enc_mean_h = attn_enc
                 dec_mean_h = attn_dec
-
+            
             tmp = torch.einsum("bhfn,bhnk->bhfk", dec_mean_h, W_self_total)
             attn_feat_feat = torch.einsum("bhfn,bhnk->bhfk", tmp, enc_mean_h)
 
