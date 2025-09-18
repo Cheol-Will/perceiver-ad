@@ -102,6 +102,7 @@ if __name__ == "__main__":
     parser.add_argument('--is_recurrent', action='store_true')    
     parser.add_argument('--contamination_ratio', type=float, default=None)    
     parser.add_argument('--latent_ratio', type=float, default=None)    
+    parser.add_argument('--memory_ratio', type=float, default=None)    
     parser.add_argument('--top_k', type=int, default=None)    
 
     args = parser.parse_args()
