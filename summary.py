@@ -421,6 +421,30 @@ def render(
     return df_render
 
 
+def render_hp(pivots, data):
+    models = ['KNN']
+    my_models = [
+        'MemPAE-ws-pos_query+token-memory_ratio0.5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-memory_ratio2.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-memory_ratio8.0-d64-lr0.001-t0.1',
+       
+        'MemPAE-ws-pos_query+token-latent_ratio0.5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-latent_ratio2.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-latent_ratio4.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1',
+    ]
+    base = 'ratio_1.0_AUCPR'
+    render(pivots, data, models, my_models, base, 
+            add_avg_rank=True, use_rank=False, use_std=False, 
+            use_baseline_pr=True, is_temp_tune=False, is_sort=False, is_plot=True)
+
+
+
+
 def main(args):
     keys = [
         # 'ratio_0.1_AUCROC', 'ratio_0.5_AUCROC', 
@@ -615,7 +639,10 @@ def main(args):
                 df_render = render(pivots, synthetic_data, models, my_models, base,
                     add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
                     use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=contamination)
-
+    if args.hp_ratio:
+        render_hp(pivots, data)
+        # cardio, optdigits, 
+        # cardio, optdigits, wbc
 
 
 
@@ -623,6 +650,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--synthetic', action='store_true')
     parser.add_argument('--contamination', action='store_true')
+    parser.add_argument('--hp_ratio', action='store_true')
     parser.add_argument('--synthetic_type', type=str, default='dependency')
     args = parser.parse_args()
     main(args)
