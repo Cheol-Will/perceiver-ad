@@ -403,6 +403,7 @@ class MemPAE(nn.Module):
         return_pred: bool = False, 
         return_memory_weight: bool = False,
         return_latents: bool = False,
+        return_pred_all: bool = False,
     ):
     
         batch_size, num_features = x.shape # (B, F)
@@ -469,12 +470,20 @@ class MemPAE(nn.Module):
                     loss = loss + self.entropy_loss_weight * entropy_loss
 
         # for analysis
+
+
         if return_latents:
             return loss, latents, latents_hat
 
         if return_attn_weight:
             return loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec
 
+        if return_pred_all:
+            output_origin, _ = self.decoder(decoder_query, latents, latents, return_weight=True)
+            x_hat_origin = self.proj(output_origin)
+            x_hat_memory = x_hat
+            
+            return x, x_hat_origin, x_hat_memory
 
         if return_pred:
             if return_memory_weight:

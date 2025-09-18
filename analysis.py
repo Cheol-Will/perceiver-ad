@@ -29,29 +29,23 @@ def build_analyzer(model_config, train_config, analysis_config):
 def train_test(model_config, train_config, analysis_config, run):
     train_config['run'] = run
     train_config['logger'].info(f"[run {run}]" + '-'*60)
-    trainer = build_analyzer(model_config, train_config, analysis_config)    
-    trainer.training()
-    mse_rauc, mse_ap, mse_f1 = trainer.evaluate()
-    train_config['logger'].info(f"[run {run}] AUC-ROC: {mse_rauc:.4f} | AUC-PR: {mse_ap:.4f} | F1: {mse_f1:.4f}")
-    results_dict = {
-        'run': run,
-        'AUC-ROC': float(mse_rauc),
-        'AUC-PR': float(mse_ap),
-        'f1': float(mse_f1),
-    }
-
-    if analysis_config['plot_recon']:
-        trainer.plot_reconstruction()
-    if analysis_config['plot_histogram']:
-        trainer.plot_anomaly_histograms(remove_outliers=True)
-    if analysis_config['plot_memory_weight']:
-        trainer.plot_memory_weight()
-    if analysis_config['compare_regresssion_with_attn']:
-        trainer.compare_regresssion_with_attn()
+    analyzer = build_analyzer(model_config, train_config, analysis_config)    
+    analyzer.training()
     
-
-
-    return results_dict
+    if analysis_config['plot_recon']:
+        analyzer.plot_reconstruction()
+    if analysis_config['plot_histogram']:
+        analyzer.plot_anomaly_histograms(remove_outliers=True)
+    if analysis_config['plot_memory_weight']:
+        analyzer.plot_memory_weight()
+    if analysis_config['compare_regresssion_with_attn']:
+        analyzer.compare_regresssion_with_attn()
+    if analysis_config['plot_tsne_recon']:
+        # analyzer.plot_tsne_reconstruction()
+        analyzer.plot_combined_tsne()
+        
+    
+    return 
 
 
 def main(args):
@@ -76,31 +70,24 @@ def main(args):
     analysis_config['plot_histogram'] = args.plot_histogram
     analysis_config['plot_memory_weight'] = args.plot_memory_weight
     analysis_config['compare_regresssion_with_attn'] = args.compare_regresssion_with_attn
+    analysis_config['plot_tsne_recon'] = args.plot_tsne_recon
+    
     
     start = time.time()    
-    all_results = []
     for seed in range(1):
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         np.random.seed(seed)
-        result = train_test(model_config, train_config, analysis_config, seed)
-        all_results.append(result)
+        train_test(model_config, train_config, analysis_config, seed)
+
     end = time.time()
     total_time = end - start
-    mean_metrics = {
-        'AUC-ROC': float(np.mean([r['AUC-ROC'] for r in all_results])),
-        'AUC-PR': float(np.mean([r['AUC-PR'] for r in all_results])),
-        'f1': float(np.mean([r['f1'] for r in all_results]))
-    }
     summary = {
         'model_config': {
             'model_type': args.model_type,
             'dataset_name': args.dataname,
             'train_ratio': args.train_ratio
         },
-        'mean_metrics': mean_metrics,
-        'total_time': total_time,
-        'all_seeds': all_results,
     }
     # with open(summary_path, 'w') as f:
     #     json.dump(summary, f, indent=4)
@@ -142,6 +129,8 @@ if __name__ == "__main__":
     parser.add_argument('--not_use_power_of_two', action='store_true')    
     parser.add_argument('--num_memories_not_use_power_of_two', action='store_true')    
     parser.add_argument('--num_memories_twice', action='store_true')    
+    parser.add_argument('--is_recurrent', action='store_true')    
+    parser.add_argument('--contamination_ratio', type=float, default=None)    
     parser.add_argument('--top_k', type=int, default=None)    
 
     # Analysis arguments
@@ -150,6 +139,7 @@ if __name__ == "__main__":
     parser.add_argument('--plot_histogram', action='store_true')
     parser.add_argument('--plot_memory_weight', action='store_true')
     parser.add_argument('--compare_regresssion_with_attn', action='store_true')
+    parser.add_argument('--plot_tsne_recon', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:

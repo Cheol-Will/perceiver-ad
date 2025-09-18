@@ -100,10 +100,17 @@ if __name__ == "__main__":
     parser.add_argument('--num_memories_not_use_power_of_two', action='store_true')    
     parser.add_argument('--num_memories_twice', action='store_true')    
     parser.add_argument('--is_recurrent', action='store_true')    
+    parser.add_argument('--contamination_ratio', type=float, default=None)    
+    parser.add_argument('--latent_ratio', type=float, default=None)    
+    parser.add_argument('--memory_ratio', type=float, default=None)    
     parser.add_argument('--top_k', type=int, default=None)    
 
     args = parser.parse_args()
     if args.exp_name is None:
         args.exp_name = args.model_type 
-    args.base_path = f"results/{args.exp_name}/{args.dataname}/{args.train_ratio}"
+    if args.contamination_ratio is not None:
+        args.base_path = f"results/{args.exp_name}/{args.dataname}_contam{args.contamination_ratio}/{args.train_ratio}"
+    else:
+        args.base_path = f"results/{args.exp_name}/{args.dataname}/{args.train_ratio}"
+
     main(args)

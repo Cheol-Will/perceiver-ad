@@ -323,7 +323,7 @@ def render(
         df_mean.drop([row1_name, row2_name], inplace=True)
         df_std.drop([row1_name, row2_name], inplace=True)
 
-    df_mean.loc['MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', 'census'] = 0.2474
+    # df_mean.loc['MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', 'census'] = 0.2474
     df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
     df_std.loc[:, 'AVG_AUC']  = df_std.mean(axis=1, numeric_only=True)
 
@@ -460,16 +460,18 @@ def main(args):
         # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
         ##################################################################################
         # MemPAE with small memory Ablation
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
-        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
-        # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
+        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
+        'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
+        'MemPAE-d64-lr0.001-t0.1', # tmux 1
 
         ##################################################################################        
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L3-d64-lr0.001', # possible
         # 'MemPAE-ws-cross_attn-rin-L4-d64-lr0.001',
-        'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', # possible
+        # 'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', # possible 
+        # 'MemPAE-ws-cross_attn-rin-pos_query+token-large_mem-L2-d64-lr0.001',
+        
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L3-d64-lr0.001', # possible
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
 
@@ -502,36 +504,31 @@ def main(args):
         'Disent',
     ]
     my_models = [
-
-        # 'PDRL-ws-pos_query+token-d64-lr0.001',
-
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-
-        # 'MemPAE-ws-pos-large_mem-L4-d64-lr0.001-t0.1',
-        # 'PAE-ws-L4-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'PAE-ws-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'PAE-L4-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'PAE-L6-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
-
-        # 'PAE-ws-d64-lr0.001', # 0.6867    3.6875 # (SOTA! KNN: 4.3125)
-        # 'MemPAE-ws-d64-lr0.001', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
+        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
-        # 'MemPAE-ws-pos_query-d64-lr0.001-t0.05',
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.05',
-        
+        # 'PDRL-ws-pos_query+token-d64-lr0.001',
     ]
 
     dataname_list = [
-        '26_optdigits',
-        '23_mammography', # 11k
-        '32_shuttle', # 49k
-        '18_ionosphere', # 0.3k   
-        '38_thyroid', # 3k
+        '32_shuttle', # 49k: 9 numeric
+        '5_campaign', # 41k: 
+        '23_mammography', # 11k: 5 numeric and 1 binary
+        '30_satellite', # 6k: image
+        '31_satimage-2', # 5k: image
+        '26_optdigits', # 5k: image
+        '38_thyroid', # 3k: medical: 1 catgorical and 5 numeric
+        '7_cardiotocography',
+        '18_ionosphere', # 0.3k: frequency and purse data
+        '6_cardio', # 1.8k
+        '29_pima', # 0.7k
+        '4_breastw', # 0.6k
+     
+        # exclude too small dataset.
+        # '45_wine',
+        # '42_wbc',
+        # '14_glass',
+        # '13_fraud', 
+        # '9_census',
     ]
 
     # todo: make name shorter.
@@ -552,51 +549,7 @@ def main(args):
             'Disent',
         ]
 
-        # success case: cardio, sat (maybe)
-        dataname_list = [
-            '26_optdigits',
-            '23_mammography', # 11k
-            '32_shuttle', # 49k
-            '18_ionosphere', # 0.3k   
-            '38_thyroid', # 3k
-        
 
-            # only care about dependency anomaly
-            # note that local anomaly requires 
-            # some density estimation or retrieval modules.
-           
-
-            # above nope small data. not good at all
-            #  '45_wine', # 0.1k
-            # '14_glass',
-            # '42_wbc',
-
-            # '4_breastw', # 0.6k
-            # '29_pima', # 0.7k
-            # '6_cardio', # 1.8k
-            # '7_cardiotocography', # 2k
-            # '31_satimage-2', # 5k
-            # '30_satellite', # 6k
-            # '5_campaign',
-
-            # here cut
-            # below nope
-            #################  
-            # '13_fraud', # good for local anomaly setting.
-            # '9_census',
-            #################      
-
-
-            #################      
-            ]
-
-        # prefix_list = [
-        #     # 'cluster_anomalies_',
-        #     # 'global_anomalies_',
-        #     'local_anomalies_',
-        #     # 'dependency_anomalies_/',
-        #     # f'{args.synthetic_type}_anomalies_',
-        # ]
         anomaly_type_list = [
             'local_anomalies_',
             'dependency_anomalies_',
@@ -609,34 +562,55 @@ def main(args):
         ]
 
         suffix = '_42'
-
+        keys = [
+            'ratio_1.0_AUCPR',
+        ]
         for anomaly_type in anomaly_type_list:
             synthetic_data = []
             for dataname in dataname_list:
                 for feature in irrelevant_features_list:
                     file_name = f"{anomaly_type}{feature}{dataname}{suffix}"
                     synthetic_data.append(file_name)
-      
+                
+
             for base in keys:
                 df_render = render(pivots, synthetic_data, models, my_models, base,
                     add_avg_rank=True, use_rank=False, use_std=False, use_baseline_pr=False, 
                     use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
     if args.contamination:
         models=[ 
-            'MCM', 'DRL', 'Disent',
+            'KNN', 
+            'MCM', 
+            # 'DRL', 
+            'Disent',
+        ]
+        # success case: cardio, sat (maybe)
+        dataname_list = [
+            'cardio', 
+            'cardiotocography',
+            'pima', # good
+            'arrhythmia', # good
+            'breastw',
+            'glass',
+            'wbc', 
+            'wine', 
+            'campaign', 
         ]
         contamination_ratio = [
-            'contamination_0.01_',
-            'contamination_0.03_',
-            'contamination_0.05_',
+            'contam0.01',
+            'contam0.03',
+            'contam0.05',
         ]
-        suffix = '_42'
+        keys = [
+            'ratio_1.0_AUCPR',
+        ]
         for dataname in dataname_list:
-            synthetic_data = []
+            synthetic_data = [dataname.split('_')[-1]]
+            print(synthetic_data)
             for contamination in contamination_ratio:
-                file_name = f"{contamination}{dataname}{suffix}"
+                file_name = f"{dataname}_{contamination}"
                 synthetic_data.append(file_name)
-      
+
             for base in keys:
                 df_render = render(pivots, synthetic_data, models, my_models, base,
                     add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
