@@ -278,6 +278,7 @@ class PAE(nn.Module):
         latents, encoder_attn = self.encoder(latents_query, feature_embedding, feature_embedding, return_weight=True) 
 
         self_attns = []
+
         if self.is_weight_sharing:
             for _ in range(self.depth):
                 latents, self_attn = self.block(latents, return_weight=True)
@@ -302,7 +303,7 @@ class PAE(nn.Module):
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
 
         if return_weight:
-            return loss, x, x_hat, encoder_attn, self_attns, decoder_attn
+            return loss, encoder_attn, self_attns, decoder_attn
         elif return_pred:
             return loss, x, x_hat
         else:
