@@ -4,7 +4,7 @@ import argparse
 import os
 import json
 import time
-from utils import get_logger, build_trainer, load_yaml
+from utils import get_parser, get_logger, build_trainer, load_yaml
 
 def train_test(model_config, train_config, run):
     train_config['run'] = run
@@ -66,46 +66,9 @@ def main(args):
     print(json.dumps(summary, indent=4))
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dataname', type=str, default='Hepatitis')
-    parser.add_argument('--model_type', type=str, default='DRL')
-    parser.add_argument('--exp_name', type=str, default=None)
-    parser.add_argument('--train_ratio', type=float, default=1.0)
-
-    # Experiment 
-    parser.add_argument('--num_heads', type=int, default=None)
-    parser.add_argument('--depth', type=int, default=None)
-    parser.add_argument('--hidden_dim', type=int, default=None)
-    parser.add_argument('--learning_rate', type=float, default=None)
-
-    # Experiment
-    parser.add_argument('--mlp_ratio', type=float, default=None)
-    parser.add_argument('--dropout_prob', type=float, default=None)
-    parser.add_argument('--drop_col_prob', type=float, default=None)
-    parser.add_argument('--temperature', type=float, default=None)
-    parser.add_argument('--sim_type', type=str, default=None)
-    parser.add_argument('--num_repeat', type=int, default=None)
-    parser.add_argument('--is_weight_sharing', action='store_true')
-    parser.add_argument('--use_pos_enc_as_query', action='store_true')
-    parser.add_argument('--num_latents', type=int, default=None)
-    parser.add_argument('--num_adapters', type=int, default=None)
-    parser.add_argument('--use_vq_loss_as_score', action='store_true')    
-    parser.add_argument('--beta', type=float, default=None)
-    parser.add_argument('--shrink_thred', type=float, default=None)
-    parser.add_argument('--latent_loss_weight', type=float, default=None)
-    parser.add_argument('--entropy_loss_weight', type=float, default=None)
-    parser.add_argument('--use_entropy_loss_as_score', action='store_true')    
-    parser.add_argument('--use_mask_token', action='store_true')    
-    parser.add_argument('--not_use_power_of_two', action='store_true')    
-    parser.add_argument('--num_memories_not_use_power_of_two', action='store_true')    
-    parser.add_argument('--num_memories_twice', action='store_true')    
-    parser.add_argument('--is_recurrent', action='store_true')    
-    parser.add_argument('--contamination_ratio', type=float, default=None)    
-    parser.add_argument('--latent_ratio', type=float, default=None)    
-    parser.add_argument('--memory_ratio', type=float, default=None)    
-    parser.add_argument('--top_k', type=int, default=None)    
-
+    parser = get_parser()
     args = parser.parse_args()
+
     if args.exp_name is None:
         args.exp_name = args.model_type 
     if args.contamination_ratio is not None:

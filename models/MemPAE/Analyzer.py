@@ -16,7 +16,7 @@ class Analyzer(Trainer):
     def __init__(self, model_config: dict, train_config: dict, analysis_config: dict):
         super().__init__(model_config, train_config)
 
-        self.plot_attn = analysis_config['plot_attn'] 
+        # self.plot_attn = analysis_config['plot_attn'] 
         self.plot_recon = analysis_config['plot_recon'] 
         self.cum_memory_weight = True
         self.model_config = model_config
@@ -372,57 +372,57 @@ class Analyzer(Trainer):
         self,
         use_self_attn: bool = True,
     ):
-        '''
-        Get feature-feature attention weights.
-        W_enc, W_self_1, ..., W_self_L, W_dec
-        W_enc: (B, H, N, F)
-        W_self_i: (B, H, N, N)
-        W_dec: (B, H, F, N)
+        """
+        enc_attn: mean over heads
+        self_attn: keep per head (compose residualized layers)
+        dec_attn: mean over heads
+        Return: (H, F, F)
+        """
+        self.model.eval()
 
-        return: (H, F, F)
-        '''
-        self.model.eval() # Set the model to evaluation mode
-        running_attn_feature_feature = None
+        running = None   # (H, F, F) accumulator (sum over batch)
         total_samples = 0
 
         for (X, y) in self.train_loader:
             X_input = X.to(self.device)
-
-            # Get attention weights from the model
-            loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
+            loss, attn_enc, attn_self_list, attn_dec = \
                 self.model(X_input, return_attn_weight=True)
 
-            B, H, N, _ = attn_weight_enc.shape # Batch, Head, Node, Feature
+            B, H, N, F = attn_enc.shape
 
-            if use_self_attn and attn_weight_self_list:
-                identity = torch.eye(N, device=self.device).expand(B, H, N, N)
-                W_self_total = attn_weight_self_list[0] + identity
+            
+            if use_self_attn and attn_self_list:
+                I = torch.eye(N, device=self.device).expand(B, H, N, N)  # (B,H,N,N)
+                W_self_total = attn_self_list[0] + I
+                for W in attn_self_list[1:]:
+                    W_with_res = W + I
+                    # (B,H,N,N) x (B,H,N,N) -> (B,H,N,N)
+                    W_self_total = torch.einsum("bhij,bhjk->bhik", W_with_res, W_self_total)
+                enc_mean = attn_enc.mean(dim=1)            # (B, N, F)
+                dec_mean = attn_dec.mean(dim=1)            # (B, F, N)
 
-                for W in attn_weight_self_list[1:]:
-                    W_with_residual = W + identity
-                    W_self_total = torch.einsum("bhij,bhjk->bhik", W_with_residual, W_self_total)
+                dec_mean_h = dec_mean.unsqueeze(1).expand(B, H, F, N)
+                enc_mean_h = enc_mean.unsqueeze(1).expand(B, H, N, F)
+            
             else:
-                # for W_dec x W_enc
+                # no self attention -> dec x enc per each ehad
                 W_self_total = torch.eye(N, device=self.device).expand(B, H, N, N)
-            
-            # Compose all weights: W_dec @ W_self @ W_enc
-            attn_feature_feature = torch.einsum("bhfn,bhnn->bhfn",
-                                                attn_weight_dec, W_self_total)
-            attn_feature_feature = torch.einsum("bhfn,bhnk->bhfk",
-                                                attn_feature_feature, attn_weight_enc)
-            
-            # Accumulate attention weights across all batches
-            batch_size = attn_feature_feature.shape[0]
-            if running_attn_feature_feature is None:
-                running_attn_feature_feature = attn_feature_feature.sum(dim=0) # (H, F, F)
-            else:
-                running_attn_feature_feature += attn_feature_feature.sum(dim=0)
-            
-            total_samples += batch_size
+                enc_mean_h = attn_enc
+                dec_mean_h = attn_dec
 
-        # Average the weights over all samples
-        running_attn_feature_feature = running_attn_feature_feature / total_samples
-        return running_attn_feature_feature # (H, F, F)
+            tmp = torch.einsum("bhfn,bhnk->bhfk", dec_mean_h, W_self_total)
+            attn_feat_feat = torch.einsum("bhfn,bhnk->bhfk", tmp, enc_mean_h)
+
+            if running is None:
+                running = attn_feat_feat.sum(dim=0)  # (H, F, F)
+            else:
+                running += attn_feat_feat.sum(dim=0)
+
+            total_samples += B
+
+        result = running / total_samples  # (H, F, F)
+        return result
+
 
     @torch.no_grad()
     def plot_latent_diff(
