@@ -577,14 +577,17 @@ def main(args):
                     use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
     if args.contamination:
         models=[ 
-            'KNN', 'MCM', 'DRL', 'Disent',
+            'KNN', 
+            'MCM', 
+            # 'DRL', 
+            'Disent',
         ]
         # success case: cardio, sat (maybe)
         dataname_list = [
             'cardio', 
             'cardiotocography',
-            'pima', 
-            'arrhythmia',
+            'pima', # good
+            'arrhythmia', # good
             'breastw',
             'glass',
             'wbc', 

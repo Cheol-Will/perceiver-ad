@@ -53,7 +53,7 @@ def load_yaml(args):
     train_config['num_memories_not_use_power_of_two'] = args.num_memories_not_use_power_of_two # defualt None
     train_config['num_memories_twice'] = args.num_memories_twice # defualt None
     train_config['contamination_ratio'] = args.contamination_ratio # defualt None
-
+    train_config['latent_ratio'] = args.latent_ratio # defualt None
     model_config['num_features'] = get_input_dim(args, train_config)
 
     return model_config, train_config
