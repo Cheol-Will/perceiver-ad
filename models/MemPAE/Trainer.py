@@ -29,12 +29,13 @@ class Trainer(object):
         if model_config['num_memories'] is None:
             num_train = self.get_num_train()
             if train_config['num_memories_not_use_power_of_two']:
-                if train_config['memory_ratio'] is not None:
-                    model_config['num_memories'] = int(math.sqrt(num_train)) * train_config['memory_ratio']
-                else:
-                    model_config['num_memories'] = int(math.sqrt(num_train))
+                model_config['num_memories'] = int(math.sqrt(num_train))
             else:
-                model_config['num_memories'] = nearest_power_of_two(int(math.sqrt(num_train)))
+                if train_config['memory_ratio'] is not None:
+                    model_config['num_memories'] = train_config['memory_ratio'] * nearest_power_of_two(int(math.sqrt(num_train)))
+                else:
+                    model_config['num_memories'] = nearest_power_of_two(int(math.sqrt(num_train)))
+
 
         self.device = train_config['device']
         self.model = MemPAE(
