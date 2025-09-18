@@ -1,13 +1,22 @@
 #!/bin/bash
 
-# data_list=(california wine_quality house)
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite) # from MCM
+data_list=(
+    superconduct
+    MiamiHousing2016
+    Ailerons
+    cpu_act
+    elevators
+    fifa
+    isolet
+    pol
+    california 
+    wine_quality 
+    house
+)
 
-# data_list=(california)
-# data_list=(wine_quality)
 # model_type='MemPAE'
 model_type='PAE'
-hidden_dim=256
+hidden_dim=128
 num_heads=4
 learning_rate=0.001
 temperature=0.1
@@ -25,5 +34,5 @@ for data in "${data_list[@]}"; do
         --num_heads "$num_heads" \
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
-        --plot_attn_and_corr
+        --compare_regresssion_with_attn
 done

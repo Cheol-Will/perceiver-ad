@@ -65,11 +65,68 @@ class Analyzer(Trainer):
         torch.save(self.model.state_dict(), parameter_path)
 
 
+    @torch.no_grad()
+    def plot_attn_and_corr(self):
+        # Extract attention weights (H, F, F)
+        attn_weights = self.get_attn_weights(use_self_attn=True)  # Shape: (H, F, F)
+        attn_weights_no_self = self.get_attn_weights(use_self_attn=False)  # Shape: (H, F, F)
+        H, F, F = attn_weights.shape
 
-    def calculate_num_memories(self):
-        n = len(self.train_loader.dataset)
-        return nearest_power_of_two(int(math.sqrt(n)))
+        # Create a combined plot (1 row x (1 + 2H) columns)
+        fig_combined, axes_combined = plt.subplots(1, 2*H + 1, figsize=(6 * (2*H + 1), 6), dpi=200)
+        if H == 1:
+            axes_combined = [axes_combined]  # Handle the case where there is only one head
 
+        # Plot the correlation matrix first
+        X_all = []
+        for X, _ in self.train_loader:
+            X_all.append(X[:, :-1])  # Excluding the label
+        X_all = torch.cat(X_all, dim=0).cpu().numpy()
+
+        # Compute the correlation matrix
+        corr_matrix = np.corrcoef(X_all.T)
+
+        ax_corr = axes_combined[0]
+        im = ax_corr.imshow(corr_matrix, cmap='coolwarm', aspect='equal')
+        ax_corr.set_title('Feature Correlation Matrix')
+        ax_corr.set_xlabel('Feature Index')
+        ax_corr.set_ylabel('Feature Index')
+        fig_combined.colorbar(im, ax=ax_corr, shrink=0.8, pad=0.02)
+
+        # Plot attention maps for each head with both self-attention and non-self-attention
+        for h in range(H):
+            ax_self = axes_combined[2 * h + 1]
+            ax_no_self = axes_combined[2 * h + 2]
+
+            # Attention with self
+            attn_map_self = attn_weights[h].cpu().numpy()
+            im_self = ax_self.imshow(attn_map_self, aspect='equal', cmap='viridis')
+            ax_self.set_title(f'Head {h+1} (Self Attention)')
+            ax_self.set_xlabel('Input Feature Index')
+            ax_self.set_ylabel('Output Feature Index')
+            fig_combined.colorbar(im_self, ax=ax_self, shrink=0.8, pad=0.02)
+
+            # Attention without self
+            attn_map_no_self = attn_weights_no_self[h].cpu().numpy()
+            im_no_self = ax_no_self.imshow(attn_map_no_self, aspect='equal', cmap='viridis')
+            ax_no_self.set_title(f'Head {h+1} (No Self Attention)')
+            ax_no_self.set_xlabel('Input Feature Index')
+            ax_no_self.set_ylabel('Output Feature Index')
+            fig_combined.colorbar(im_no_self, ax=ax_no_self, shrink=0.8, pad=0.02)
+
+        # Adjust layout and save the figure
+        fig_combined.tight_layout()
+        
+        # Save the figure in PNG and PDF formats
+        base_path = self.train_config['base_path']
+        os.makedirs(base_path, exist_ok=True)
+        
+        # Save combined plot
+        combined_plot_path_png = os.path.join(base_path, 'attn_and_corr_combined.png')
+        combined_plot_path_pdf = os.path.join(base_path, 'attn_and_corr_combined.pdf')
+        fig_combined.savefig(combined_plot_path_png)
+        fig_combined.savefig(combined_plot_path_pdf)
+        print(f"Attention maps and correlation matrix saved to {combined_plot_path_png}.")
 
     @torch.no_grad()
     def compare_regresssion_with_attn(self):
