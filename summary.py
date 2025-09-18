@@ -451,8 +451,10 @@ def main(args):
     data.sort()
 
     my_models = [
+        'PDRL-ws-pos_query+token-d64-lr0.001',
+        
         ##################################################################################
-        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         # 'PAE-ws-d64-lr0.001', # Final architecture for PAE
         # 'PAE-L4-d64-lr0.001', # Final architecture for PAE
         # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
