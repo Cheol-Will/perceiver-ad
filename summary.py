@@ -548,13 +548,6 @@ def main(args):
         ]
 
 
-        # prefix_list = [
-        #     # 'cluster_anomalies_',
-        #     # 'global_anomalies_',
-        #     'local_anomalies_',
-        #     # 'dependency_anomalies_/',
-        #     # f'{args.synthetic_type}_anomalies_',
-        # ]
         anomaly_type_list = [
             'local_anomalies_',
             'dependency_anomalies_',
@@ -591,11 +584,12 @@ def main(args):
             'cardio', 
             'cardiotocography',
             'pima', 
-
-            # 'wbc', 
-            # 'wine', 
-            # 'campaign', 
-            # "satimage-2",
+            'arrhythmia',
+            'breastw',
+            'glass',
+            'wbc', 
+            'wine', 
+            'campaign', 
         ]
         contamination_ratio = [
             'contam0.01',
