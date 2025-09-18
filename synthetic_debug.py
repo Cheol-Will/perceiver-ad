@@ -9,7 +9,8 @@ from DataSet.DataLoader import get_dataset
 
 def main(args):
     model_config = {
-        'dataset_name': 'dependency_anomalies_45_wine_42',
+        'dataset_name': 'campaign',
+        # 'dataset_name': 'dependency_anomalies_45_wine_42',
         'data_dir': 'Data/',
         'data_dim': 1,
         'preprocess': 'standard',

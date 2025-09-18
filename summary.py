@@ -424,18 +424,20 @@ def render(
 def render_hp(pivots, data):
     models = ['KNN']
     my_models = [
+        'MemPAE-ws-pos_query+token-latent_ratio0.5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-latent_ratio2.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-latent_ratio4.0-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1',
+ 
         'MemPAE-ws-pos_query+token-memory_ratio0.5-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-memory_ratio2.0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-memory_ratio8.0-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-memory_ratio8.0-d64-lr0.001-t0.1',
        
-        'MemPAE-ws-pos_query+token-latent_ratio0.5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-latent_ratio2.0-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-latent_ratio4.0-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1',
+ 
     ]
     base = 'ratio_1.0_AUCPR'
     render(pivots, data, models, my_models, base, 
