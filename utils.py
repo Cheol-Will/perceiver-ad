@@ -84,7 +84,7 @@ def load_yaml(args):
                 train_config[k] = v
 
 
-    if args.model_type in ['Perceiver', 'RIN', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE']:
+    if args.model_type in ['Perceiver', 'RIN', 'MCMPAE', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE']:
         model_config = replace_transformer_config(args, model_config)
     elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
         model_config = replace_mlp_config(args, model_config)
@@ -141,7 +141,9 @@ def build_trainer(model_config, train_config):
     elif model_type == 'AutoEncoder':
         from models.AutoEncoder.Trainer import Trainer        
     elif model_type == 'PDRL':
-        from models.PDRL.Trainer import Trainer        
+        from models.PDRL.Trainer import Trainer
+    elif model_type == 'MCMPAE':
+        from models.MCMPAE.Trainer import Trainer        
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Trainer import Trainer
     else:
@@ -170,7 +172,7 @@ def replace_transformer_config(args, model_config):
     if args.model_type in ['Perceiver', 'RIN']:
         model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
     
-    if args.model_type in ['PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'PDRL']:
+    if args.model_type in ['MCMPAE', 'PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'PDRL']:
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
         model_config['use_pos_enc_as_query'] = args.use_pos_enc_as_query # default False
         model_config['use_mask_token'] = args.use_mask_token # default False

@@ -16,7 +16,3 @@ class ScoreFunction(nn.Module):
         mse = torch.norm(sub_result, p=2, dim=2)
         mse_score = torch.mean(mse, dim=1,keepdim=True)
         return mse_score
-
-
-
-    
