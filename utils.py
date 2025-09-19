@@ -6,6 +6,7 @@ import numpy as np
 import glob
 import os
 from scipy import io
+import pandas as pd
 import yaml
 import importlib
 from sklearn.metrics import average_precision_score, roc_auc_score, precision_recall_fscore_support
@@ -165,19 +166,20 @@ def get_input_dim(args, model_config):
         path = os.path.join(model_config['data_dir'], args.dataname + '.mat')
         data = io.loadmat(path)
     elif args.dataname in dat_datanames:
-        path = os.path.join(model_config['data_dir'], args.dataname + '.data')
-        data = io.loadmat(path)
+        path = os.path.join(model_config['data_dir'], args.dataname + '.data')  
+        data = pd.read_csv(path, header=None) 
+        print(data)
+        # data = io.loadmat(path)
     elif args.dataname in arff_datanames:
         path = os.path.join(model_config['data_dir'], args.dataname + '.arff')
-        import pandas as pd
         data, _ = io.arff.loadarff(path)
         data = pd.DataFrame(data)
         samples = pd.get_dummies(data.iloc[:, :-1]).to_numpy()
         labels = data.iloc[:, -1].values
     else:
         raise ValueError(f"Unknown dataset {args.dataname}")
-    
-    dim = data['X'].shape[-1]
+    if args.dataname not in arff_datanames:
+        dim = data['X'].shape[-1]
 
     return dim
 

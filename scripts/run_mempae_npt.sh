@@ -2,21 +2,20 @@
 set -euo pipefail
 
 data_list=(
-    # lympho
-    # vertebral
-    # vowels
-    # letter
-    # musk
-    # speech
-
-    # mnist
-    # annthyroid
-    forest_cover
-    backdoor
+    abalone # need to resolve things
+    lympho
+    vertebral
+    vowels
+    letter
+    musk
+    speech
+    ecoli
     seismic
-    # abalone # need to resolve things
-    # mulcross # arff
-    # ecoli # need to create label manually.
+    abalone
+    mullcross
+    backdoor
+    mulcross # arff
+    ecoli # need to create label manually.
 )
   
 hidden_dim=64

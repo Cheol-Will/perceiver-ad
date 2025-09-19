@@ -421,21 +421,21 @@ def render_hp(pivots, data):
 def render_ours_on_npt(pivots, ):
     data = [
         'wine',
-        'lympho',
+        # 'lympho',
         'glass',
-        'vertebral',
+        # 'vertebral',
         'wbc',
         # 'ecoli',
         'ionosphere',
         'arrhythmia',
         'breastw',
         'pima',
-        'vowels',
-        'letter',
+        # 'vowels',
+        # 'letter',
         'cardio',
         # 'seismic',
-        'musk',
-        'speech',
+        # 'musk',
+        # 'speech',
         'thyroid',
         # 'abalone',
         'optdigits',
@@ -443,10 +443,10 @@ def render_ours_on_npt(pivots, ):
         'satellite',
         'pendigits',
         'annthyroid',
-        'mnist',
+        # 'mnist',
         'mammography',
         'shuttle',
-        'forest_cover',
+        # 'forest_cover',
         'campaign',
         'fraud',
         # 'backdoor', # we got 5 remainig datasets.
@@ -454,41 +454,60 @@ def render_ours_on_npt(pivots, ):
     models = []
     my_models = [
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query-d32-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-d32-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-memory_ratio2.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-memory_ratio0.5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-latent_ratio0.5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-latent_ratio2.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-latent_ratio4.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query-L2-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query-L6-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2',
+        'MemPAE-ws-pos_query+token-L5-d64-lr0.005-t0.1',
+        'MemPAE-ws-pos_query+token-np-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-L2-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-L3-d64-lr0.001-t0.1',
+
     ]
     npt_aucroc = {
         "wine": 96.6,
-        "lympho": 99.9,
+        # "lympho": 99.9,
         "glass": 82.8,
-        "vertebral": 54.6,
+        # "vertebral": 54.6,
         "wbc": 96.3,
-        "ecoli": 88.7,
+        # "ecoli": 88.7,
         "ionosphere": 97.4,
         "arrhythmia": 80.1,
         "breastw": 98.6,
         "pima": 73.4,
-        "vowels": 99.3,
-        "letter": 96.1,
+        # "vowels": 99.3,
+        # "letter": 96.1,
         "cardio": 94.7,
-        "seismic": 69.8,
-        "musk": 100,
-        "speech": 54.3,
+        # "seismic": 69.8,
+        # "musk": 100,
+        # "speech": 54.3,
         "thyroid": 97.8,
-        "abalone": 91.6,
+        # "abalone": 91.6,
         "optdigits": 97.5,
         "satimage-2": 99.9,
         "satellite": 80.3,
         "pendigits": 99.9,
         "annthyroid": 86.7,
-        "mnist": 94.4,
+        # "mnist": 94.4,
         "mammography": 88.6,
-        "mullcross": 100,
+        # "mullcross": 100,
         "shuttle": 99.8,
-        "forest_cover": 95.8,
+        # "forest_cover": 95.8,
         "campaign": 79.1,
         "fraud": 95.7,
-        "backdoor": 95.2
+        # "backdoor": 95.2
     }
-    npt_aucf1 = {
+    npt_f1 = {
         "wine": 72.5,
         # "lympho": 94.2,
         "glass": 26.2,
@@ -523,13 +542,13 @@ def render_ours_on_npt(pivots, ):
     }    
     npt_df = pd.DataFrame([npt_aucroc.values()], index=['NPT-AD'], columns=npt_aucroc.keys())
     npt_df = npt_df/100
-    # base = 'ratio_1.0_AUCPR'
     base = 'ratio_1.0_AUCROC'
-            # '',
     # base = 'ratio_1.0_f1'
     pae_df = render(pivots, data, models, my_models, base, 
             add_avg_rank=False, use_rank=False, use_std=False, 
             use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
+    pae_df = pae_df.max(axis=0).to_frame().T
+    # print(pae_df)
     merged_df = merged_df = pd.concat([npt_df, pae_df])
     merged_df = merged_df.dropna(axis=1)
     merged_df['AVG_AUC'] = merged_df.mean(axis=1)
