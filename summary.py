@@ -558,7 +558,7 @@ def main(args):
     ]
     models=  [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
-        'AutoEncoder', 
+        # 'AutoEncoder', 
         'DeepSVDD', 'GOAD', 
         'NeuTraL', 'ICL', 'MCM', 'DRL',
         'Disent',
@@ -626,11 +626,11 @@ def main(args):
     for base in keys:
         render(pivots, data, models, my_models, base, 
                add_avg_rank=True, use_rank=False, use_std=False, 
-               use_baseline_pr=True, is_temp_tune=False, is_sort=False, is_plot=True)
+               use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=True)
 
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
-        'AutoEncoder', 
+        # 'AutoEncoder', 
         'DeepSVDD', 'GOAD', 
         'NeuTraL', 'ICL', 'MCM', 'DRL',
         'Disent',
@@ -673,7 +673,7 @@ def main(args):
             # 'ECOD', # remove due to local
             'KNN', 
             'PCA',  
-            'AutoEncoder', 
+            # 'AutoEncoder', 
             # 'DeepSVDD', 'GOAD', # not important baseline 
             # 'NeuTraL', 'ICL', # not important baseline
             # Below three are important.
