@@ -1,20 +1,21 @@
 #!/bin/bash
 data_list=(
-    cluster_anomalies_45_wine_42
-    cluster_anomalies_14_glass_42
-    cluster_anomalies_42_WBC_42
-    cluster_anomalies_18_Ionosphere_42
-    cluster_anomalies_4_breastw_42
-    cluster_anomalies_29_Pima_42
-    cluster_anomalies_6_cardio_42
-    cluster_anomalies_7_Cardiotocography_42
-    cluster_anomalies_38_thyroid_42
-    cluster_anomalies_26_optdigits_42
-    cluster_anomalies_31_satimage-2_42
-    cluster_anomalies_30_satellite_42
-    cluster_anomalies_23_mammography_42
-    cluster_anomalies_5_campaign_42
-    cluster_anomalies_32_shuttle_42
+    # cluster_anomalies_45_wine_42
+    # cluster_anomalies_14_glass_42
+    # cluster_anomalies_42_WBC_42
+    # cluster_anomalies_18_Ionosphere_42
+    # cluster_anomalies_4_breastw_42
+    # cluster_anomalies_29_Pima_42
+    # cluster_anomalies_6_cardio_42
+    # cluster_anomalies_7_Cardiotocography_42
+    # cluster_anomalies_38_thyroid_42
+    # cluster_anomalies_26_optdigits_42
+    # cluster_anomalies_31_satimage-2_42
+    # cluster_anomalies_30_satellite_42
+    # cluster_anomalies_23_mammography_42
+    # cluster_anomalies_5_campaign_42
+    # cluster_anomalies_32_shuttle_42
+    global_anomalies_32_shuttle_42
       
    
    
