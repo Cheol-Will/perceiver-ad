@@ -299,16 +299,9 @@ def render(
     order = first + rest
     df_mean = df_mean.loc[order]
     df_std  = df_std.loc[order]
-
-    if is_temp_tune:
-        pass
-
-    # df_mean.loc['MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', 'census'] = 0.2474
-    # df_mean.loc['MCMPAE-ws-pos_query+token-d32-lr0.001', 'census'] = 0.2159
     df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
     df_std.loc[:, 'AVG_AUC']  = df_std.mean(axis=1, numeric_only=True)
 
-    
     if add_avg_rank:
         if is_synthetic:
             plot_name = f'synthetic_{synthetic_type}_{base}'
@@ -320,12 +313,10 @@ def render(
 
     if use_rank:
         df_mean.loc[:, data] = df_mean.loc[:, data].rank(axis=0, ascending=False, method='average')
-
     
     df_render = df_mean.copy()
+    
     if use_rank:
-        target_cols = [col for col in df_render.columns if col not in data]
-        # df_render.loc[:, target_cols] = df_render.loc[:, target_cols].round(4)
         df_render.loc[:, data] = df_render.loc[:, data].round(0)
 
     if use_std:
@@ -393,7 +384,7 @@ def render(
         file_name = base
     df_render.to_csv(f'metrics/{file_name}.csv')
     df_render.T.to_csv(f'metrics/{file_name}_T.csv')
-
+    print(f"file saved in {file_name}")
     print(base)
     print(df_render)
     # print(df_render.T)
@@ -636,7 +627,7 @@ def main(args):
         'Disent',
     ]
     my_models = [
-        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
     ]
@@ -683,6 +674,8 @@ def main(args):
 
 
         anomaly_type_list = [
+            # 'global_anomalies_',
+            # 'cluster_anomalies_',
             'local_anomalies_',
             'dependency_anomalies_',
         ]
