@@ -23,13 +23,13 @@ data_list=(
     dependency_anomalies_32_shuttle_42
 ) 
 # model_list=(IForest LOF OCSVM ECOD KNN PCA MCM DRL Disent) 
-# model_type='Disent'
+data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography nslkdd shuttle fraud census) # from MCM
 # data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography nslkdd shuttle fraud census) # from MCM
-data_list=(optdigits) # from MCM
+# data_list=(pendigits) # from MCM
 
+# model_type='Disent'
+model_type='MCM'
 model_type='Disent'
-# model_type='MCM'
-# model_type='PAE'
 for data in "${data_list[@]}"; do
     echo "$model_type on $data"
     python analysis.py \

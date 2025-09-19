@@ -721,12 +721,12 @@ class Analyzer(Trainer):
     @torch.no_grad()
     def plot_anomaly_histograms(
         self,
-        bins: int = 50,
+        bins: int = 100,
         remove_outliers: bool = False,
-        outlier_method: str = "iqr",
+        outlier_method: str = "percentile", # percentile or iqr
         low: float = 0.0,
-        high: float = 90,
-        iqr_k: float = 1.5,
+        high: float = 100,
+        iqr_k: float = 2.0,
     ):
         self.model.eval()
 

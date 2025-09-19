@@ -604,7 +604,7 @@ def main(args):
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
 
         # 'MCMPAE-ws-pos_query+token-d32-lr0.001',
-        # 'MCMPAE-ws-pos_query+token-d64-lr0.001',
+        'MCMPAE-ws-pos_query+token-d64-lr0.001',
         # 'MCMPAE-ws-pos_query+token-d64-lr0.005',
 
         ##################################################################################
@@ -725,7 +725,7 @@ def main(args):
                     use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
     if args.contamination:
         models=[ 
-            # 'KNN', 
+            'KNN', 
             'MCM', 
             'DRL', 
             'Disent',
@@ -746,7 +746,7 @@ def main(args):
             # 
             # 'satimage-2',
             # 'pendigits',
-            # 'shuttle', 
+            'shuttle', 
             'satellite', 
             # 'thyroid',
         ]
