@@ -1,0 +1,105 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "num_latents": 4,
+        "depth": 4,
+        "hidden_dim": 64,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "mask_num": 15,
+        "diversity_loss_weight": 5,
+        "is_weight_sharing": true,
+        "use_pos_enc_as_query": true,
+        "use_mask_token": true,
+        "num_features": 29
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 2048,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "model_type": "MCMPAE",
+        "dataset_name": "fraud",
+        "train_ratio": 1.0,
+        "base_path": "results/MCMPAE-ws-pos_query+token-d64-lr0.001/fraud/1.0",
+        "not_use_power_of_two": false,
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9601829306896243,
+        "AUC-PR": 0.5518366135703265,
+        "f1": 0.6530487804878048
+    },
+    "total_time": 30537.87818789482,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.958446513252116,
+            "AUC-PR": 0.6245590634571122,
+            "f1": 0.774390243902439
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.962135569526041,
+            "AUC-PR": 0.6010763183496483,
+            "f1": 0.7378048780487805
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9616708684497051,
+            "AUC-PR": 0.5896945936849693,
+            "f1": 0.6849593495934959
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9588553678450304,
+            "AUC-PR": 0.49843654918485636,
+            "f1": 0.5813008130081301
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9607155304237802,
+            "AUC-PR": 0.5511298933093118,
+            "f1": 0.6321138211382114
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9617995040900901,
+            "AUC-PR": 0.5126805330860259,
+            "f1": 0.6077235772357723
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9603475384139737,
+            "AUC-PR": 0.5289074187611382,
+            "f1": 0.5934959349593496
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9601059230214131,
+            "AUC-PR": 0.62306216738918,
+            "f1": 0.7601626016260162
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.9599699312582118,
+            "AUC-PR": 0.5006141846260339,
+            "f1": 0.6016260162601627
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.9577825606158819,
+            "AUC-PR": 0.48820541385498967,
+            "f1": 0.556910569105691
+        }
+    ]
+}

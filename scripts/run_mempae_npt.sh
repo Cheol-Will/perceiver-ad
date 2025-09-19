@@ -9,13 +9,13 @@ data_list=(
     # musk
     # speech
 
-    mnist
-    annthyroid
-    mulcross
+    # mnist
+    # annthyroid
     forest_cover
     backdoor
     seismic
     # abalone # need to resolve things
+    # mulcross # arff
     # ecoli # need to create label manually.
 )
   

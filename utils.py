@@ -176,8 +176,10 @@ def get_input_dim(args, model_config):
         labels = data.iloc[:, -1].values
     else:
         raise ValueError(f"Unknown dataset {args.dataname}")
-    samples = data['X']
-    return samples.shape[-1]
+    
+    dim = data['X'].shape[-1]
+
+    return dim
 
 def replace_transformer_config(args, model_config):
     model_config['num_heads'] = args.num_heads if args.num_heads is not None else model_config['num_heads']

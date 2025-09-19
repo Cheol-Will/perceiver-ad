@@ -300,30 +300,10 @@ def render(
     df_std  = df_std.loc[order]
 
     if is_temp_tune:
-        row1_name = 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1'
-        row2_name = 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05'
-        if is_synthetic:
-            row1_name = 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05'
-            row2_name = 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1'
-        new_row_name = 'MemPAE-ws-pos_query+token-d64-lr0.001-t-tune'
-
-        mean_comparison = df_mean.loc[[row1_name, row2_name]]
-        winner_indices = mean_comparison.idxmax()
-        new_mean_row = mean_comparison.max()
-
-        is_row1_winner = (winner_indices == row1_name)
-        new_std_row = pd.Series(
-            np.where(is_row1_winner, df_std.loc[row1_name], df_std.loc[row2_name]),
-            index=df_std.columns
-        )
-
-        df_mean.loc[new_row_name] = new_mean_row
-        df_std.loc[new_row_name] = new_std_row
-
-        df_mean.drop([row1_name, row2_name], inplace=True)
-        df_std.drop([row1_name, row2_name], inplace=True)
+        pass
 
     # df_mean.loc['MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', 'census'] = 0.2474
+    # df_mean.loc['MCMPAE-ws-pos_query+token-d32-lr0.001', 'census'] = 0.2159
     df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
     df_std.loc[:, 'AVG_AUC']  = df_std.mean(axis=1, numeric_only=True)
 
@@ -443,6 +423,91 @@ def render_hp(pivots, data):
     render(pivots, data, models, my_models, base, 
             add_avg_rank=True, use_rank=False, use_std=False, 
             use_baseline_pr=True, is_temp_tune=False, is_sort=False, is_plot=True)
+
+
+
+def render_ours_on_npt(pivots, ):
+    data = [
+        'wine',
+        'lympho',
+        'glass',
+        'vertebral',
+        'wbc',
+        # 'ecoli',
+        'ionosphere',
+        'arrhythmia',
+        'breastw',
+        'pima',
+        'vowels',
+        'letter',
+        'cardio',
+        # 'seismic',
+        'musk',
+        'speech',
+        'thyroid',
+        # 'abalone',
+        'optdigits',
+        'satimage-2',
+        'satellite',
+        'pendigits',
+        'annthyroid',
+        'mnist',
+        'mammography',
+        'shuttle',
+        # 'forest_cover',
+        'campaign',
+        'fraud',
+        # 'backdoor', # we got 5 remainig datasets.
+    ]
+    models = []
+    my_models = [
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+    ]
+    npt_aucroc = {
+        "wine": 96.6,
+        "lympho": 99.9,
+        "glass": 82.8,
+        "vertebral": 54.6,
+        "wbc": 96.3,
+        "ecoli": 88.7,
+        "ionosphere": 97.4,
+        "arrhythmia": 80.1,
+        "breastw": 98.6,
+        "pima": 73.4,
+        "vowels": 99.3,
+        "letter": 96.1,
+        "cardio": 94.7,
+        "seismic": 69.8,
+        "musk": 100,
+        "speech": 54.3,
+        "thyroid": 97.8,
+        "abalone": 91.6,
+        "optdigits": 97.5,
+        "satimage-2": 99.9,
+        "satellite": 80.3,
+        "pendigits": 99.9,
+        "annthyroid": 86.7,
+        "mnist": 94.4,
+        "mammography": 88.6,
+        "mullcross": 100,
+        "shuttle": 99.8,
+        "forest": 95.8,
+        "campaign": 79.1,
+        "fraud": 95.7,
+        "backdoor": 95.2
+    }
+    npt_df = pd.DataFrame([npt_aucroc.values()], index=['NPT-AD'], columns=npt_aucroc.keys())
+    npt_df = npt_df/100
+    # base = 'ratio_1.0_AUCPR'
+    base = 'ratio_1.0_AUCROC'
+    pae_df = render(pivots, data, models, my_models, base, 
+            add_avg_rank=False, use_rank=False, use_std=False, 
+            use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
+    merged_df = merged_df = pd.concat([npt_df, pae_df])
+    merged_df['AVG_AUCROC'] = merged_df.mean(axis=1)
+    print(merged_df)
+
+    return 
 
 
 
@@ -650,6 +715,8 @@ def main(args):
         # cardio, optdigits, 
         # cardio, optdigits, wbc
 
+    if args.npt:
+        render_ours_on_npt(pivots, )
 
 
 if __name__ == "__main__":
@@ -657,6 +724,7 @@ if __name__ == "__main__":
     parser.add_argument('--synthetic', action='store_true')
     parser.add_argument('--contamination', action='store_true')
     parser.add_argument('--hp_ratio', action='store_true')
+    parser.add_argument('--npt', action='store_true')
     parser.add_argument('--synthetic_type', type=str, default='dependency')
     args = parser.parse_args()
     main(args)
