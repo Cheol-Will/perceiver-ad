@@ -16,6 +16,13 @@ npz_datanames = [os.path.splitext(os.path.basename(file))[0] for file in npz_fil
 mat_files = glob.glob(os.path.join('./Data', '*.mat'))
 mat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in mat_files]
 
+dat_files = glob.glob(os.path.join('./Data', '*.dat'))
+dat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in dat_files]
+
+arff_files = glob.glob(os.path.join('./Data', '*.arff'))
+arff_datanames = [os.path.splitext(os.path.basename(file))[0] for file in arff_files]
+
+
 class MyDataset(Dataset):
     def __init__(self, data, label):
         super().__init__()
@@ -67,6 +74,32 @@ def load_dataset(data_dir, dataset_name):
 
         inliers = samples[labels == 0]
         outliers = samples[labels == 1]
+
+
+    # below is for datasets from NPT-AD .
+    elif dataset_name in dat_datanames:
+        path = os.path.join(data_dir, dataset_name + '.dat')
+        data = io.loadmat(path)
+        samples = data['X']
+        labels = ((data['y']).astype(int)).reshape(-1)
+
+        inliers = samples[labels == 0]
+        outliers = samples[labels == 1]
+
+    
+    elif dataset_name in arff_datanames:
+        # for seismic
+        path = os.path.join(data_dir, dataset_name + '.arff')
+        data, _ = io.arff.loadarff(path)
+        data = pd.DataFrame(data)
+        samples = pd.get_dummies(data.iloc[:, :-1]).to_numpy()
+        labels = data.iloc[:, -1].values
+        inliers = samples[labels == b'0']
+        outliers = samples[labels == b'1']
+        print(samples)
+        print(labels)
+
+    
     # else:
     #     x = []
     #     labels = []
