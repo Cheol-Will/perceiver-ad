@@ -24,9 +24,11 @@ data_list=(
 ) 
 # model_list=(IForest LOF OCSVM ECOD KNN PCA MCM DRL Disent) 
 # model_type='Disent'
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography nslkdd shuttle fraud census) # from MCM
+# data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography nslkdd shuttle fraud census) # from MCM
+data_list=(optdigits) # from MCM
 
-model_type='MCM'
+model_type='Disent'
+# model_type='MCM'
 # model_type='PAE'
 for data in "${data_list[@]}"; do
     echo "$model_type on $data"

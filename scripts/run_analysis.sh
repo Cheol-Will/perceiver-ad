@@ -4,6 +4,7 @@
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
 
 data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography nslkdd shuttle fraud census) # from MCM
+data_list=(cardiotocography) # from MCM
 
 # data_list=(pima) # from MCM
 # data_list=(wine wbc) # from MCM

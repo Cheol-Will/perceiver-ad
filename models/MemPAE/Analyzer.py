@@ -723,7 +723,7 @@ class Analyzer(Trainer):
         self,
         bins: int = 50,
         remove_outliers: bool = False,
-        outlier_method: str = "percentile",
+        outlier_method: str = "iqr",
         low: float = 0.0,
         high: float = 90,
         iqr_k: float = 1.5,
