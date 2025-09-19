@@ -176,7 +176,7 @@ class Analyzer(Trainer):
         remove_outliers: bool = False,
         outlier_method: str = "percentile",
         low: float = 0.0,
-        high: float = 100.0,
+        high: float = 90.0,
         iqr_k: float = 1.5,
     ):
         self.model.eval()

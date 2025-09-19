@@ -50,7 +50,7 @@ def train_test(args, model_config, train_config, analysis_config, run):
     if analysis_config['compare_regresssion_with_attn']:
         analyzer.compare_regresssion_with_attn(use_sup_attn=False, lambda_attn=args.lambda_attn)
     if analysis_config['compare_regresssion_with_sup_attn']:
-        analyzer.compare_regresssion_with_attn(use_sup_attn=True, lambda_attn=args.lambda_attn)
+        analyzer.compare_regresssion_with_attn(use_sup_attn=True, lambda_attn=args.lambda_attn, model_type='decision_tree')
     if analysis_config['plot_attn_and_corr']:
         analyzer.plot_attn_and_corr()
     if analysis_config['plot_tsne_recon']:

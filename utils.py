@@ -69,8 +69,6 @@ def get_parser():
     return parser
 
 
-
-
 def load_yaml(args):    
 
     dict_to_import = args.model_type + '.yaml'

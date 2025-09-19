@@ -179,7 +179,7 @@ class Analyzer(Trainer):
         remove_outliers: bool = False,
         outlier_method: str = "percentile",
         low: float = 0.0,
-        high: float = 80.0,
+        high: float = 90.0,
         iqr_k: float = 1.5,
     ):
         self.model.eval()
@@ -235,10 +235,10 @@ class Analyzer(Trainer):
             return arr[(arr >= lo) & (arr <= hi)]
 
         if remove_outliers:
-            # train_plot = _clip(train_normal)
             train_plot = train_normal
-            test_norm_plot = _clip(test_normal)
+            train_plot = _clip(train_normal)
             test_norm_plot = test_normal
+            test_norm_plot = _clip(test_normal)
             test_abn_plot  = _clip(test_abnormal)
         else:
             train_plot = train_normal

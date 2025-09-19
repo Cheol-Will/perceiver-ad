@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-data_list=(arrhythmia breastw glass cardio cardiotocography pima wbc wine campaign) # from MCM
+# data_list=(arrhythmia breastw glass cardio cardiotocography pima wbc wine campaign) # from MCM
+data_list=(satellite shuttle) # from MCM
 
 depth=4
 hidden_dim=64

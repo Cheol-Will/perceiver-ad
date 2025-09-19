@@ -393,21 +393,33 @@ def render(
     return df_render
 
 
-def render_hp(pivots, data):
+def render_hp(pivots):
+    data = [
+        'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
+        'ionosphere', 'pima', 'wbc', 'wine', 'thyroid',
+        'optdigits', 'pendigits', 'satellite', 
+        'campaign', 
+        'mammography', 
+        'satimage-2', # middle
+        'nslkdd', # large 
+        'fraud', # large
+        'shuttle', # large
+        # 'census', # large
+    ]
     models = ['KNN']
     my_models = [
         'MemPAE-ws-pos_query+token-latent_ratio0.5-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-latent_ratio2.0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-latent_ratio4.0-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1',
  
         'MemPAE-ws-pos_query+token-memory_ratio0.5-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-memory_ratio2.0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-memory_ratio8.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-memory_ratio8.0-d64-lr0.001-t0.1',
        
  
     ]
@@ -602,6 +614,7 @@ def main(args):
         # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
         ##################################################################################
         # MemPAE with small memory Ablation
+        # 'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
         # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
@@ -712,22 +725,30 @@ def main(args):
                     use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
     if args.contamination:
         models=[ 
-            'KNN', 
+            # 'KNN', 
             'MCM', 
-            # 'DRL', 
+            'DRL', 
             'Disent',
         ]
         # success case: cardio, sat (maybe)
         dataname_list = [
-            'cardio', 
-            'cardiotocography',
+            # we can use only pima and arrhythmia
             'pima', # good
             'arrhythmia', # good
-            'breastw',
+            # 'cardio', 
+            # 'cardiotocography',
+            # 'breastw',
             'glass',
             'wbc', 
             'wine', 
             'campaign', 
+            'ionosphere',
+            # 
+            # 'satimage-2',
+            # 'pendigits',
+            # 'shuttle', 
+            'satellite', 
+            # 'thyroid',
         ]
         contamination_ratio = [
             'contam0.01',
@@ -749,7 +770,7 @@ def main(args):
                     add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
                     use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=contamination)
     if args.hp_ratio:
-        render_hp(pivots, data)
+        render_hp(pivots)
         # cardio, optdigits, 
         # cardio, optdigits, wbc
 
