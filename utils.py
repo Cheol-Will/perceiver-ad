@@ -15,8 +15,15 @@ BASELINE_MODELS = ['OCSVM', 'KNN', 'IForest', 'LOF', 'PCA', 'ECOD',
 
 npz_files = glob.glob(os.path.join('./Data', '*.npz'))
 npz_datanames = [os.path.splitext(os.path.basename(file))[0] for file in npz_files]
+
 mat_files = glob.glob(os.path.join('./Data', '*.mat'))
 mat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in mat_files]
+
+dat_files = glob.glob(os.path.join('./Data', '*.data'))
+dat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in dat_files]
+
+arff_files = glob.glob(os.path.join('./Data', '*.arff'))
+arff_datanames = [os.path.splitext(os.path.basename(file))[0] for file in arff_files]
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -157,6 +164,16 @@ def get_input_dim(args, model_config):
     elif args.dataname in mat_datanames:
         path = os.path.join(model_config['data_dir'], args.dataname + '.mat')
         data = io.loadmat(path)
+    elif args.dataname in dat_datanames:
+        path = os.path.join(model_config['data_dir'], args.dataname + '.data')
+        data = io.loadmat(path)
+    elif args.dataname in arff_datanames:
+        path = os.path.join(model_config['data_dir'], args.dataname + '.arff')
+        import pandas as pd
+        data, _ = io.arff.loadarff(path)
+        data = pd.DataFrame(data)
+        samples = pd.get_dummies(data.iloc[:, :-1]).to_numpy()
+        labels = data.iloc[:, -1].values
     else:
         raise ValueError(f"Unknown dataset {args.dataname}")
     samples = data['X']

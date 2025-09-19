@@ -16,7 +16,7 @@ npz_datanames = [os.path.splitext(os.path.basename(file))[0] for file in npz_fil
 mat_files = glob.glob(os.path.join('./Data', '*.mat'))
 mat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in mat_files]
 
-dat_files = glob.glob(os.path.join('./Data', '*.dat'))
+dat_files = glob.glob(os.path.join('./Data', '*.data'))
 dat_datanames = [os.path.splitext(os.path.basename(file))[0] for file in dat_files]
 
 arff_files = glob.glob(os.path.join('./Data', '*.arff'))
@@ -78,7 +78,7 @@ def load_dataset(data_dir, dataset_name):
 
     # below is for datasets from NPT-AD .
     elif dataset_name in dat_datanames:
-        path = os.path.join(data_dir, dataset_name + '.dat')
+        path = os.path.join(data_dir, dataset_name + '.data')
         data = io.loadmat(path)
         samples = data['X']
         labels = ((data['y']).astype(int)).reshape(-1)

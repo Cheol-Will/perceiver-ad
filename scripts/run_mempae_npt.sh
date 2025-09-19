@@ -2,19 +2,20 @@
 set -euo pipefail
 
 data_list=(
-    lympho
-    vertebral
-    vowels
-    letter
-    musk
-    speech
-    abalone
+    # lympho
+    # vertebral
+    # vowels
+    # letter
+    # musk
+    # speech
+
     mnist
     annthyroid
     mulcross
     forest_cover
     backdoor
     seismic
+    # abalone # need to resolve things
     # ecoli # need to create label manually.
 )
   
