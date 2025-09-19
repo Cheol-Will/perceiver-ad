@@ -8,12 +8,13 @@ pd.set_option('display.max_rows', None)
 
 BASE_DIR = "results"
 TRAIN_RATIOS = [0.1, 0.5, 1.0]
-METRICS_CANON = ["AUC-ROC", "AUC-PR"]
+METRICS_CANON = ["AUC-ROC", "AUC-PR", 'f1']
 METRIC_ALIAS = {
     "AUC-ROC": "AUC-ROC", "AUROC": "AUC-ROC", "AUCROC": "AUC-ROC",
     "AUC_ROC": "AUC-ROC", "auc_roc": "AUC-ROC",
     "AUC-PR": "AUC-PR", "AUCPR": "AUC-PR", "AUC_PR": "AUC-PR",
     "auc_pr": "AUC-PR",
+    'f1': 'f1'
 }
 
 def canon_metric_name(name: str):
@@ -465,46 +466,82 @@ def render_ours_on_npt(pivots, ):
     ]
     npt_aucroc = {
         "wine": 96.6,
-        "lympho": 99.9,
+        # "lympho": 99.9,
         "glass": 82.8,
-        "vertebral": 54.6,
+        # "vertebral": 54.6,
         "wbc": 96.3,
-        "ecoli": 88.7,
+        # "ecoli": 88.7,
         "ionosphere": 97.4,
         "arrhythmia": 80.1,
         "breastw": 98.6,
         "pima": 73.4,
-        "vowels": 99.3,
-        "letter": 96.1,
+        # "vowels": 99.3,
+        # "letter": 96.1,
         "cardio": 94.7,
-        "seismic": 69.8,
-        "musk": 100,
-        "speech": 54.3,
+        # "seismic": 69.8,
+        # "musk": 100,
+        # "speech": 54.3,
         "thyroid": 97.8,
-        "abalone": 91.6,
+        # "abalone": 91.6,
         "optdigits": 97.5,
         "satimage-2": 99.9,
         "satellite": 80.3,
         "pendigits": 99.9,
         "annthyroid": 86.7,
-        "mnist": 94.4,
+        # "mnist": 94.4,
         "mammography": 88.6,
-        "mullcross": 100,
+        # "mullcross": 100,
         "shuttle": 99.8,
-        "forest": 95.8,
+        # "forest": 95.8,
         "campaign": 79.1,
         "fraud": 95.7,
-        "backdoor": 95.2
+        # "backdoor": 95.2
     }
+    npt_aucf1 = {
+        "wine": 72.5,
+        # "lympho": 94.2,
+        "glass": 26.2,
+        # "vertebral": 20.3,
+        "wbc": 67.3,
+        # "ecoli": 77.7,
+        "ionosphere": 92.7,
+        "arrhythmia": 60.4,
+        "breastw": 95.7,
+        "pima": 68.8,
+        # "vowels": 88.7,
+        # "letter": 71.4,
+        "cardio": 78.1,
+        # "seismic": 26.2,
+        # "musk": 100,
+        # "speech": 9.3,
+        "thyroid": 77.0,
+        # "abalone": 59.7,
+        "optdigits": 62,
+        "satimage-2": 94.8,
+        "satellite": 74.6,
+        "pendigits": 92.5,
+        "annthyroid": 57.7,
+        # "mnist": 43.6,
+        "mammography": 43.6,
+        # "mullcross": 100,
+        "shuttle": 98.2,
+        # "forest": 58,
+        "campaign": 49.8,
+        "fraud": 58.1,
+        # "backdoor": 84.1,
+    }    
     npt_df = pd.DataFrame([npt_aucroc.values()], index=['NPT-AD'], columns=npt_aucroc.keys())
     npt_df = npt_df/100
     # base = 'ratio_1.0_AUCPR'
     base = 'ratio_1.0_AUCROC'
+            # '',
+    # base = 'ratio_1.0_f1'
     pae_df = render(pivots, data, models, my_models, base, 
             add_avg_rank=False, use_rank=False, use_std=False, 
             use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
     merged_df = merged_df = pd.concat([npt_df, pae_df])
-    merged_df['AVG_AUCROC'] = merged_df.mean(axis=1)
+    merged_df = merged_df.dropna(axis=1)
+    merged_df['AVG_AUC'] = merged_df.mean(axis=1)
     print(merged_df)
 
     return 
@@ -717,7 +754,6 @@ def main(args):
 
     if args.npt:
         render_ours_on_npt(pivots, )
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
