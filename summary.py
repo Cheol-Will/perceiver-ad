@@ -393,21 +393,33 @@ def render(
     return df_render
 
 
-def render_hp(pivots, data):
+def render_hp(pivots):
+    data = [
+        'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
+        'ionosphere', 'pima', 'wbc', 'wine', 'thyroid',
+        'optdigits', 'pendigits', 'satellite', 
+        'campaign', 
+        'mammography', 
+        'satimage-2', # middle
+        'nslkdd', # large 
+        'fraud', # large
+        'shuttle', # large
+        'census', # large
+    ]
     models = ['KNN']
     my_models = [
         'MemPAE-ws-pos_query+token-latent_ratio0.5-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-latent_ratio2.0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-latent_ratio4.0-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1',
  
         'MemPAE-ws-pos_query+token-memory_ratio0.5-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-memory_ratio2.0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-memory_ratio8.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-memory_ratio8.0-d64-lr0.001-t0.1',
        
  
     ]
@@ -602,10 +614,11 @@ def main(args):
         # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
         ##################################################################################
         # MemPAE with small memory Ablation
+        # 'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
-        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
-        'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
-        'MemPAE-d64-lr0.001-t0.1', # tmux 1
+        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
+        # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
 
         ##################################################################################        
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
@@ -757,7 +770,7 @@ def main(args):
                     add_avg_rank=True, use_rank=False, use_std=True, use_baseline_pr=False, 
                     use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=contamination)
     if args.hp_ratio:
-        render_hp(pivots, data)
+        render_hp(pivots)
         # cardio, optdigits, 
         # cardio, optdigits, wbc
 
