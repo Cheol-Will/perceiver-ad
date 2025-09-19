@@ -114,6 +114,7 @@ if __name__ == "__main__":
     parser.add_argument('--plot_histogram', action='store_true')
     parser.add_argument('--plot_memory_weight', action='store_true')
     parser.add_argument('--compare_regresssion_with_attn', action='store_true')
+    parser.add_argument('--lambda_attn', type=float, default=1.0)
     parser.add_argument('--compare_regresssion_with_sup_attn', action='store_true')
     parser.add_argument('--plot_attn_and_corr', action='store_true')
     parser.add_argument('--plot_tsne_recon', action='store_true')
