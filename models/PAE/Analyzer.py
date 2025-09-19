@@ -117,10 +117,10 @@ class Analyzer(Trainer):
     @torch.no_grad()
     def plot_attn_and_corr(self):
         # Extract attention weights (H, F, F)
-        attn_weights = self.get_attn_weights(use_self_attn=True)  # Shape: (H, F, F)
-        attn_weights_no_self = self.get_attn_weights(use_self_attn=False)  # Shape: (H, F, F)
+        attn_weights = self.get_attn_weights(use_self_attn=True).unsqueeze(0)  # Shape: (H, F, F)
+        attn_weights_no_self = self.get_attn_weights(use_self_attn=False).unsqueeze(0)  # Shape: (H, F, F)
+        
         H, F, F = attn_weights.shape
-
         # Create a combined plot (1 row x (1 + 2H) columns)
         fig_combined, axes_combined = plt.subplots(1, 2*H + 1, figsize=(6 * (2*H + 1), 6), dpi=200)
         if H == 1:
@@ -184,22 +184,28 @@ class Analyzer(Trainer):
         lambda_attn: float = 1.0,
     ):  
         if use_sup_attn:
-            attn_with_self = self.get_sup_attn_weights(use_self_attn=True, lambda_attn=lambda_attn)
-            attn_no_self = self.get_sup_attn_weights(use_self_attn=False)
+            attn_with_self = self.get_attn_weights(use_self_attn=True, lambda_attn=lambda_attn).unsqueeze(0)  # Shape: (H, F, F)
+            attn_no_self = self.get_attn_weights(use_self_attn=False).unsqueeze(0)  # Shape: (H, F, F)
+
+            # attn_with_self = self.get_sup_attn_weights(use_self_attn=True, lambda_attn=lambda_attn)
+            # attn_no_self = self.get_sup_attn_weights(use_self_attn=False)
         
             attn_label_with_self = attn_with_self.cpu().numpy()
             attn_label_no_self = attn_no_self.cpu().numpy()
-            # print(attn_label_no_self.shape)
+            print(attn_label_no_self.shape)
 
-            attn_label_with_self = attn_with_self[:, -1, :].cpu().numpy()
-            attn_label_no_self = attn_no_self[:, -1, :].cpu().numpy()
+            attn_label_with_self = attn_with_self[:, -1, :-1].cpu().numpy()
+            attn_label_no_self = attn_no_self[:, -1, :-1].cpu().numpy()
 
         else:    
             attn_with_self = self.get_attn_weights(use_self_attn=True, lambda_attn=lambda_attn)
             attn_no_self = self.get_attn_weights(use_self_attn=False)
 
-            attn_label_with_self = attn_with_self[:, -1, :-1].cpu().numpy()
-            attn_label_no_self = attn_no_self[:, -1, :-1].cpu().numpy()
+            attn_label_with_self = attn_with_self[:, -1, :].cpu().numpy()
+            attn_label_no_self = attn_no_self[:, -1, :].cpu().numpy()
+        print(attn_label_no_self.shape)
+        print(attn_label_with_self.shape)
+
 
         X_all, y_all = [], []
         for X, y in self.train_loader:
@@ -308,6 +314,7 @@ class Analyzer(Trainer):
     def get_attn_weights(
         self,
         use_self_attn: bool = True,
+        lambda_attn: float = 1.0,
     ):
         """
         enc_attn: mean over heads
@@ -324,40 +331,41 @@ class Analyzer(Trainer):
             X_input = X.to(self.device)
             loss, attn_enc, attn_self_list, attn_dec = \
                 self.model(X_input, return_weight=True)
-
-            B, H, N, F = attn_enc.shape
+            attn_enc = attn_enc.mean(axis=1)
+            attn_dec = attn_dec.mean(axis=1)
+            B, N, F = attn_enc.shape
 
             
             if use_self_attn and attn_self_list:
-                I = torch.eye(N, device=self.device).expand(B, H, N, N)  # (B,H,N,N)
-                W_self_total = attn_self_list[0] + I
+                I = torch.eye(N, device=self.device).expand(B, N, N)  # (B,H,N,N)
+                W_self_total = attn_self_list[0].mean(axis=1) + I
                 for W in attn_self_list[1:]:
-                    W_with_res = W + I
-                    # (B,H,N,N) x (B,H,N,N) -> (B,H,N,N)
-                    W_self_total = torch.einsum("bhij,bhjk->bhik", W_with_res, W_self_total)
+                    W_with_res = lambda_attn * W.mean(axis=1) + I
+
+                    W_self_total = torch.einsum("bij,bjk->bik", W_with_res, W_self_total)
                 enc_mean = attn_enc.mean(dim=1)            # (B, N, F)
                 dec_mean = attn_dec.mean(dim=1)            # (B, F, N)
 
-                dec_mean_h = dec_mean.unsqueeze(1).expand(B, H, F, N)
-                enc_mean_h = enc_mean.unsqueeze(1).expand(B, H, N, F)
+                dec_mean_h = dec_mean.unsqueeze(1).expand(B, F, N)
+                enc_mean_h = enc_mean.unsqueeze(1).expand(B, N, F)
             
             else:
                 # no self attention -> dec x enc per each ehad
-                W_self_total = torch.eye(N, device=self.device).expand(B, H, N, N)
+                W_self_total = torch.eye(N, device=self.device).expand(B, N, N)
                 enc_mean_h = attn_enc
                 dec_mean_h = attn_dec
             
-            tmp = torch.einsum("bhfn,bhnk->bhfk", dec_mean_h, W_self_total)
-            attn_feat_feat = torch.einsum("bhfn,bhnk->bhfk", tmp, enc_mean_h)
+            tmp = torch.einsum("bfn,bnk->bfk", dec_mean_h, W_self_total)
+            attn_feat_feat = torch.einsum("bfn,bnk->bfk", tmp, enc_mean_h)
 
             if running is None:
-                running = attn_feat_feat.sum(dim=0)  # (H, F, F)
+                running = attn_feat_feat.sum(dim=0)  # F, F
             else:
                 running += attn_feat_feat.sum(dim=0)
 
             total_samples += B
 
-        result = running / total_samples  # (H, F, F)
+        result = running / total_samples  # F, F
         return result
 
 

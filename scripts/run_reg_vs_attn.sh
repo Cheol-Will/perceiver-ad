@@ -2,6 +2,7 @@
 
 data_list=(
     # superconduct
+    wine_quality 
     MiamiHousing2016
     # Ailerons
     # cpu_act
@@ -10,13 +11,12 @@ data_list=(
     isolet
     pol
     california 
-    wine_quality 
     house
 )
 
 # model_type='MemPAE'
 model_type='PAE'
-hidden_dim=64
+hidden_dim=128
 num_heads=4
 learning_rate=0.001
 temperature=0.1

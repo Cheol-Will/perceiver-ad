@@ -455,7 +455,7 @@ def render_ours_on_npt(pivots, ):
         'mnist',
         'mammography',
         'shuttle',
-        # 'forest_cover',
+        'forest_cover',
         'campaign',
         'fraud',
         # 'backdoor', # we got 5 remainig datasets.
@@ -466,36 +466,36 @@ def render_ours_on_npt(pivots, ):
     ]
     npt_aucroc = {
         "wine": 96.6,
-        # "lympho": 99.9,
+        "lympho": 99.9,
         "glass": 82.8,
-        # "vertebral": 54.6,
+        "vertebral": 54.6,
         "wbc": 96.3,
-        # "ecoli": 88.7,
+        "ecoli": 88.7,
         "ionosphere": 97.4,
         "arrhythmia": 80.1,
         "breastw": 98.6,
         "pima": 73.4,
-        # "vowels": 99.3,
-        # "letter": 96.1,
+        "vowels": 99.3,
+        "letter": 96.1,
         "cardio": 94.7,
-        # "seismic": 69.8,
-        # "musk": 100,
-        # "speech": 54.3,
+        "seismic": 69.8,
+        "musk": 100,
+        "speech": 54.3,
         "thyroid": 97.8,
-        # "abalone": 91.6,
+        "abalone": 91.6,
         "optdigits": 97.5,
         "satimage-2": 99.9,
         "satellite": 80.3,
         "pendigits": 99.9,
         "annthyroid": 86.7,
-        # "mnist": 94.4,
+        "mnist": 94.4,
         "mammography": 88.6,
-        # "mullcross": 100,
+        "mullcross": 100,
         "shuttle": 99.8,
-        # "forest": 95.8,
+        "forest_cover": 95.8,
         "campaign": 79.1,
         "fraud": 95.7,
-        # "backdoor": 95.2
+        "backdoor": 95.2
     }
     npt_aucf1 = {
         "wine": 72.5,
@@ -525,7 +525,7 @@ def render_ours_on_npt(pivots, ):
         "mammography": 43.6,
         # "mullcross": 100,
         "shuttle": 98.2,
-        # "forest": 58,
+        # "forest_cover": 58,
         "campaign": 49.8,
         "fraud": 58.1,
         # "backdoor": 84.1,
@@ -581,12 +581,12 @@ def main(args):
     my_models = [
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
 
-        'MCMPAE-ws-pos_query+token-d32-lr0.001',
-        'MCMPAE-ws-pos_query+token-d64-lr0.001',
+        # 'MCMPAE-ws-pos_query+token-d32-lr0.001',
+        # 'MCMPAE-ws-pos_query+token-d64-lr0.001',
         # 'MCMPAE-ws-pos_query+token-d64-lr0.005',
 
         ##################################################################################
-        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         # 'PAE-ws-d64-lr0.001', # Final architecture for PAE
         # 'PAE-L4-d64-lr0.001', # Final architecture for PAE
         # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
