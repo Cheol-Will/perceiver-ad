@@ -635,7 +635,7 @@ def main(args):
 
     for base in keys:
         render(pivots, data, models, my_models, base, 
-               add_avg_rank=True, use_rank=False, use_std=True, 
+               add_avg_rank=True, use_rank=False, use_std=False, 
                use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=True)
 
     models = [
@@ -652,25 +652,19 @@ def main(args):
     ]
 
     dataname_list = [
-        '32_shuttle', # 49k: 9 numeric
-        '5_campaign', # 41k: 
-        '23_mammography', # 11k: 5 numeric and 1 binary
-        '30_satellite', # 6k: image
-        '31_satimage-2', # 5k: image
+        # '32_shuttle', # 49k: 9 numeric
+        # '5_campaign', # 41k: 
+        '23_mammography', # 11k: 5 numeric and 1 binary -------------
+        '30_satellite', # 6k: image 
+        '31_satimage-2', # 5k: image 
         '26_optdigits', # 5k: image
-        '38_thyroid', # 3k: medical: 1 catgorical and 5 numeric
-        '7_cardiotocography',
+        '38_thyroid', # 3k: medical: 1 catgorical and 5 numeric -------------
+        '7_cardiotocography', # -------------
         '18_ionosphere', # 0.3k: frequency and purse data
-        '6_cardio', # 1.8k
+        '6_cardio', # 1.8k -------------
         '29_pima', # 0.7k
         '4_breastw', # 0.6k
      
-        # exclude too small dataset.
-        # '45_wine',
-        # '42_wbc',
-        # '14_glass',
-        # '13_fraud', 
-        # '9_census',
     ]
 
     # todo: make name shorter.
@@ -680,21 +674,16 @@ def main(args):
             'IForest', 
             'LOF', 
             'OCSVM', 
-            # 'ECOD', # remove due to local
             'KNN', 
             'PCA',  
-            # 'AutoEncoder', 
-            # 'DeepSVDD', 'GOAD', # not important baseline 
-            # 'NeuTraL', 'ICL', # not important baseline
-            # Below three are important.
             'MCM', 'DRL',
             'Disent',
         ]
 
 
         anomaly_type_list = [
-            # 'global_anomalies_',
-            # 'cluster_anomalies_',
+            'global_anomalies_',
+            'cluster_anomalies_',
             'local_anomalies_',
             'dependency_anomalies_',
         ]

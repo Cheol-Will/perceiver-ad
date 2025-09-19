@@ -17,6 +17,10 @@ def build_analyzer(model_config, train_config, analysis_config):
         from models.MemAE.Analyzer import Analyzer
     elif model_type == 'MemPAE':
         from models.MemPAE.Analyzer import Analyzer
+    elif model_type == 'MCM':
+        from models.MCM.Analyzer import Analyzer
+    elif model_type == 'Disent':
+        from models.Disent.Analyzer import Analyzer
     elif model_type == 'PAE':
         from models.PAE.Analyzer import Analyzer        
     elif model_type in BASELINE_MODELS:
