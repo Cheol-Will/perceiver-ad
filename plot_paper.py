@@ -183,39 +183,39 @@ def plot_hp_sen():
         [4.0, 0.7322],
     ]
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(8, 3))
 
     ax1 = axes[0]
     x1, y1 = zip(*aucpr_vs_latent)
     x1_positions = range(len(x1)) 
 
-    ax1.plot(x1_positions, y1, marker='o', linestyle='-', label='Latent Dim.')
+    ax1.plot(x1_positions, y1, marker='o', linestyle='-', label='Average AUC-PR')
 
     ax1.set_xticks(x1_positions) 
     ax1.set_xticklabels(x1)      
 
     ax1.tick_params(axis='x', length=0)
 
-    ax1.set_title('Latent Dim. vs AUCPR', fontsize=12)
+    # ax1.set_title('Latent Number vs AUCPR', fontsize=12)
     ax1.set_ylabel('AUCPR', fontsize=11)
-    ax1.set_xlabel('Scale Factor', fontsize=11)
-    ax1.legend()
+    ax1.set_xlabel('Latent Number Scale Factor', fontsize=11)
+    # ax1.legend()
     ax1.grid(True, axis='y', linestyle='--', linewidth=0.5) # 
 
     ax2 = axes[1]
     x2, y2 = zip(*aucpr_vs_memory)
     x2_positions = range(len(x2))
 
-    ax2.plot(x2_positions, y2, marker='s', linestyle='-', color='C1', label='Memory Size')
+    ax2.plot(x2_positions, y2, marker='s', linestyle='-', color='C1', label='Average AUC-PR')
 
     ax2.set_xticks(x2_positions)
     ax2.set_xticklabels(x2)
 
     ax2.tick_params(axis='x', length=0)
 
-    ax2.set_title('Memory Size vs AUCPR', fontsize=12)
-    ax2.set_xlabel('Scale Factor', fontsize=11)
-    ax2.legend()
+    # ax2.set_title('Memory Number vs AUCPR', fontsize=12)
+    ax2.set_xlabel('Memory Number Scale Factor', fontsize=11)
+    # ax2.legend()
     ax2.grid(True, axis='y', linestyle='--', linewidth=0.5)
 
     plt.tight_layout()
