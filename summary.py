@@ -481,7 +481,7 @@ def main(args):
 
         'MCMPAE-ws-pos_query+token-d32-lr0.001',
         'MCMPAE-ws-pos_query+token-d64-lr0.001',
-        'MCMPAE-ws-pos_query+token-d64-lr0.005',
+        # 'MCMPAE-ws-pos_query+token-d64-lr0.005',
 
         ##################################################################################
         'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
