@@ -34,5 +34,5 @@ for data in "${data_list[@]}"; do
         --num_heads "$num_heads" \
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
-        --compare_regresssion_with_attn
+        --compare_regresssion_with_sup_attn
 done

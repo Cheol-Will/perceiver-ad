@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from scipy.stats import spearmanr
 from utils import aucPerformance, F1Performance
 from models.PAE.Trainer import Trainer
+from models.PAE.Supervised import PAESupervised
 import math
 
 def nearest_power_of_two(x: int) -> int:
@@ -24,6 +26,9 @@ class Analyzer(Trainer):
         self.model_config = model_config
         self.train_config = train_config
         self.analysis_config = analysis_config
+        self.model_supervsied = PAESupervised(
+            **model_config
+        ).to(self.device)
 
     def training(self):
         print(self.model_config)
@@ -64,6 +69,49 @@ class Analyzer(Trainer):
         print("Saving")
         torch.save(self.model.state_dict(), parameter_path)
 
+
+    def training_supervised(self):
+        print(self.model_config)
+        print(self.train_config)
+        parameter_path = os.path.join(self.train_config['base_path'], 'model_supervised.pt')
+        if os.path.exists(parameter_path):
+            print(f"model.pt already exists at {parameter_path}. Skip training and load parameters.")
+            
+            self.model_supervsied.load_state_dict(torch.load(parameter_path))  # 
+            self.model_supervsied.eval()
+            return
+
+        self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
+        self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
+
+        optimizer = optim.Adam(self.model_supervsied.parameters(), lr=self.learning_rate, weight_decay=1e-5)
+        scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
+        self.model_supervsied.train()
+        print("Training Start.")
+
+        for epoch in range(self.epochs):
+            running_loss = 0.0
+            for step, (x_input, y_label) in enumerate(self.train_loader):
+                x_input = x_input.to(self.device)
+                y_label = y_label.to(self.device).float().view(-1)
+
+                y_pred = self.model_supervsied(x_input)
+                y_pred = y_pred.view(-1)     
+                loss = F.mse_loss(y_pred, y_label, reduction='mean')
+
+                running_loss += loss.item()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+            scheduler.step()
+            info = 'Epoch:[{}]\t loss={:.4f}\t'
+            running_loss = running_loss / len(self.train_loader)
+            self.logger.info(info.format(epoch,loss.cpu()))
+        print("Supervised Training complete.")
+
+        print("Saving")
+        torch.save(self.model_supervsied.state_dict(), parameter_path)
 
     @torch.no_grad()
     def plot_attn_and_corr(self):
@@ -129,12 +177,23 @@ class Analyzer(Trainer):
         print(f"Attention maps and correlation matrix saved to {combined_plot_path_png}.")
 
     @torch.no_grad()
-    def compare_regresssion_with_attn(self):
-        attn_with_self = self.get_attn_weights(use_self_attn=True)
-        attn_no_self = self.get_attn_weights(use_self_attn=False)
+    def compare_regresssion_with_attn(
+        self,
+        use_sup_attn: bool = False,
+    ):  
+        if use_sup_attn:
+            attn_with_self = self.get_sup_attn_weights(use_self_attn=True)
+            attn_no_self = self.get_sup_attn_weights(use_self_attn=False)
+        
+            attn_label_with_self = attn_with_self.cpu().numpy()
+            attn_label_no_self = attn_no_self.cpu().numpy()
 
-        attn_label_with_self = attn_with_self[:, -1, :-1].cpu().numpy()
-        attn_label_no_self = attn_no_self[:, -1, :-1].cpu().numpy()
+        else:    
+            attn_with_self = self.get_attn_weights(use_self_attn=True)
+            attn_no_self = self.get_attn_weights(use_self_attn=False)
+
+            attn_label_with_self = attn_with_self[:, -1, :-1].cpu().numpy()
+            attn_label_no_self = attn_no_self[:, -1, :-1].cpu().numpy()
 
         X_all, y_all = [], []
         for X, y in self.train_loader:
@@ -179,13 +238,66 @@ class Analyzer(Trainer):
         df = df.round(4)
 
         base_path = self.train_config['base_path']
-        path = os.path.join(base_path, 'attn_regression_comparison.csv')
+        if use_sup_attn:
+            path = os.path.join(base_path, 'sup_attn_regression_comparison.csv')
+        else:
+            path = os.path.join(base_path, 'attn_regression_comparison.csv')
+        
         df.to_csv(path, index=True)
         
         print('Attention vs. Regression Comparison\n', df)
         return df
 
 
+    @torch.no_grad()
+    def get_sup_attn_weights(
+        self,
+        use_self_attn: bool = True,
+    ):
+        
+        self.model.eval()
+        running = None   # (H, 1, F) accumulator (sum over batch)
+        total_samples = 0
+
+        for (X, y) in self.train_loader:
+            X_input = X.to(self.device)
+            y_pred, attn_enc, attn_self_list, attn_dec = \
+                self.model(X_input, return_weight=True)
+
+            B, H, N, F = attn_enc.shape # N should be 1
+
+            
+            if use_self_attn and attn_self_list:
+                I = torch.eye(N, device=self.device).expand(B, H, N, N)  # (B,H,N,N)
+                W_self_total = attn_self_list[0] + I
+                for W in attn_self_list[1:]:
+                    W_with_res = W + I
+                    # (B,H,N,N) x (B,H,N,N) -> (B,H,N,N)
+                    W_self_total = torch.einsum("bhij,bhjk->bhik", W_with_res, W_self_total)
+                enc_mean = attn_enc.mean(dim=1)            # (B, N, F)
+                dec_mean = attn_dec.mean(dim=1)            # (B, F, N)
+
+                dec_mean_h = dec_mean.unsqueeze(1).expand(B, H, F, N)
+                enc_mean_h = enc_mean.unsqueeze(1).expand(B, H, N, F)
+            
+            else:
+                # no self attention -> dec x enc per each ehad
+                W_self_total = torch.eye(N, device=self.device).expand(B, H, N, N)
+                enc_mean_h = attn_enc
+                dec_mean_h = attn_dec
+            
+            tmp = torch.einsum("bhfn,bhnk->bhfk", dec_mean_h, W_self_total)
+            attn_feat_feat = torch.einsum("bhfn,bhnk->bhfk", tmp, enc_mean_h)
+
+            if running is None:
+                running = attn_feat_feat.sum(dim=0)  # (H, 1, F)
+            else:
+                running += attn_feat_feat.sum(dim=0)
+
+            total_samples += B
+
+        result = running / total_samples  # (H, 1, F)
+        return result
 
     @torch.no_grad()
     def get_attn_weights(

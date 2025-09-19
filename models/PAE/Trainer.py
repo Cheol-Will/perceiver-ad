@@ -1,6 +1,8 @@
 import os
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
+import models
 from DataSet.DataLoader import get_dataloader
 from models.PAE.Model import PAE
 from utils import aucPerformance, F1Performance
@@ -61,6 +63,7 @@ class Trainer(object):
             self.logger.info(info.format(epoch,loss.cpu()))
         print("Training complete.")
 
+    
     @torch.no_grad()
     def evaluate(self):
         model = self.model

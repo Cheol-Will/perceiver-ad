@@ -30,8 +30,13 @@ def train_test(model_config, train_config, analysis_config, run):
     train_config['run'] = run
     train_config['logger'].info(f"[run {run}]" + '-'*60)
     analyzer = build_analyzer(model_config, train_config, analysis_config)    
-    analyzer.training()
     
+    if analysis_config['compare_regresssion_with_sup_attn']:
+        analyzer.training_supervised()
+        
+    else:
+        analyzer.training()
+
     if analysis_config['plot_recon']:
         analyzer.plot_reconstruction()
     if analysis_config['plot_histogram']:
@@ -40,6 +45,8 @@ def train_test(model_config, train_config, analysis_config, run):
         analyzer.plot_memory_weight()
     if analysis_config['compare_regresssion_with_attn']:
         analyzer.compare_regresssion_with_attn()
+    if analysis_config['compare_regresssion_with_sup_attn']:
+        analyzer.compare_regresssion_with_attn(use_sup_attn=True)
     if analysis_config['plot_attn_and_corr']:
         analyzer.plot_attn_and_corr()
 
@@ -73,6 +80,7 @@ def main(args):
     analysis_config['plot_histogram'] = args.plot_histogram
     analysis_config['plot_memory_weight'] = args.plot_memory_weight
     analysis_config['compare_regresssion_with_attn'] = args.compare_regresssion_with_attn
+    analysis_config['compare_regresssion_with_sup_attn'] = args.compare_regresssion_with_sup_attn
     analysis_config['plot_attn_and_corr'] = args.plot_attn_and_corr
     analysis_config['plot_tsne_recon'] = args.plot_tsne_recon
     
@@ -108,6 +116,7 @@ if __name__ == "__main__":
     parser.add_argument('--plot_histogram', action='store_true')
     parser.add_argument('--plot_memory_weight', action='store_true')
     parser.add_argument('--compare_regresssion_with_attn', action='store_true')
+    parser.add_argument('--compare_regresssion_with_sup_attn', action='store_true')
     parser.add_argument('--plot_attn_and_corr', action='store_true')
     parser.add_argument('--plot_tsne_recon', action='store_true')
 
