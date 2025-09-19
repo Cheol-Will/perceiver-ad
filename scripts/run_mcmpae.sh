@@ -5,6 +5,7 @@ set -euo pipefail
 
 # data_list=(nslkdd fraud) # from MCM
 data_list=(shuttle census) # from MCM
+data_list=(census) # from MCM
   
 hidden_dim=64
 learning_rate=0.001
