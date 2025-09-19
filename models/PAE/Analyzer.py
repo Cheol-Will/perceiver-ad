@@ -89,15 +89,16 @@ class Analyzer(Trainer):
         self.model_supervsied.train()
         print("Training Start.")
 
-        for epoch in range(self.epochs):
+        for epoch in range(50):
             running_loss = 0.0
             for step, (x_input, y_label) in enumerate(self.train_loader):
-                x_input = x_input.to(self.device)
-                y_label = y_label.to(self.device).float().view(-1)
-
+                # note that current dataset has lable in input_features
+                # thus, we extract it and use as label.
+                x_input = x_input[:, :-1].to(self.device)
+                y = x_input[:, -1].to(self.device).float().view(-1)
                 y_pred = self.model_supervsied(x_input)
                 y_pred = y_pred.view(-1)     
-                loss = F.mse_loss(y_pred, y_label, reduction='mean')
+                loss = F.mse_loss(y_pred, y, reduction='mean')
 
                 running_loss += loss.item()
                 optimizer.zero_grad()
@@ -180,16 +181,21 @@ class Analyzer(Trainer):
     def compare_regresssion_with_attn(
         self,
         use_sup_attn: bool = False,
+        lambda_attn: float = 1.0,
     ):  
         if use_sup_attn:
-            attn_with_self = self.get_sup_attn_weights(use_self_attn=True)
+            attn_with_self = self.get_sup_attn_weights(use_self_attn=True, lambda_attn=lambda_attn)
             attn_no_self = self.get_sup_attn_weights(use_self_attn=False)
         
             attn_label_with_self = attn_with_self.cpu().numpy()
             attn_label_no_self = attn_no_self.cpu().numpy()
+            # print(attn_label_no_self.shape)
+
+            attn_label_with_self = attn_with_self[:, -1, :].cpu().numpy()
+            attn_label_no_self = attn_no_self[:, -1, :].cpu().numpy()
 
         else:    
-            attn_with_self = self.get_attn_weights(use_self_attn=True)
+            attn_with_self = self.get_attn_weights(use_self_attn=True, lambda_attn=lambda_attn)
             attn_no_self = self.get_attn_weights(use_self_attn=False)
 
             attn_label_with_self = attn_with_self[:, -1, :-1].cpu().numpy()
@@ -209,7 +215,6 @@ class Analyzer(Trainer):
         head_cols_self = [f'head{i+1}_self' for i in range(num_heads)]
         head_cols_no_self = [f'head{i+1}_no_self' for i in range(num_heads)]
         columns = ['reg'] + head_cols_self + head_cols_no_self
-
         data = np.vstack([coef, attn_label_with_self, attn_label_no_self])
         df = pd.DataFrame(data.T, columns=columns)
         num_features = df.shape[0]
@@ -239,9 +244,9 @@ class Analyzer(Trainer):
 
         base_path = self.train_config['base_path']
         if use_sup_attn:
-            path = os.path.join(base_path, 'sup_attn_regression_comparison.csv')
+            path = os.path.join(base_path, f'sup_attn_regression_comparison_lambda{lambda_attn}.csv')
         else:
-            path = os.path.join(base_path, 'attn_regression_comparison.csv')
+            path = os.path.join(base_path, f'attn_regression_comparison_{lambda_attn}.csv')
         
         df.to_csv(path, index=True)
         
@@ -253,25 +258,25 @@ class Analyzer(Trainer):
     def get_sup_attn_weights(
         self,
         use_self_attn: bool = True,
+        lambda_attn: float = 1.0,
     ):
         
-        self.model.eval()
+        self.model_supervsied.eval()
         running = None   # (H, 1, F) accumulator (sum over batch)
         total_samples = 0
 
         for (X, y) in self.train_loader:
-            X_input = X.to(self.device)
+            X_input = X[:, :-1].to(self.device)
             y_pred, attn_enc, attn_self_list, attn_dec = \
-                self.model(X_input, return_weight=True)
-
+                self.model_supervsied(X_input, return_weight=True)
+            
             B, H, N, F = attn_enc.shape # N should be 1
 
-            
             if use_self_attn and attn_self_list:
                 I = torch.eye(N, device=self.device).expand(B, H, N, N)  # (B,H,N,N)
                 W_self_total = attn_self_list[0] + I
                 for W in attn_self_list[1:]:
-                    W_with_res = W + I
+                    W_with_res = lambda_attn * W + I
                     # (B,H,N,N) x (B,H,N,N) -> (B,H,N,N)
                     W_self_total = torch.einsum("bhij,bhjk->bhik", W_with_res, W_self_total)
                 enc_mean = attn_enc.mean(dim=1)            # (B, N, F)

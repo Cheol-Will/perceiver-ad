@@ -1,10 +1,10 @@
 #!/bin/bash
 
 data_list=(
-    superconduct
+    # superconduct
     MiamiHousing2016
-    Ailerons
-    cpu_act
+    # Ailerons
+    # cpu_act
     elevators
     fifa
     isolet
@@ -16,7 +16,7 @@ data_list=(
 
 # model_type='MemPAE'
 model_type='PAE'
-hidden_dim=128
+hidden_dim=64
 num_heads=4
 learning_rate=0.001
 temperature=0.1
