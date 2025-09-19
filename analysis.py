@@ -26,7 +26,7 @@ def build_analyzer(model_config, train_config, analysis_config):
     return Analyzer(model_config, train_config, analysis_config)
 
 
-def train_test(model_config, train_config, analysis_config, run):
+def train_test(args, model_config, train_config, analysis_config, run):
     train_config['run'] = run
     train_config['logger'].info(f"[run {run}]" + '-'*60)
     analyzer = build_analyzer(model_config, train_config, analysis_config)    
@@ -44,16 +44,14 @@ def train_test(model_config, train_config, analysis_config, run):
     if analysis_config['plot_memory_weight']:
         analyzer.plot_memory_weight()
     if analysis_config['compare_regresssion_with_attn']:
-        analyzer.compare_regresssion_with_attn()
+        analyzer.compare_regresssion_with_attn(use_sup_attn=False, lambda_attn=args.lambda_attn)
     if analysis_config['compare_regresssion_with_sup_attn']:
-        analyzer.compare_regresssion_with_attn(use_sup_attn=True)
+        analyzer.compare_regresssion_with_attn(use_sup_attn=True, lambda_attn=args.lambda_attn)
     if analysis_config['plot_attn_and_corr']:
         analyzer.plot_attn_and_corr()
-
     if analysis_config['plot_tsne_recon']:
         # analyzer.plot_tsne_reconstruction()
         analyzer.plot_combined_tsne()
-        
     
     return 
 
@@ -90,7 +88,7 @@ def main(args):
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         np.random.seed(seed)
-        train_test(model_config, train_config, analysis_config, seed)
+        train_test(args, model_config, train_config, analysis_config, seed)
 
     end = time.time()
     total_time = end - start

@@ -223,7 +223,7 @@ class PAESupervised(nn.Module):
         assert num_latents is not None
         if not use_pos_enc_as_query:
             assert not use_mask_token
-
+        num_features -= 1 # Note that last feature is label so we cannot access it in supervised setting.
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim) # only numerical inputs
         
         if is_weight_sharing:
