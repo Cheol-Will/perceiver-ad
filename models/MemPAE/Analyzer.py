@@ -79,27 +79,20 @@ class Analyzer(Trainer):
 
     @torch.no_grad()
     def plot_combined_tsne(self, figsize=(10, 8)):
-        """
-        normal_input, abnormal_input, abnormal_recon_mem 세 가지 데이터를
-        하나의 t-SNE 공간에 시각화하여 분포를 비교합니다.
-        """
         self.model.eval()
-        print("데이터 수집 및 전처리 중...")
         recons = self._accumulate_recon()
 
-        # 1. 시각화에 사용할 세 가지 데이터셋을 선택합니다.
         normal_input = recons['normal_input']
+        normal_recon = recons['normal_recon']
         abnormal_input = recons['abnormal_input']
         abnormal_recon_mem = recons['abnormal_recon_mem']
         
-        datasets = [normal_input, abnormal_input, abnormal_recon_mem]
+        datasets = [normal_input, normal_recon, abnormal_input, abnormal_recon_mem]
         
         if any(d.shape[0] == 0 for d in datasets):
-            print("경고: 데이터셋 중 일부가 비어있어 시각화를 건너뜁니다.")
+            print("No data. Skip Vis.")
             return
 
-        # 2. 모든 데이터를 하나로 합치고, 각 그룹을 구분할 레이블을 생성합니다.
-        # 레이블: 0=Normal Input, 1=Abnormal Input, 2=Abnormal Recon (Mem)
         labels = []
         for i, d in enumerate(datasets):
             labels.extend([i] * d.shape[0])
@@ -107,26 +100,20 @@ class Analyzer(Trainer):
         
         combined_data = np.vstack(datasets)
 
-        # 3. 합쳐진 전체 데이터에 대해 t-SNE를 실행합니다.
-        print("t-SNE 변환을 시작합니다...")
         scaler = StandardScaler()
         scaled_data = scaler.fit_transform(combined_data)
 
         tsne = TSNE(n_components=2, random_state=42, perplexity=30, n_iter=1000, init='pca', learning_rate='auto')
         tsne_results = tsne.fit_transform(scaled_data)
-        print("t-SNE 변환 완료.")
 
-        # --- 4. 통합 플롯 그리기 ---
         fig, ax = plt.subplots(figsize=figsize)
         
-        # 각 그룹에 대한 이름, 색상, 마커 정의
         plot_info = {
-            0: {'label': 'Normal Input', 'color': 'royalblue', 'marker': 'o', 'alpha': 0.5, 's': 50},
-            1: {'label': 'Abnormal Input', 'color': 'darkorange', 'marker': 'X', 'alpha': 0.8, 's': 70},
-            2: {'label': 'Abnormal Recon (Mem)', 'color': 'green', 'marker': 's', 'alpha': 0.8, 's': 70}
+            0: {'label': 'Normal Input', 'color': '#1f77b4', 'marker': 'o', 'alpha': 0.7, 's': 50}, # Blue (Matplotlib default blue)
+            1: {'label': 'Normal Recon', 'color': '#aec7e8', 'marker': 's', 'alpha': 0.7, 's': 50}, # Light Blue
+            2: {'label': 'Abnormal Input', 'color': '#d62728', 'marker': '^', 'alpha': 0.7, 's': 50}, # Red (Matplotlib default red)
+            3: {'label': 'Abnormal Recon', 'color': '#ff9896', 'marker': 'D', 'alpha': 0.7, 's': 50}, # Light Red
         }
-
-        # 각 그룹별로 점을 찍습니다.
         for label_id, info in plot_info.items():
             mask = (labels == label_id)
             ax.scatter(tsne_results[mask, 0], tsne_results[mask, 1], 
@@ -145,34 +132,25 @@ class Analyzer(Trainer):
         plt.tight_layout()
         plt.savefig(out_path)
         plt.close()
-        print(f"통합 t-SNE 시각화가 '{out_path}'에 저장되었습니다.")
+        print(f"T-SNE saved into '{out_path}'.")
 
-    # -------------------------------
-    # 1) 수집: model(x, return_pred_all=True) -> (x, x_hat_origin, x_hat_memory) 가정
-    # -------------------------------
     @torch.no_grad()
     def _collect_recon(self, loader):
         x_list, x_hat_origin_list, x_hat_memory_list, labels = [], [], [], []
         self.model.eval()
 
         for batch in loader:
-            # (x, y) 또는 (x,) 형태 모두 대비
             if isinstance(batch, (list, tuple)) and len(batch) == 2:
                 x, y = batch
             else:
                 x, y = batch, None
 
             x = x.to(self.device)
-
-            # model forward
             x_out, x_hat_origin, x_hat_memory = self.model(x, return_pred_all=True)
-
-            # numpy로 변환
             x_np = x_out.detach().cpu().numpy()
             x_hat_origin_np = x_hat_origin.detach().cpu().numpy()
             x_hat_memory_np = x_hat_memory.detach().cpu().numpy()
 
-            # label 처리
             if y is None:
                 y_arr = np.zeros(x_np.shape[0], dtype=np.int64)
             else:
@@ -191,22 +169,16 @@ class Analyzer(Trainer):
         return x_list, x_hat_origin_list, x_hat_memory_list, labels
 
 
-    # -------------------------------
-    # 2) 누적/정리: base는 항상 normal_input (라벨==0)
-    #    abnormal은 라벨==1 로 가정(다중 클래스면 !=0 으로 바꿔도 됨)
-    # -------------------------------
     @torch.no_grad()
     def _accumulate_recon(self):
         self.model.eval()
         test_input, test_recon, test_recon_mem, test_labels = self._collect_recon(self.test_loader)
 
-        # 베이스: normal
         normal_mask = (test_labels == 0)
         normal_input     = test_input[normal_mask]
         normal_recon     = test_recon[normal_mask]
         normal_recon_mem = test_recon_mem[normal_mask]
 
-        # 오버레이: abnormal (여기서는 1로 명시)
         abnormal_mask = (test_labels == 1)
         abnormal_input     = test_input[abnormal_mask]
         abnormal_recon     = test_recon[abnormal_mask]
@@ -225,15 +197,7 @@ class Analyzer(Trainer):
 
     @torch.no_grad()
     def plot_tsne_reconstruction(self, figsize=(16, 5), s_base=12, s_overlay=24, alpha_base=0.35, alpha_overlay=0.9):
-        """
-        패널별로 항상 'normal_input'을 베이스로 깔고,
-        그 위에 abnormal_* (input / recon / recon_mem)를 오버레이로 시각화.
-        """
         def _fit_tsne_on_base_overlay(base_X, overlay_X, perplexity=30, random_state=42, n_iter=1000):
-                """
-                base_X로만 StandardScaler를 fit하고, base/overlay를 동일 스케일로 변환.
-                변환된 두 집합을 concat하여 t-SNE를 fit → 같은 2D 공간으로 임베딩.
-                """
                 base_X = np.asarray(base_X, dtype=np.float32)
                 overlay_X = np.asarray(overlay_X, dtype=np.float32)
                 n_base = base_X.shape[0]
@@ -241,17 +205,14 @@ class Analyzer(Trainer):
                 n_total = n_base + n_overlay
 
                 if n_total < 5 or n_overlay == 0:
-                    # 샘플 수가 너무 적거나 overlay가 없으면 빈 결과 반환
                     return None, None, False
 
-                # t-SNE 안정화를 위해 베이스 기준 스케일링
                 scaler = StandardScaler().fit(base_X)
                 base_Z = scaler.transform(base_X)
                 overlay_Z = scaler.transform(overlay_X)
 
                 X = np.concatenate([base_Z, overlay_Z], axis=0)
 
-                # perplexity는 (n_samples - 1) 보다 작아야 하고, 최소 5 정도 권장
                 safe_perp = max(5, min(perplexity, (n_total - 1) // 3 if n_total > 10 else 5))
 
                 tsne = TSNE(
@@ -715,7 +676,7 @@ class Analyzer(Trainer):
 
         _, x, recon = self.model(x, return_pred=True)
 
-        base_path = self.model_config['base_path']
+        base_path = self.train_config['base_path']
         os.makedirs(base_path, exist_ok=True)
 
         def _norm_with_ref(arr, ref_min, ref_max):

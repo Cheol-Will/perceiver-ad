@@ -603,9 +603,9 @@ def main(args):
         ##################################################################################
         # MemPAE with small memory Ablation
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
-        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
-        # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
+        'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
+        'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
+        'MemPAE-d64-lr0.001-t0.1', # tmux 1
 
         ##################################################################################        
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
@@ -635,7 +635,7 @@ def main(args):
 
     for base in keys:
         render(pivots, data, models, my_models, base, 
-               add_avg_rank=True, use_rank=False, use_std=False, 
+               add_avg_rank=True, use_rank=False, use_std=True, 
                use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=True)
 
     models = [
@@ -712,22 +712,30 @@ def main(args):
                     use_alias=True, is_temp_tune=False, is_synthetic=True, synthetic_type=anomaly_type)
     if args.contamination:
         models=[ 
-            'KNN', 
+            # 'KNN', 
             'MCM', 
-            # 'DRL', 
+            'DRL', 
             'Disent',
         ]
         # success case: cardio, sat (maybe)
         dataname_list = [
-            'cardio', 
-            'cardiotocography',
+            # we can use only pima and arrhythmia
             'pima', # good
             'arrhythmia', # good
-            'breastw',
+            # 'cardio', 
+            # 'cardiotocography',
+            # 'breastw',
             'glass',
             'wbc', 
             'wine', 
             'campaign', 
+            'ionosphere',
+            # 
+            # 'satimage-2',
+            # 'pendigits',
+            # 'shuttle', 
+            'satellite', 
+            # 'thyroid',
         ]
         contamination_ratio = [
             'contam0.01',
