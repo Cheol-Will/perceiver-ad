@@ -404,7 +404,7 @@ def render_hp(pivots):
         'nslkdd', # large 
         'fraud', # large
         'shuttle', # large
-        # 'census', # large
+        'census', # large
     ]
     models = ['KNN']
     my_models = [
