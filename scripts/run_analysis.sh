@@ -1,6 +1,27 @@
 #!/bin/bash
 
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid) # from MCM
+# data_list=(satimage-2) # from MCM
+# data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
+# data_list=(pima) # from MCM
+# data_list=(wine wbc) # from MCM
+# data_list=(cardiotocography) # from MCM
+data_list=(
+    dependency_anomalies_45_wine_42
+    dependency_anomalies_14_glass_42
+    dependency_anomalies_42_WBC_42
+    dependency_anomalies_18_Ionosphere_42
+    dependency_anomalies_4_breastw_42
+    dependency_anomalies_29_Pima_42
+    dependency_anomalies_6_cardio_42
+    dependency_anomalies_7_Cardiotocography_42
+    dependency_anomalies_38_thyroid_42
+    dependency_anomalies_26_optdigits_42
+    dependency_anomalies_31_satimage-2_42
+    dependency_anomalies_30_satellite_42
+    dependency_anomalies_23_mammography_42
+    dependency_anomalies_5_campaign_42
+    dependency_anomalies_32_shuttle_42
+)
 model_type='MemPAE'
 # model_type='PAE'
 hidden_dim=64
@@ -20,6 +41,5 @@ for data in "${data_list[@]}"; do
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
         --exp_name "$exp_name"\
-        --????????
-        # --compare_regresssion_with_attn
+        --plot_histogram
 done
