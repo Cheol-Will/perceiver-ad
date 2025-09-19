@@ -2,21 +2,22 @@
 
 data_list=(
     # superconduct
-    wine_quality 
-    MiamiHousing2016
     # Ailerons
     # cpu_act
-    elevators
-    fifa
-    isolet
-    pol
-    california 
-    house
+
+    # wine_quality 
+    # MiamiHousing2016
+    # elevators
+    # fifa
+    # isolet
+    # pol
+    # california 
+    # house
 )
 
 # model_type='MemPAE'
 model_type='PAE'
-hidden_dim=128
+hidden_dim=64
 num_heads=4
 learning_rate=0.001
 temperature=0.1

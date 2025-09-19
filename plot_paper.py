@@ -21,7 +21,7 @@ else:
 
 sns.set_theme(style="ticks", context="paper")
 
-def plot_hp_sensitivity():
+def plot_hp_sensitivity_old():
     meta_data = {
         'arrhythmia': { # good
             "num_latents": 16, 
@@ -193,7 +193,6 @@ def plot_hp_sen():
 
     ax1.set_xticks(x1_positions) 
     ax1.set_xticklabels(x1)      
-
     ax1.tick_params(axis='x', length=0)
 
     # ax1.set_title('Latent Number vs AUCPR', fontsize=12)
@@ -233,5 +232,64 @@ def plot_hp_sen():
 
     print(f"Plot saved into {png_path}")
 
+
+def plot_contam():
+    pima = {
+        'MCM': [0.6250, 0.6200, 0.6143, 0.6084],
+        'DRL': [0.6322,  0.6278,  0.6225,  0.6139],
+        'Disent': [0.6759, 0.6716, 0.6147, 0.6145],
+        'LATTE': [0.6986, 0.6933, 0.6798, 0.6764],
+    }
+    arrhythmia = {
+        'MCM': [0.5945, 0.5927, 0.5810, 0.5058], 
+        'DRL': [0.5401, 0.5005, 0.4869, 0.3803], 
+        'Disent': [0.5953, 0.5932, 0.5842, 0.5105], 
+        'LATTE': [0.6113, 0.6091, 0.6010, 0.5330], 
+    }
+
+    contamination_rates = [0, 0.01, 0.03, 0.05]
+    
+    datasets = {'PIMA': pima, 'Arrhythmia': arrhythmia}
+    styles = {
+        'MCM': {'marker': 'o', 'linestyle': '-'},
+        'DRL': {'marker': 's', 'linestyle': '--'},
+        'Disent': {'marker': '^', 'linestyle': '-.'},
+        'LATTE': {'marker': 'D', 'linestyle': ':'}
+    }
+    
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4),)
+
+    for i, (name, data) in enumerate(datasets.items()):
+        ax = axes[i]
+        for model, values in data.items():
+            x1_positions = range(len(contamination_rates)) 
+            ax.plot(x1_positions, values, label=model, **styles.get(model, {}))
+        
+        ax.set_title(name)
+        ax.set_xlabel('Contamination Rate (%)')
+        ax.set_xticks(x1_positions) 
+        ax.set_xticklabels(contamination_rates)      
+        ax.legend()
+        ax.grid(True, linestyle='--', linewidth=0.5)
+
+        # if i == 0:
+        #     ax.set_ylabel('AUC-PR')
+    
+    plt.tight_layout()
+    sns.despine(fig)
+    
+    save_dir = 'metrics'
+    os.makedirs(save_dir, exist_ok=True)
+    png_path = os.path.join(save_dir, 'contamination.png')
+    pdf_path = os.path.join(save_dir, 'contamination.pdf')
+
+    plt.savefig(png_path, dpi=300, bbox_inches='tight')
+    plt.savefig(pdf_path, bbox_inches='tight')
+    plt.show()
+
+    print(f"Plot saved into {png_path}")
+
+
 if __name__ == '__main__':
     plot_hp_sen()
+    plot_contam()

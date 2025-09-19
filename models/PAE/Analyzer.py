@@ -182,14 +182,15 @@ class Analyzer(Trainer):
         self,
         use_sup_attn: bool = False,
         lambda_attn: float = 1.0,
+        model_type: str = 'linear_regression',  # 'linear_regression' or 'decision_tree'
+        max_depth: int = 10,
+        min_samples_split: int = 20,
+        random_state: int = 42
     ):  
         if use_sup_attn:
             attn_with_self = self.get_attn_weights(use_self_attn=True, lambda_attn=lambda_attn).unsqueeze(0)  # Shape: (H, F, F)
             attn_no_self = self.get_attn_weights(use_self_attn=False).unsqueeze(0)  # Shape: (H, F, F)
 
-            # attn_with_self = self.get_sup_attn_weights(use_self_attn=True, lambda_attn=lambda_attn)
-            # attn_no_self = self.get_sup_attn_weights(use_self_attn=False)
-        
             attn_label_with_self = attn_with_self.cpu().numpy()
             attn_label_no_self = attn_no_self.cpu().numpy()
             print(attn_label_no_self.shape)
@@ -206,7 +207,6 @@ class Analyzer(Trainer):
         print(attn_label_no_self.shape)
         print(attn_label_with_self.shape)
 
-
         X_all, y_all = [], []
         for X, y in self.train_loader:
             X_all.append(X[:, :-1])
@@ -214,34 +214,58 @@ class Analyzer(Trainer):
         X_all = torch.cat(X_all, dim=0).cpu().numpy()
         y_all = torch.cat(y_all, dim=0).cpu().numpy()
         
-        reg = LinearRegression().fit(X_all, y_all)
-        coef = reg.coef_
+        if model_type == 'linear_regression':
+            from sklearn.linear_model import LinearRegression
+            reg = LinearRegression().fit(X_all, y_all)
+            importance = reg.coef_
+            model_name = 'reg'
+        elif model_type == 'decision_tree':
+            from sklearn.tree import DecisionTreeRegressor
+            reg = DecisionTreeRegressor(
+                max_depth=max_depth,
+                min_samples_split=min_samples_split,
+                random_state=random_state
+            ).fit(X_all, y_all)
+            importance = reg.feature_importances_
+            model_name = 'tree'
+        else:
+            raise ValueError("model_type must be 'linear_regression' or 'decision_tree'")
 
         num_heads = attn_with_self.shape[0]
         head_cols_self = [f'head{i+1}_self' for i in range(num_heads)]
         head_cols_no_self = [f'head{i+1}_no_self' for i in range(num_heads)]
-        columns = ['reg'] + head_cols_self + head_cols_no_self
-        data = np.vstack([coef, attn_label_with_self, attn_label_no_self])
+        columns = [model_name] + head_cols_self + head_cols_no_self
+        data = np.vstack([importance, attn_label_with_self, attn_label_no_self])
         df = pd.DataFrame(data.T, columns=columns)
         num_features = df.shape[0]
         df.index = [f'feature_{i}' for i in range(num_features)]
 
-        df['reg_abs'] = df['reg'].abs()
-        df['reg_abs'] = df['reg_abs'] / df['reg_abs'].sum()
+        if model_type == 'linear_regression':
+            df[f'{model_name}_abs'] = df[model_name].abs()
+            df[f'{model_name}_abs'] = df[f'{model_name}_abs'] / df[f'{model_name}_abs'].sum()
+            reference_col = f'{model_name}_abs'
+        else:  # decision_tree
+            df[f'{model_name}_norm'] = df[model_name] / df[model_name].sum()
+            reference_col = f'{model_name}_norm'
+        
         df['head_sum_self'] = df[head_cols_self].abs().sum(axis=1)
         df['head_sum_no_self'] = df[head_cols_no_self].abs().sum(axis=1)
 
-        cols_order = ['reg', 'reg_abs'] + head_cols_self + ['head_sum_self'] + head_cols_no_self + ['head_sum_no_self']
+        if model_type == 'linear_regression':
+            cols_order = [model_name, f'{model_name}_abs'] + head_cols_self + ['head_sum_self'] + head_cols_no_self + ['head_sum_no_self']
+        else:
+            cols_order = [model_name, f'{model_name}_norm'] + head_cols_self + ['head_sum_self'] + head_cols_no_self + ['head_sum_no_self']
+        
         df = df[cols_order]
 
-        reg_abs_values = df['reg_abs'].values
+        reference_values = df[reference_col].values
         cos_sim_list, rank_corr_list = [], []
         
         for col in df.columns:
             col_values = df[col].values
-            sim = cosine_similarity(reg_abs_values.reshape(1, -1), col_values.reshape(1, -1))[0, 0]
+            sim = cosine_similarity(reference_values.reshape(1, -1), col_values.reshape(1, -1))[0, 0]
             cos_sim_list.append(sim)
-            rho, _ = spearmanr(reg_abs_values, col_values)
+            rho, _ = spearmanr(reference_values, col_values)
             rank_corr_list.append(rho)
 
         df.loc['rank_correlation', :] = rank_corr_list
@@ -250,15 +274,14 @@ class Analyzer(Trainer):
 
         base_path = self.train_config['base_path']
         if use_sup_attn:
-            path = os.path.join(base_path, f'sup_attn_regression_comparison_lambda{lambda_attn}.csv')
+            path = os.path.join(base_path, f'sup_attn_{model_type}_comparison_lambda{lambda_attn}.csv')
         else:
-            path = os.path.join(base_path, f'attn_regression_comparison_{lambda_attn}.csv')
+            path = os.path.join(base_path, f'attn_{model_type}_comparison_lambda{lambda_attn}.csv')
         
         df.to_csv(path, index=True)
         
-        print('Attention vs. Regression Comparison\n', df)
+        print(f'Attention vs. {model_type.replace("_", " ").title()} Comparison\n', df)
         return df
-
 
     @torch.no_grad()
     def get_sup_attn_weights(
