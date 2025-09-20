@@ -7,7 +7,7 @@ import seaborn as sns
 pd.set_option('display.max_rows', None)
 
 BASE_DIR = "results"
-TRAIN_RATIOS = [0.1, 0.5, 1.0]
+TRAIN_RATIOS = [0.1, 0.5, 0.8, 1.0]
 METRICS_CANON = ["AUC-ROC", "AUC-PR", 'f1']
 METRIC_ALIAS = {
     "AUC-ROC": "AUC-ROC", "AUROC": "AUC-ROC", "AUCROC": "AUC-ROC",
@@ -428,6 +428,39 @@ def render_hp(pivots):
             add_avg_rank=True, use_rank=False, use_std=False, 
             use_baseline_pr=True, is_temp_tune=False, is_sort=False, is_plot=True)
 
+def render_train_ratio(pivots):
+    data = [
+        'arrhythmia', 
+        'cardio', 
+        'campaign', 
+        # 'cardiotocography', 
+        # 'pendigits', 
+        # 'mammography', 
+        # 'satimage-2', 
+    ]
+    models = [
+        'KNN',
+        'Disent',
+        'MCM',
+        'DRL',
+    ]
+    my_models = [
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+    ]
+    keys = [
+        # 'ratio_0.1_AUCROC', 'ratio_0.5_AUCROC', 
+        # 'ratio_0.1_AUCPR', 'ratio_0.5_AUCPR',
+        # 'ratio_1.0_AUCROC',
+        'ratio_0.5_AUCPR',
+        'ratio_0.8_AUCPR',
+        'ratio_1.0_AUCPR',
+    ]    
+    # print(pivots)
+    for base in keys:
+        df = render(pivots, data, models, my_models, base, 
+                add_avg_rank=False, use_rank=False, use_std=False, 
+                use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
+
 
 
 def render_ours_on_npt(pivots, ):
@@ -577,6 +610,8 @@ def main(args):
         # 'ratio_0.1_AUCPR', 'ratio_0.5_AUCPR',
         'ratio_1.0_AUCROC',
         'ratio_1.0_AUCPR',
+        # 'ratio_0.8_AUCPR',
+        # 'ratio_0.5_AUCPR',
     ]
     models=  [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
@@ -604,7 +639,7 @@ def main(args):
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
 
         # 'MCMPAE-ws-pos_query+token-d32-lr0.001',
-        'MCMPAE-ws-pos_query+token-d64-lr0.001',
+        # 'MCMPAE-ws-pos_query+token-d64-lr0.001',
         # 'MCMPAE-ws-pos_query+token-d64-lr0.005',
 
         ##################################################################################
@@ -776,6 +811,8 @@ def main(args):
 
     if args.npt:
         render_ours_on_npt(pivots, )
+    if args.train_ratio:
+        render_train_ratio(pivots)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -783,6 +820,7 @@ if __name__ == "__main__":
     parser.add_argument('--contamination', action='store_true')
     parser.add_argument('--hp_ratio', action='store_true')
     parser.add_argument('--npt', action='store_true')
+    parser.add_argument('--train_ratio', action='store_true')
     parser.add_argument('--synthetic_type', type=str, default='dependency')
     args = parser.parse_args()
     main(args)

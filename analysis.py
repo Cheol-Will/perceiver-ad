@@ -56,7 +56,10 @@ def train_test(args, model_config, train_config, analysis_config, run):
     if analysis_config['plot_tsne_recon']:
         # analyzer.plot_tsne_reconstruction()
         analyzer.plot_combined_tsne()
-    
+    if args.plot_pos_encoding:
+        analyzer.plot_pos_encoding(use_mask=True)    
+    if args.plot_attn:
+        analyzer.plot_attn(use_mask=True)    
     return 
 
 
@@ -122,6 +125,7 @@ if __name__ == "__main__":
     parser.add_argument('--compare_regresssion_with_sup_attn', action='store_true')
     parser.add_argument('--plot_attn_and_corr', action='store_true')
     parser.add_argument('--plot_tsne_recon', action='store_true')
+    parser.add_argument('--plot_pos_encoding', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:

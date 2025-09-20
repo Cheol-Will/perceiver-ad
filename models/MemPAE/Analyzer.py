@@ -62,13 +62,55 @@ class Analyzer(Trainer):
         print("Saving")
         torch.save(self.model.state_dict(), parameter_path)
 
+    def plot_pos_encoding(self, use_mask = False):
+        if use_mask: 
+            pos_encoding = self.model.decoder_query + self.model.pos_encoding  # (1, F, D)
+        else:
+            pos_encoding = self.model.pos_encoding  # (1, F, D)
+        
+        if pos_encoding.dim() == 3:
+            pos_encoding = pos_encoding.squeeze(0)  # (F, D)
+        
+        if isinstance(pos_encoding, torch.Tensor):
+            pos_encoding_np = pos_encoding.detach().cpu().numpy()
+        else:
+            pos_encoding_np = pos_encoding
+        
+        pos_encoding_normalized = pos_encoding_np / (np.linalg.norm(pos_encoding_np, axis=1, keepdims=True) + 1e-8)
+        cosine_sim_matrix = np.dot(pos_encoding_normalized, pos_encoding_normalized.T)
+        
+        plt.figure(figsize=(10, 8), dpi=200)
+        im = plt.imshow(cosine_sim_matrix, cmap='coolwarm', aspect='equal', vmin=-1, vmax=1)
+        
+        plt.title('Position Encoding Cosine Similarity Matrix', fontsize=14, pad=20)
+        plt.xlabel('Feature Index', fontsize=12)
+        plt.ylabel('Feature Index', fontsize=12)
+        cbar = plt.colorbar(im, fraction=0.046, pad=0.04)
+        cbar.set_label('Cosine Similarity', rotation=270, labelpad=20)
+        plt.tight_layout()
+        
+        base_path = self.train_config['base_path']
+        file_name = "pos_encoding+token.png" if use_mask else pos_encoding.png
+        out_path = os.path.join(base_path, file_name)
+
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"pos_encoding saved into '{out_path}'.")
+        
+        return
+
+    def plot_attn_normal_vs_abnormal(self,):
+        attn_feature_feature, label = self.get_attn_weights(use_self_attn=True) # (H, F, F)
+        
+
     def plot_attn(self,):
         
         # get attention per head
-        attn_feature_feature = self.get_attn_weights(use_self_attn=True) # (H, F, F)
+        attn_feature_feature, label = self.get_attn_weights(use_self_attn=True) # (H, F, F)
         
         
-        attn_feature_feature = self.get_attn_weights(use_self_attn=False) # (H, F, F)
+        attn_feature_feature, label = self.get_attn_weights(use_self_attn=False) # (H, F, F)
 
         # calculate corr matrix in trainset.
         # 
@@ -273,8 +315,8 @@ class Analyzer(Trainer):
 
     @torch.no_grad()
     def compare_regresssion_with_attn(self):
-        attn_with_self = self.get_attn_weights(use_self_attn=True)
-        attn_no_self = self.get_attn_weights(use_self_attn=False)
+        attn_with_self, label = self.get_attn_weights(use_self_attn=True)
+        attn_no_self, label = self.get_attn_weights(use_self_attn=False)
 
         attn_label_with_self = attn_with_self[:, -1, :-1].cpu().numpy()
         attn_label_no_self = attn_no_self[:, -1, :-1].cpu().numpy()
@@ -343,14 +385,14 @@ class Analyzer(Trainer):
 
         running = None   # (H, F, F) accumulator (sum over batch)
         total_samples = 0
-
+        all_labels = []
         for (X, y) in self.train_loader:
             X_input = X.to(self.device)
             loss, attn_enc, attn_self_list, attn_dec = \
                 self.model(X_input, return_attn_weight=True)
 
             B, H, N, F = attn_enc.shape
-
+            all_labels.append(y.cpu())
             
             if use_self_attn and attn_self_list:
                 I = torch.eye(N, device=self.device).expand(B, H, N, N)  # (B,H,N,N)
@@ -382,7 +424,8 @@ class Analyzer(Trainer):
             total_samples += B
 
         result = running / total_samples  # (H, F, F)
-        return result
+        labels = torch.cat(all_labels, dim=0) 
+        return result, labels
 
 
     @torch.no_grad()

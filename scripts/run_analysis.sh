@@ -4,7 +4,7 @@
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
 
 data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography nslkdd shuttle fraud census) # from MCM
-data_list=(pendigits) # from MCM
+# data_list=(pendigits) # from MCM
 # data_list=(cardiotocography) # from MCM
 
 # data_list=(pima) # from MCM
@@ -29,13 +29,11 @@ data_list=(pendigits) # from MCM
 #     mnist
 # )
 model_type='MemPAE'
-# model_type='PAE'
 hidden_dim=64
 learning_rate=0.001
 temperature=0.1
 for data in "${data_list[@]}"; do
     exp_name="$model_type-ws-pos_query+token-d$hidden_dim-lr$learning_rate-t$temperature"
-    # exp_name="$model_type-ws-pos_query+token-d$hidden_dim-lr$learning_rate"
     echo "$exp_name on $data"
     python analysis.py \
         --dataname "$data" \
@@ -47,7 +45,8 @@ for data in "${data_list[@]}"; do
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
         --exp_name "$exp_name"\
-        --plot_histogram
+        --plot_pos_encoding
+        # --plot_histogram
         # --plot_recon
         # --plot_tsne_recon
 done

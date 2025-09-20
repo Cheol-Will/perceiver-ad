@@ -135,8 +135,9 @@ def split_and_preprocess(inliers, outliers, preprocess, ratio=1.0, contamination
     # shuffle and split
     np.random.shuffle(inliers)
     num_split = len(inliers) // 2
-    train_data = inliers[:num_split]
-    train_label = np.zeros(num_split)
+
+    train_data = inliers[:int(num_split*ratio)] # 
+    train_label = np.zeros(int(num_split*ratio))
     test_data = np.concatenate([inliers[num_split:], outliers], 0)
     test_label = np.zeros(test_data.shape[0])
     test_label[-len(outliers):] = 1
@@ -180,9 +181,9 @@ def split_and_preprocess(inliers, outliers, preprocess, ratio=1.0, contamination
 
     return train_data, train_label, test_data, test_label   
 
-def load_and_preprocess(data_dir, dataset_name, preprocess, contamination_ratio=None):
+def load_and_preprocess(data_dir, dataset_name, preprocess, contamination_ratio=None, ratio=1.0):
     inliers, outliers = load_dataset(data_dir, dataset_name)
     train_data, train_label, test_data, test_label = split_and_preprocess(
-        inliers, outliers, preprocess, ratio=1.0, contamination_ratio=contamination_ratio)
+        inliers, outliers, preprocess, ratio=ratio, contamination_ratio=contamination_ratio)
 
     return train_data, train_label, test_data, test_label
