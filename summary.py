@@ -445,6 +445,7 @@ def render_train_ratio(pivots):
         'wine',
         'thyroid',
         'optdigits',
+        'shuttle', # all good.
     ]
     models = [
         # 'KNN',
