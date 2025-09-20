@@ -458,6 +458,7 @@ def render_train_ratio(pivots):
         # 'ratio_0.1_AUCROC', 'ratio_0.5_AUCROC', 
         # 'ratio_0.1_AUCPR', 'ratio_0.5_AUCPR',
         # 'ratio_1.0_AUCROC',
+        'ratio_0.3_AUCPR',
         'ratio_0.5_AUCPR',
         'ratio_0.8_AUCPR',
         'ratio_1.0_AUCPR',
