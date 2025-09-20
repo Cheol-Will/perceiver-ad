@@ -344,7 +344,7 @@ def plot_train_ratio():
     # satimage-2, 
     # wbc,  
     datasets = {
-        'arrhythmia': arrhythmia, 
+        # 'arrhythmia': arrhythmia, 
         'pendigits': pendigits, 
         # 'cardiotocography': cardiotocography, 
         'pima': pima,
