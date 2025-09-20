@@ -290,35 +290,63 @@ def plot_contam():
     print(f"Plot saved into {png_path}")
 
 def plot_train_ratio():
+    arrhythmia = { # from ratio 1, 0.8, 0.5, 0.3 
+        'ours': [0.6113, 0.6183, 0.6173, 0.6285], 
+        'MCM': [0.5945, 0.6041, 0.6035, 0.6127], 
+        'DRL': [0.5401, 0.5469, 0.5122, 0.5335], # temp
+        'Disent': [0.5945, 0.5973, 0.6000, 0.5885],
+    }
+    pima = { # from ratio 1, 0.8, 0.5 
+        'ours': [0.6986, 0.6963, 0.7021, 0.6820], 
+        'MCM': [0.6250, 0.6288, 0.6494, 0.6416], 
+        'DRL': [0.6322, 0.6340, 0.6543, 0.6681], # temp
+        'Disent': [0.6759, 0.6726, 0.6612, 0.6517],
+    }
+
     pendigits = { # from ratio 1, 0.8, 0.5 
-        'ours': [0.8679, 0.8642, 0.8252], 
-        'MCM': [0.8381, 0.8164, 0.7561], 
-        'DRL': [0.6094, 0.5, 0.4400], # temp
-        'Disent': [0.7697, 0.7416, 0.6474],
+        'ours': [0.8679, 0.8642, 0.8252, 0.7521], 
+        'MCM': [0.8381, 0.8164, 0.7561, 0.7010], 
+        'DRL': [0.6094, 0.5, 0.4400, 0.4291], # temp
+        'Disent': [0.7697, 0.7416, 0.6474, 0.5349],
     }
 
     cardiotocography = { # from ratio 1, 0.8, 0.5 # IDK 
-        'ours': [0.6811, 0.6773, 0.6541], 
-        'MCM': [0.6344, 0.6271, 0.5541], 
-        'DRL': [0.6084, 0.6034, 0.5791], # temp
-        'Disent': [0.6856, 0.6910, 0.6920],
+        'ours': [0.6811, 0.6773, 0.6541, 0.6488], 
+        'MCM': [0.6344, 0.6271, 0.5541, 0.5623], 
+        'DRL': [0.6084, 0.6034, 0.5791, 0.5638], # temp
+        'Disent': [0.6856, 0.6910, 0.6920, 0.6895],
     }
-    
+    ionosphere = { # from ratio 1, 0.8, 0.5 # IDK 
+        'ours': [0.9747, 0.9744, 0.9751, 0.9820], 
+        'MCM': [0.8652, 0.7488, 0.5543, 0.7259], 
+        'DRL': [0.9412, 0.9207, 0.8910, 0.8576], # temp
+        'Disent': [0.9658, 0.9285, 0.9721, 0.9688],
+    }        
     satimage = { # from ratio 1, 0.8, 0.5 # IDK 
-        'ours': [0.9747, 0.9744, 0.9751], 
-        'MCM': [0.8652, 0.7488, 0.5543], 
-        'DRL': [0.9412, 0.9207, 0.8910], # temp
-        'Disent': [0.9658, 0.9285, 0.9721],
+        'ours': [0.9747, 0.9744, 0.9751, 0.9820], 
+        'MCM': [0.8652, 0.7488, 0.5543, 0.7259], 
+        'DRL': [0.9412, 0.9207, 0.8910, 0.8576], # temp
+        'Disent': [0.9658, 0.9285, 0.9721, 0.9688],
     }
     wbc = {
-
+        'ours': [0.7837, 0.7687, 0.7547, 0.7096],
+        'MCM': [0.5548, 0.5823, 0.6207, 0.6000], 
+        'DRL': [0.7423, 0.7095, 0.6749, 0.6565], # temp
+        'Disent': [0.7566, 0.7461, 0.7511, 0.6975],
     }
-    trainset_ratio = [1.0, 0.8, 0.5]
-    # arrhythmia, pima, pendigits, satimage-2, wbc,  
+    trainset_ratio = [1.0, 0.8, 0.5, 0.3]
+    # arrhythmia, 
+    # pima, 
+    # pendigits, 
+    # satimage-2, 
+    # wbc,  
     datasets = {
+        'arrhythmia': arrhythmia, 
         'pendigits': pendigits, 
         # 'cardiotocography': cardiotocography, 
-        'satimage': satimage
+        'pima': pima,
+        'satimage': satimage,
+        'wbc': wbc,
     }
     styles = {
         'MCM': {'marker': 'o', 'linestyle': '-'},
@@ -327,7 +355,7 @@ def plot_train_ratio():
         'ours': {'marker': 'D', 'linestyle': ':'}
     }
     
-    fig, axes = plt.subplots(1, len(datasets), figsize=(10, 4),)
+    fig, axes = plt.subplots(1, len(datasets), figsize=(3*len(datasets), 4),)
 
     for i, (name, data) in enumerate(datasets.items()):
         ax = axes[i]

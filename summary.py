@@ -443,7 +443,8 @@ def render_train_ratio(pivots):
         'ionosphere',
         'wbc',
         'wine',
-        # 'thyroid',
+        'thyroid',
+        # 'optdigits',
     ]
     models = [
         # 'KNN',
