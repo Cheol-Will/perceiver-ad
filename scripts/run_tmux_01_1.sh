@@ -6,10 +6,10 @@
 # data_list=(census fraud "satimage-2" shuttle) 
 
 # data_list=(pendigits "satimage-2" breastw pima glass ionosphere wbc wine thyroid arrhythmia cardio cardiotocography mammography) 
-data_list=(arrhythmia) 
+data_list=(opdigits) 
 
 model_list=(KNN Disent MCM DRL) 
-train_ratio_list=(0.3)
+train_ratio_list=(0.5)
 
 for data in "${data_list[@]}"; do
     for model_type in "${model_list[@]}"; do

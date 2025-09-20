@@ -5,9 +5,11 @@
 # data_list=(arrhythmia optdigits breastw cardio campaign cardiotocography census fraud glass ionosphere mammography nslkdd  pendigits pima satellite "satimage-2" shuttle thyroid wbc wine) 
 # data_list=(census fraud "satimage-2" shuttle) 
 
-data_list=(pendigits "satimage-2" breastw pima glass ionosphere wbc wine thyroid arrhythmia cardio cardiotocography mammography) 
+# data_list=(pendigits "satimage-2" breastw pima glass ionosphere wbc wine thyroid arrhythmia cardio cardiotocography mammography) 
+data_list=(opdigits) 
+
 model_list=(KNN Disent MCM DRL) 
-train_ratio_list=(0.3)
+train_ratio_list=(0.8)
 
 for data in "${data_list[@]}"; do
     for model_type in "${model_list[@]}"; do
