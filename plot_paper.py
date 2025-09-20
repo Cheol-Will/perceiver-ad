@@ -310,6 +310,9 @@ def plot_train_ratio():
         'DRL': [0.9412, 0.9207, 0.8910], # temp
         'Disent': [0.9658, 0.9285, 0.9721],
     }
+    wbc = {
+
+    }
     trainset_ratio = [1.0, 0.8, 0.5]
     
     datasets = {
