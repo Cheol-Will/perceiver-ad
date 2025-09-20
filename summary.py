@@ -432,7 +432,8 @@ def render_train_ratio(pivots):
     data = [
         'arrhythmia', 
         'cardio', 
-        'campaign', 
+        'campaign',
+        'pima', 
         # 'cardiotocography', 
         # 'pendigits', 
         # 'mammography', 
