@@ -6,6 +6,7 @@
 # data_list=(census fraud "satimage-2" shuttle) 
 
 data_list=(arrhythmia cardio cardiotocography mammography  pendigits ) 
+data_list=(breastw glass ionosphere  wbc wine thyroid ) 
 model_list=(KNN Disent MCM DRL) 
 train_ratio_list=(0.5)
 

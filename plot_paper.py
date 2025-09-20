@@ -303,9 +303,61 @@ def plot_train_ratio():
         'DRL': [0.6084, 0.6034, 0.5791], # temp
         'Disent': [0.6856, 0.6910, 0.6920],
     }
+    
+    satimage = { # from ratio 1, 0.8, 0.5 # IDK 
+        'ours': [0.9747, 0.9744, 0.9751], 
+        'MCM': [0.8652, 0.8, 0.5543], 
+        'DRL': [0.9412, 0.9, 0.8910], # temp
+        'Disent': [0.9658, 0.9285, 0.9721],
+    }
+    trainset_ratio = [1.0, 0.8, 0.5]
+    
+    datasets = {
+        'pendigits': pendigits, 
+        # 'cardiotocography': cardiotocography, 
+        'satimage': satimage
+    }
+    styles = {
+        'MCM': {'marker': 'o', 'linestyle': '-'},
+        'DRL': {'marker': 's', 'linestyle': '--'},
+        'Disent': {'marker': '^', 'linestyle': '-.'},
+        'ours': {'marker': 'D', 'linestyle': ':'}
+    }
+    
+    fig, axes = plt.subplots(1, len(datasets), figsize=(10, 4),)
 
+    for i, (name, data) in enumerate(datasets.items()):
+        ax = axes[i]
+        for model, values in data.items():
+            x1_positions = range(len(trainset_ratio)) 
+            ax.plot(x1_positions, values, label=model, **styles.get(model, {}))
+        
+        ax.set_title(name)
+        ax.set_xlabel('Trainset Ratio (%)')
+        ax.set_xticks(x1_positions) 
+        ax.set_xticklabels(trainset_ratio)      
+        ax.legend()
+        ax.grid(True, linestyle='--', linewidth=0.5)
+
+        # if i == 0:
+        #     ax.set_ylabel('AUC-PR')
+    
+    plt.tight_layout()
+    sns.despine(fig)
+    
+    save_dir = 'metrics'
+    os.makedirs(save_dir, exist_ok=True)
+    png_path = os.path.join(save_dir, 'train_ratio.png')
+    pdf_path = os.path.join(save_dir, 'train_ratio.pdf')
+
+    plt.savefig(png_path, dpi=300, bbox_inches='tight')
+    plt.savefig(pdf_path, bbox_inches='tight')
+    plt.show()
+
+    print(f"Plot saved into {png_path}")
 
 
 if __name__ == '__main__':
     plot_hp_sen()
     plot_contam()
+    plot_train_ratio()

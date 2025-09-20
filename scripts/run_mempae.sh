@@ -22,7 +22,8 @@ data_list=(
     global_anomalies_32_shuttle_42
 )      
    
-data_list=(arrhythmia cardio cardiotocography mammography  pendigits pima  "satimage-2") 
+# data_list=(arrhythmia  cardio cardiotocography pima  optdigits pendigits satellite) # from MCM
+data_list=(breastw glass ionosphere  wbc wine thyroid ) 
 
 hidden_dim=64
 learning_rate=0.001
