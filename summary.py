@@ -440,7 +440,7 @@ def render_train_ratio(pivots):
         'satimage-2', 
         'breastw',
         'glass',
-        # 'ionosphere',
+        'ionosphere',
     ]
     models = [
         # 'KNN',
