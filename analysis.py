@@ -60,6 +60,9 @@ def train_test(args, model_config, train_config, analysis_config, run):
         analyzer.plot_pos_encoding(use_mask=True)    
     if args.plot_attn:
         analyzer.plot_attn(use_mask=True)    
+    if args.plot_tsne_latent_vs_memory:
+        analyzer.plot_tsne_latent_vs_memory()
+        analyzer.plot_tsne_latent_vs_memory(use_latents_hat=True)
     return 
 
 
@@ -126,6 +129,7 @@ if __name__ == "__main__":
     parser.add_argument('--plot_attn_and_corr', action='store_true')
     parser.add_argument('--plot_tsne_recon', action='store_true')
     parser.add_argument('--plot_pos_encoding', action='store_true')
+    parser.add_argument('--plot_tsne_latent_vs_memory', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:

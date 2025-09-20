@@ -3,7 +3,8 @@
 # data_list=(satimage-2) # from MCM
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
 
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography nslkdd shuttle fraud census) # from MCM
+# data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography nslkdd shuttle fraud census) # from MCM
+data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite ) # from MCM
 # data_list=(pendigits) # from MCM
 # data_list=(cardiotocography) # from MCM
 
@@ -45,7 +46,8 @@ for data in "${data_list[@]}"; do
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
         --exp_name "$exp_name"\
-        --plot_pos_encoding
+        --plot_tsne_latent_vs_memory
+        # --plot_pos_encoding
         # --plot_histogram
         # --plot_recon
         # --plot_tsne_recon

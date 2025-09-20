@@ -100,6 +100,122 @@ class Analyzer(Trainer):
         
         return
 
+    @torch.no_grad()
+    def get_latent(
+        self,
+    ):
+        self.model.eval()
+        all_labels = []
+        all_latents = []
+        all_latents_hat = []
+        for (X, y) in self.test_loader:
+            X_input = X.to(self.device)
+            _, latents, latents_hat = self.model(X_input, return_latents=True)
+            B, N, D = latents.shape
+            all_labels.append(y.cpu())
+            all_latents.append(latents.cpu())
+            all_latents_hat.append(latents_hat.cpu())
+
+        latents = torch.cat(all_latents, dim=0) # (N_train, N, D) 
+        latents_hat = torch.cat(all_latents_hat, dim=0) # (N_train, N, D)
+        labels = torch.cat(all_labels, dim=0) # (N_train, )
+        return latents, latents_hat, labels # 
+
+
+    def plot_tsne_latent_vs_memory(
+        self,
+        use_latents_hat: bool = False,
+    ):
+        # get latents and memroy vector
+        latents, latents_hat, labels = self.get_latent()
+        filename = 'latents'
+        if use_latents_hat:
+            latents = latents_hat
+            filename = 'latents_hat'
+
+        hidden_dim = latents.shape[-1]
+        normal_latents = latents[labels==0].view(-1, hidden_dim) # (num_normal x num_latent, D)
+        abnormal_latents = latents[labels==1].view(-1, hidden_dim) # (num_abnormal x num_latent, D)
+        memory_latents = self.model.memory.memories.detach().cpu().numpy()  # (num_memory, D)
+
+        # now plot on T-SNE and add color for each one.
+        datasets = []
+        category_labels = []
+        
+        datasets.append(normal_latents.numpy())
+        category_labels.extend([0] * normal_latents.shape[0])  # normal latents
+        
+        datasets.append(abnormal_latents.numpy())
+        category_labels.extend([1] * abnormal_latents.shape[0])  # abnormal latents
+        
+        datasets.append(memory_latents)
+        category_labels.extend([2] * memory_latents.shape[0])  # memory vectors
+        
+        # Combine all data
+        combined_data = np.vstack(datasets)
+        category_labels = np.array(category_labels)
+        
+        # Standardize the data
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(combined_data)
+        
+        # Apply t-SNE
+        n_samples = scaled_data.shape[0]
+        perplexity = min(30, max(5, n_samples // 3)) if n_samples > 10 else 5
+        
+        tsne = TSNE(
+            n_components=2, 
+            random_state=42, 
+            perplexity=perplexity, 
+            n_iter=1000, 
+            init='pca', 
+            learning_rate='auto'
+        )
+        tsne_results = tsne.fit_transform(scaled_data)
+        
+        # Create the plot
+        plt.figure(figsize=(10, 8), dpi=200)
+        
+        # Define colors and markers for each category
+        plot_config = {
+            0: {'label': 'Normal Latents', 'color': '#1f77b4', 'marker': 'o', 'alpha': 0.6, 's': 30},
+            1: {'label': 'Abnormal Latents', 'color': '#d62728', 'marker': '^', 'alpha': 0.6, 's': 30}, 
+            2: {'label': 'Memory Vectors', 'color': '#2ca02c', 'marker': 's', 'alpha': 0.8, 's': 60}
+        }
+        
+        # Plot each category
+        for cat_id, config in plot_config.items():
+            mask = (category_labels == cat_id)
+            if mask.any():
+                plt.scatter(
+                    tsne_results[mask, 0], 
+                    tsne_results[mask, 1],
+                    label=config['label'],
+                    c=config['color'],
+                    marker=config['marker'],
+                    alpha=config['alpha'],
+                    s=config['s'],
+                    edgecolors='white',
+                    linewidth=0.5
+                )
+        
+        plt.title(f't-SNE: {filename} vs Memory Vectors • {self.train_config["dataset_name"].upper()}', 
+                fontsize=14, pad=20)
+        plt.xlabel('t-SNE Dimension 1', fontsize=12)
+        plt.ylabel('t-SNE Dimension 2', fontsize=12)
+        plt.legend(loc='best', frameon=True, fancybox=True, shadow=True)
+        plt.grid(True, linestyle='--', alpha=0.3)
+        
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, f't-sne_{filename}_memory.png')
+
+        plt.tight_layout()
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        print(f"T-SNE saved into '{out_path}'.")
+        
+
+
     def plot_attn_normal_vs_abnormal(self,):
         attn_feature_feature, label = self.get_attn_weights(use_self_attn=True) # (H, F, F)
         
