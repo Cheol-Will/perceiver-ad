@@ -7,7 +7,7 @@ import seaborn as sns
 pd.set_option('display.max_rows', None)
 
 BASE_DIR = "results"
-TRAIN_RATIOS = [0.1, 0.5, 0.8, 1.0]
+TRAIN_RATIOS = [0.1, 0.3, 0.5, 0.8, 1.0]
 METRICS_CANON = ["AUC-ROC", "AUC-PR", 'f1']
 METRIC_ALIAS = {
     "AUC-ROC": "AUC-ROC", "AUROC": "AUC-ROC", "AUCROC": "AUC-ROC",
