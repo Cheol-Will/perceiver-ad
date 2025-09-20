@@ -438,6 +438,9 @@ def render_train_ratio(pivots):
         'cardiotocography', 
         'mammography', 
         'satimage-2', 
+        'breastw',
+        'glass',
+        # 'ionosphere',
     ]
     models = [
         # 'KNN',
