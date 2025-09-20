@@ -289,6 +289,16 @@ def plot_contam():
 
     print(f"Plot saved into {png_path}")
 
+def plot_train_ratio():
+    pendigits = { # from ratio 1, 0.8, 0.5 
+        'ours': [0.8679, 0.8642, 0.8252], 
+        'MCM': [0.8381, 0.8381, 0.7561], # temp
+        'DRL': [0.6094, 0.5, 0.4400], # temp
+        'Disent': [0.7697, 0.70, 0.6474],
+    }
+
+
+
 
 if __name__ == '__main__':
     plot_hp_sen()
