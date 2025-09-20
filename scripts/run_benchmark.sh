@@ -8,7 +8,7 @@
 data_list=(arrhythmia cardio cardiotocography mammography  pendigits ) 
 data_list=(breastw glass ionosphere  wbc wine thyroid ) 
 model_list=(KNN Disent MCM DRL) 
-train_ratio_list=(0.5)
+train_ratio_list=(0.8)
 
 for data in "${data_list[@]}"; do
     for model_type in "${model_list[@]}"; do
