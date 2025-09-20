@@ -375,17 +375,17 @@ def plot_train_ratio():
                 legend_handles.extend(line)
                 legend_labels.append(model)
         
-        ax.set_title(name)
-        ax.set_xlabel('Trainset Ratio (%)')
+        ax.set_title(name, fontsize=14)
+        ax.set_xlabel('Trainset Ratio (%)', fontsize=12)
         ax.set_xticks(x1_positions) 
-        ax.set_xticklabels(trainset_ratio)      
+        ax.set_xticklabels(trainset_ratio, fontsize=10)
+        ax.tick_params(axis='y', labelsize=10)      
         ax.grid(True, linestyle='--', linewidth=0.5)
-
         # if i == 0:
         #     ax.set_ylabel('AUC-PR')
     
     # Add single legend for entire figure
-    fig.legend(legend_handles, legend_labels, loc='upper right', bbox_to_anchor=(0.98, 0.95), ncol=2)
+    fig.legend(legend_handles, legend_labels, loc='upper right', bbox_to_anchor=(0.98, 0.95), ncol=2, fontsize=12)
     
     plt.tight_layout()
     sns.despine(fig)
