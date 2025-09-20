@@ -288,6 +288,9 @@ def plot_contam():
     plt.show()
 
     print(f"Plot saved into {png_path}")
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
 
 def plot_train_ratio():
     arrhythmia = { # from ratio 1, 0.8, 0.5, 0.3 
@@ -355,23 +358,34 @@ def plot_train_ratio():
         'ours': {'marker': 'D', 'linestyle': ':'}
     }
     
-    fig, axes = plt.subplots(1, len(datasets), figsize=(3*len(datasets), 4),)
+    fig, axes = plt.subplots(1, len(datasets), figsize=(4*len(datasets), 4))
 
+    # Store handles and labels from first subplot for global legend
+    legend_handles = []
+    legend_labels = []
+    
     for i, (name, data) in enumerate(datasets.items()):
         ax = axes[i]
         for model, values in data.items():
             x1_positions = range(len(trainset_ratio)) 
-            ax.plot(x1_positions, values, label=model, **styles.get(model, {}))
+            line = ax.plot(x1_positions, values, label=model, **styles.get(model, {}))
+            
+            # Collect legend info only from first subplot
+            if i == 0:
+                legend_handles.extend(line)
+                legend_labels.append(model)
         
         ax.set_title(name)
         ax.set_xlabel('Trainset Ratio (%)')
         ax.set_xticks(x1_positions) 
         ax.set_xticklabels(trainset_ratio)      
-        ax.legend()
         ax.grid(True, linestyle='--', linewidth=0.5)
 
         # if i == 0:
         #     ax.set_ylabel('AUC-PR')
+    
+    # Add single legend for entire figure
+    fig.legend(legend_handles, legend_labels, loc='upper right', bbox_to_anchor=(0.98, 0.95), ncol=2)
     
     plt.tight_layout()
     sns.despine(fig)
@@ -388,7 +402,60 @@ def plot_train_ratio():
     print(f"Plot saved into {png_path}")
 
 
+def render_npt():
+    npt = {
+        'arrhythmia': 0.4345,
+        'breastw': 0.8825,
+        'campaign': 0.469,
+        'cardio': 0.6929,
+        'cardiotocography': 0.5334,
+        'census': 0.1794, 
+        'fraud': 0.6214,
+        'glass': 0.2151,
+        'ionosphere': 0.9683,
+        'mammography': 0.3985,
+        'optdigits': 0.1534,
+        'pendigits': 0.4844,
+        'pima': 0.6798,
+        'satellite': 0.8479,
+        'satimage-2': 0.6798,
+        'shuttle': 0.9403,
+        'thyroid': 0.8167,
+        'wbc': 0.3997,
+        'wine': 0.9985,
+    }
+    ours = {
+         'arrhythmia': 0.6113,
+        'breastw': 0.9844,
+        'campaign': 0.5105,
+        'cardio': 0.8442,
+        'cardiotocography': 0.6811,
+        'census': 0.2474, 
+        'fraud': 0.7240,
+        'glass': 0.2909,
+        'ionosphere': 0.9772,
+        'mammography': 0.4196,
+        # 'nslkdd': 0.9755,
+        'optdigits': 0.2204,
+        'pendigits': 0.8679,
+        'pima': 0.6986,
+        'satellite-2': 0.8657,
+        'satimage': 0.9747,
+        'shuttle': 0.9889,
+        'thyroid': 0.7566,
+        'wbc': 0.7837,
+        'wine': 0.8260,
+    } 
+    # list(npt.values)
+    npt_mean = np.mean(list(npt.values()))  # 
+    ours_mean = np.mean(list(ours.values()))  # 
+    print(f"NPT Mean: {npt_mean:.4f}")
+    print(f"Ours Mean: {ours_mean:.4f}")
+
+
+
 if __name__ == '__main__':
     plot_hp_sen()
     plot_contam()
     plot_train_ratio()
+    render_npt()
