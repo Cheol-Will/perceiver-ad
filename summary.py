@@ -436,11 +436,11 @@ def render_train_ratio(pivots):
         'pima', 
         'pendigits', 
         'cardiotocography', 
-        # 'mammography', 
+        'mammography', 
         'satimage-2', 
     ]
     models = [
-        # 'KNN',
+        'KNN',
         'Disent',
         'MCM',
         'DRL',
