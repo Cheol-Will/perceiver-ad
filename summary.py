@@ -432,14 +432,15 @@ def render_train_ratio(pivots):
     data = [
         'arrhythmia', 
         'cardio', 
-        'campaign', 
-        # 'cardiotocography', 
-        # 'pendigits', 
-        # 'mammography', 
-        # 'satimage-2', 
+        # 'campaign', # too slow
+        'pima', 
+        'pendigits', 
+        'cardiotocography', 
+        'mammography', 
+        'satimage-2', 
     ]
     models = [
-        'KNN',
+        # 'KNN',
         'Disent',
         'MCM',
         'DRL',
