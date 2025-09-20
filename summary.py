@@ -7,7 +7,7 @@ import seaborn as sns
 pd.set_option('display.max_rows', None)
 
 BASE_DIR = "results"
-TRAIN_RATIOS = [0.1, 0.5, 0.8, 1.0]
+TRAIN_RATIOS = [0.1, 0.3, 0.5, 0.8, 1.0]
 METRICS_CANON = ["AUC-ROC", "AUC-PR", 'f1']
 METRIC_ALIAS = {
     "AUC-ROC": "AUC-ROC", "AUROC": "AUC-ROC", "AUCROC": "AUC-ROC",
@@ -438,6 +438,12 @@ def render_train_ratio(pivots):
         'cardiotocography', 
         'mammography', 
         'satimage-2', 
+        'breastw',
+        'glass',
+        'ionosphere',
+        'wbc',
+        'wine',
+        # 'thyroid',
     ]
     models = [
         # 'KNN',
@@ -452,6 +458,7 @@ def render_train_ratio(pivots):
         # 'ratio_0.1_AUCROC', 'ratio_0.5_AUCROC', 
         # 'ratio_0.1_AUCPR', 'ratio_0.5_AUCPR',
         # 'ratio_1.0_AUCROC',
+        'ratio_0.3_AUCPR',
         'ratio_0.5_AUCPR',
         'ratio_0.8_AUCPR',
         'ratio_1.0_AUCPR',

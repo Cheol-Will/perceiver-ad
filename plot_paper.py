@@ -306,12 +306,15 @@ def plot_train_ratio():
     
     satimage = { # from ratio 1, 0.8, 0.5 # IDK 
         'ours': [0.9747, 0.9744, 0.9751], 
-        'MCM': [0.8652, 0.8, 0.5543], 
-        'DRL': [0.9412, 0.9, 0.8910], # temp
+        'MCM': [0.8652, 0.7488, 0.5543], 
+        'DRL': [0.9412, 0.9207, 0.8910], # temp
         'Disent': [0.9658, 0.9285, 0.9721],
     }
+    wbc = {
+
+    }
     trainset_ratio = [1.0, 0.8, 0.5]
-    
+    # arrhythmia, pima, pendigits, satimage-2, wbc,  
     datasets = {
         'pendigits': pendigits, 
         # 'cardiotocography': cardiotocography, 
