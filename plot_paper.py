@@ -294,23 +294,23 @@ import os
 
 def plot_train_ratio():
     arrhythmia = { # from ratio 1, 0.8, 0.5, 0.3 
-        'ours': [0.6113, 0.6183, 0.6173, 0.6285], 
-        'MCM': [0.5945, 0.6041, 0.6035, 0.6127], 
-        'DRL': [0.5401, 0.5469, 0.5122, 0.5335], # temp
-        'Disent': [0.5945, 0.5973, 0.6000, 0.5885],
+        'ours': [0.6113, 0.6183, 0.6194, 0.6194, 0.6150], 
+        'MCM': [0.5945, 0.5469, 0.5223, 0.5252, 0.5819], 
+        'DRL': [0.5401, 0.5469, 0.5945, 0.6025, 0.5819], 
+        'Disent': [0.5953, 0.5973, 0.5945, 0.6025, 0.5822],
     }
     pima = { # from ratio 1, 0.8, 0.5 
-        'ours': [0.6986, 0.6963, 0.7021, 0.6820], 
-        'MCM': [0.6250, 0.6288, 0.6494, 0.6416], 
-        'DRL': [0.6322, 0.6340, 0.6543, 0.6681], # temp
-        'Disent': [0.6759, 0.6726, 0.6612, 0.6517],
+        'ours': [0.6986, 0.6963, 0.6823, 0.7004, 0.6849], 
+        'MCM': [0.6250, 0.6288, 0.6435, 0.6309, 0.6301], 
+        'DRL': [0.6322, 0.6340, 0.6440, 0.6622, 0.6843], # temp
+        'Disent': [0.6759, 0.6726, 0.6694, 0.6574, 0.6531],
     }
 
     pendigits = { # from ratio 1, 0.8, 0.5 
-        'ours': [0.8679, 0.8642, 0.8252, 0.7521], 
-        'MCM': [0.8381, 0.8164, 0.7561, 0.7010], 
-        'DRL': [0.6094, 0.5, 0.4400, 0.4291], # temp
-        'Disent': [0.7697, 0.7416, 0.6474, 0.5349],
+        'ours': [0.8679, 0.8642, 0.8313, 0.8029, 0.7053], 
+        'MCM': [0.8381, 0.8164, 0.8074, 0.7544, 0.6707], 
+        'DRL': [0.6094, 0.5, 0.5525, 0.5049, 0.4070], # temp
+        'Disent': [0.7697, 0.7416, 0.6798, 0.6057, 0.4028],
     }
 
     cardiotocography = { # from ratio 1, 0.8, 0.5 # IDK 
@@ -326,28 +326,28 @@ def plot_train_ratio():
         'Disent': [0.9658, 0.9285, 0.9721, 0.9688],
     }        
     satimage = { # from ratio 1, 0.8, 0.5 # IDK 
-        'ours': [0.9747, 0.9744, 0.9751, 0.9820], 
-        'MCM': [0.8652, 0.7488, 0.5543, 0.7259], 
-        'DRL': [0.9412, 0.9207, 0.8910, 0.8576], # temp
-        'Disent': [0.9658, 0.9285, 0.9721, 0.9688],
+        'ours': [0.9747, 0.9744, 0.9733, 0.9777, 0.9822], 
+        'MCM': [0.8652, 0.7488, 0.6677, 0.5871, 0.9231], 
+        'DRL': [0.9412, 0.9207, 0.9289, 0.9271, 0.8800], # temp
+        'Disent': [0.9658, 0.9285, 0.9696, 0.9692, 0.9675],
     }
     wbc = {
-        'ours': [0.7837, 0.7687, 0.7547, 0.7096],
-        'MCM': [0.5548, 0.5823, 0.6207, 0.6000], 
-        'DRL': [0.7423, 0.7095, 0.6749, 0.6565], # temp
-        'Disent': [0.7566, 0.7461, 0.7511, 0.6975],
+        'ours': [0.7837, 0.7687, 0.7617, 0.7307, 0.6904],
+        'MCM': [0.5548, 0.5823, 0.5751, 0.5635, 0.5298], 
+        'DRL': [0.7423, 0.7095, 0.7095, 0.6619, 0.6097], # temp
+        'Disent': [0.7566, 0.7461, 0.7533, 0.7169, 0.6842],
     }
-    trainset_ratio = [1.0, 0.8, 0.5, 0.3]
+    trainset_ratio = [1.0, 0.8, 0.6, 0.4, 0.2]
     # arrhythmia, 
     # pima, 
     # pendigits, 
     # satimage-2, 
     # wbc,  
     datasets = {
-        # 'arrhythmia': arrhythmia, 
+        'arrhythmia': arrhythmia, 
         'pendigits': pendigits, 
         # 'cardiotocography': cardiotocography, 
-        'pima': pima,
+        # 'pima': pima, # DRL increasings
         'satimage': satimage,
         'wbc': wbc,
     }
@@ -381,13 +381,15 @@ def plot_train_ratio():
         ax.set_xticklabels(trainset_ratio, fontsize=10)
         ax.tick_params(axis='y', labelsize=10)      
         ax.grid(True, linestyle='--', linewidth=0.5)
+        # ax.set_ylim(bottom=0.2)
         # if i == 0:
         #     ax.set_ylabel('AUC-PR')
     
     # Add single legend for entire figure
-    fig.legend(legend_handles, legend_labels, loc='upper right', bbox_to_anchor=(0.98, 0.95), ncol=2, fontsize=12)
+    fig.legend(legend_handles, legend_labels, loc='upper right', bbox_to_anchor=(0.98, 0.95), ncol=1, fontsize=12)
     
     plt.tight_layout()
+    plt.subplots_adjust(right=0.91) # for legend
     sns.despine(fig)
     
     save_dir = 'metrics'
