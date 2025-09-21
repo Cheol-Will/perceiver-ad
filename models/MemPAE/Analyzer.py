@@ -1633,6 +1633,7 @@ class Analyzer(Trainer):
         print(f"Single class t-SNE saved into '{out_path}'.")
         print(f"Samples - {class_name}: {class_latents_flat.shape[0]}, Memory: {memory_latents.shape[0]}")
 
+
     def plot_attn_single(self):
         self.model.eval()
 
@@ -1642,14 +1643,15 @@ class Analyzer(Trainer):
             loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = self.model(X, return_attn_weight=True)
             break
         single_attn_weight_enc = attn_weight_enc[0, :, :, :] # (H, F, N)
+        single_attn_weight_dec = attn_weight_dec[0, :, :, :] # (H, F, N)
 
         depth = self.model.depth
-        fig, axes = plt.subplots(1, depth + 1, figsize=(4 * (depth + 1), 4))
+        fig, axes = plt.subplots(1, depth + 2, figsize=(4 * (depth + 2), 4))
 
         single_attn_weight_enc_head_sum = single_attn_weight_enc.mean(dim=0) # (F, N)
-        head_sum_data = single_attn_weight_enc_head_sum.detach().cpu().numpy()  # (F, N)
-        im_sum = axes[0].imshow(head_sum_data, cmap='viridis', aspect='auto')
-        axes[0].set_title('All Heads Average')
+        single_attn_weight_enc_head_sum = single_attn_weight_enc_head_sum.detach().cpu().numpy()  # (F, N)
+        im_sum = axes[0].imshow(single_attn_weight_enc_head_sum, cmap='viridis', aspect='auto')
+        axes[0].set_title('Attn Map of Encoder')
         axes[0].set_xlabel('Column')
         axes[0].set_ylabel('Latent')
         plt.colorbar(im_sum, ax=axes[0])
@@ -1660,14 +1662,21 @@ class Analyzer(Trainer):
             
             head_sum_data = self_attn.detach().cpu().numpy()  # (F, N)
             im_sum = axes[i+1].imshow(head_sum_data, cmap='viridis', aspect='auto')
-            axes[i+1].set_title('Heads Average')
+            axes[i+1].set_title(f'Heads Average of Self Attn {i+1}')
             axes[i+1].set_xlabel('Latent')
             axes[i+1].set_ylabel('Latent')
             plt.colorbar(im_sum, ax=axes[i+1])
 
+        single_attn_weight_dec_head_sum = single_attn_weight_dec.mean(dim=0) # (F, N)
+        single_attn_weight_dec_head_sum = single_attn_weight_dec_head_sum.detach().cpu().numpy()  # (F, N)
+        im_sum = axes[5].imshow(single_attn_weight_dec_head_sum, cmap='viridis', aspect='auto')
+        axes[5].set_title('Attn Map of Encoder')
+        axes[5].set_xlabel('Column')
+        axes[5].set_ylabel('Latent')
+        plt.colorbar(im_sum, ax=axes[5])
 
         plt.tight_layout()
-        filename = 'single_sample_attn_weight_enc'
+        filename = 'single_sample_attn_weight'
         base_path = self.train_config['base_path']
         out_path = os.path.join(base_path, f'{filename}.png')
         plt.savefig(out_path, bbox_inches='tight', dpi=200)
@@ -1676,6 +1685,57 @@ class Analyzer(Trainer):
         print(f"Head-wise attention analysis saved to '{out_path}'")
         
         return
+
+    # def plot_attn_single_self_sum(self):
+    #     self.model.eval()
+
+    #     for (X, y) in self.test_loader:
+    #         X = X.to(self.device)
+    #         loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = self.model(X, return_attn_weight=True)
+    #         break
+        
+    #     single_attn_weight_enc = attn_weight_enc[0, :, :, :] # (H, F, N)
+    #     single_attn_weight_dec = attn_weight_dec[0, :, :, :] # (H, F, N)
+
+    #     fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+
+    #     enc_head_avg = single_attn_weight_enc.mean(dim=0).detach().cpu().numpy() # (F, N)
+    #     im1 = axes[0].imshow(enc_head_avg, cmap='viridis', aspect='auto')
+    #     axes[0].set_title('Encoder Attention')
+    #     axes[0].set_xlabel('Column')
+    #     axes[0].set_ylabel('Latent')
+    #     plt.colorbar(im1, ax=axes[0])
+
+    #     all_self_attn = []
+    #     for self_attn in attn_weight_self_list:
+    #         single_self_attn = self_attn[0] # 1st
+    #         layer_avg = single_self_attn.mean(0) # 
+    #         all_self_attn.append(layer_avg)
+        
+    #     self_attn_avg = torch.stack(all_self_attn).mean(dim=0).detach().cpu().numpy() # (F, N)
+    #     im2 = axes[1].imshow(self_attn_avg, cmap='viridis', aspect='auto')
+    #     axes[1].set_title('Self Attention (All Layers Avg)')
+    #     axes[1].set_xlabel('Latent')
+    #     axes[1].set_ylabel('Latent')
+    #     plt.colorbar(im2, ax=axes[1])
+
+    #     dec_head_avg = single_attn_weight_dec.mean(dim=0).detach().cpu().numpy() # (F, N)
+    #     im3 = axes[2].imshow(dec_head_avg, cmap='viridis', aspect='auto')
+    #     axes[2].set_title('Decoder Attention')
+    #     axes[2].set_xlabel('Latent')
+    #     axes[2].set_ylabel('Column')
+    #     plt.colorbar(im3, ax=axes[2])
+
+    #     plt.tight_layout()
+        
+    #     filename = 'single_sample_enc_self_dec'
+    #     base_path = self.train_config['base_path']
+    #     out_path = os.path.join(base_path, f'{filename}.png')
+    #     plt.savefig(out_path, bbox_inches='tight', dpi=200)
+    #     plt.close()
+        
+    #     print(f"Attention analysis (1x3 plot) saved to '{out_path}'")
+
     @torch.no_grad()
     def plot_hist_diff_memory_addressing(self):
         """
@@ -1774,3 +1834,551 @@ class Analyzer(Trainer):
             print(f"Abnormal samples L2 distance - Mean: {abnormal_distances.mean():.4f}, Std: {abnormal_distances.std():.4f}")
         
         print(f"Memory addressing L2 distance histogram saved to '{out_path}'.")
+
+    @torch.no_grad()
+    def get_single_samples(self, num_samples: int = 1):
+        """Normal과 Abnormal 샘플 각각 하나씩 logger로 출력"""
+        self.model.eval()
+        
+        collected_data = {
+            'normal': {
+                'x': [], 'x_hat': [], 'latents': [], 'latents_hat': [], 'memory_weights': [], 'losses': []
+            },
+            'abnormal': {
+                'x': [], 'x_hat': [], 'latents': [], 'latents_hat': [], 'memory_weights': [], 'losses': []
+            }
+        }
+        
+        normal_count = 0
+        abnormal_count = 0
+        
+        for (X, y) in self.test_loader:
+            if normal_count >= num_samples and abnormal_count >= num_samples:
+                break
+                
+            X_input = X.to(self.device)
+            
+            loss, latents, latents_hat = self.model(X_input, return_latents=True)
+            _, memory_weight = self.model(X_input, return_memory_weight=True)
+            _, x_orig, x_hat = self.model(X_input, return_pred=True)
+            
+            normal_mask = (y == 0)
+            if normal_mask.any() and normal_count < num_samples:
+                needed = min(num_samples - normal_count, normal_mask.sum().item())
+                normal_indices = torch.where(normal_mask)[0][:needed]
+                
+                collected_data['normal']['x'].append(x_orig[normal_indices].cpu().numpy())
+                collected_data['normal']['x_hat'].append(x_hat[normal_indices].cpu().numpy())
+                collected_data['normal']['latents'].append(latents[normal_indices].cpu().numpy())
+                collected_data['normal']['latents_hat'].append(latents_hat[normal_indices].cpu().numpy())
+                collected_data['normal']['memory_weights'].append(memory_weight[normal_indices].cpu().numpy())
+                collected_data['normal']['losses'].append(loss[normal_indices].cpu().numpy())
+                
+                normal_count += needed
+            
+            abnormal_mask = (y == 1)
+            if abnormal_mask.any() and abnormal_count < num_samples:
+                needed = min(num_samples - abnormal_count, abnormal_mask.sum().item())
+                abnormal_indices = torch.where(abnormal_mask)[0][:needed]
+                
+                collected_data['abnormal']['x'].append(x_orig[abnormal_indices].cpu().numpy())
+                collected_data['abnormal']['x_hat'].append(x_hat[abnormal_indices].cpu().numpy())
+                collected_data['abnormal']['latents'].append(latents[abnormal_indices].cpu().numpy())
+                collected_data['abnormal']['latents_hat'].append(latents_hat[abnormal_indices].cpu().numpy())
+                collected_data['abnormal']['memory_weights'].append(memory_weight[abnormal_indices].cpu().numpy())
+                collected_data['abnormal']['losses'].append(loss[abnormal_indices].cpu().numpy())
+                
+                abnormal_count += needed
+        
+        final_data = {}
+        for data_type in ['normal', 'abnormal']:
+            if collected_data[data_type]['x']:  
+                final_data[data_type] = {}
+                for key in collected_data[data_type]:
+                    final_data[data_type][key] = np.concatenate(collected_data[data_type][key], axis=0)[:num_samples]
+        
+        # Logger로 단일 샘플 출력
+        self.log_single_sample_analysis(final_data, num_samples)
+        
+        return final_data
+
+    def log_single_sample_analysis(self, data, num_samples):
+        """Logger를 통해 각 샘플의 상세 정보 출력"""
+        
+        self.logger.info("=" * 60)
+        self.logger.info(f"SINGLE SAMPLE ANALYSIS (n={num_samples} each)")
+        self.logger.info("=" * 60)
+        
+        # Memory vectors 출력
+        memory_vectors = self.model.memory.memories.detach().cpu().numpy()
+        self.logger.info(f"\nMemory vectors shape: {memory_vectors.shape}")
+        self.logger.info(f"Memory vectors:\n{memory_vectors}")
+        
+        for data_type in ['normal', 'abnormal']:
+            if data_type not in data:
+                continue
+                
+            self.logger.info(f"\n--- {data_type.upper()} SAMPLES ---")
+            
+            for i in range(min(num_samples, len(data[data_type]['x']))):
+                self.logger.info(f"\n[{data_type.upper()} Sample {i+1}]")
+                
+                # 1. 기본 정보
+                x = data[data_type]['x'][i]
+                x_hat = data[data_type]['x_hat'][i]
+                loss = data[data_type]['losses'][i]
+                
+                self.logger.info(f"Original data (x): {x}")
+                self.logger.info(f"Reconstructed (x_hat): {x_hat}")
+                self.logger.info(f"Loss: {loss:.6f}")
+                self.logger.info(f"Feature-wise MSE: {(x - x_hat)**2}")
+                
+                # 2. Latent 분석
+                latents = data[data_type]['latents'][i]  # (N, D)
+                latents_hat = data[data_type]['latents_hat'][i]  # (N, D)
+                
+                self.logger.info(f"Latents (z) shape: {latents.shape}")
+                self.logger.info(f"Latents (z):\n{latents}")
+                self.logger.info(f"Latents_hat (ẑ):\n{latents_hat}")
+                
+                # L2 norm 비교
+                latents_norm = np.linalg.norm(latents, axis=-1)  # (N,)
+                latents_hat_norm = np.linalg.norm(latents_hat, axis=-1)  # (N,)
+                
+                self.logger.info(f"Latent L2 norms (z): {latents_norm}")
+                self.logger.info(f"Latent L2 norms (ẑ): {latents_hat_norm}")
+                
+                # 정규화 후 코사인 유사도
+                latents_unit = latents / (np.linalg.norm(latents, axis=-1, keepdims=True) + 1e-8)
+                latents_hat_unit = latents_hat / (np.linalg.norm(latents_hat, axis=-1, keepdims=True) + 1e-8)
+                cosine_sim = np.sum(latents_unit * latents_hat_unit, axis=-1)  # (N,)
+                
+                self.logger.info(f"Cosine similarity (z, ẑ): {cosine_sim}")
+                
+                # 3. Memory weight 분석
+                memory_weights = data[data_type]['memory_weights'][i]  # (N, M)
+                
+                self.logger.info(f"Memory weights shape: {memory_weights.shape}")
+                self.logger.info(f"Memory weights:\n{memory_weights}")
+                
+                # 각 latent별 top-3 memory 사용
+                for latent_idx in range(memory_weights.shape[0]):
+                    top_memories = np.argsort(memory_weights[latent_idx])[-3:][::-1]
+                    top_weights = memory_weights[latent_idx][top_memories]
+                    self.logger.info(f"Latent {latent_idx} top-3 memories: slots {top_memories} with weights {top_weights}")
+                
+                # Memory usage entropy
+                entropy = -np.sum(memory_weights * np.log(memory_weights + 1e-8), axis=-1)
+                self.logger.info(f"Memory entropy per latent: {entropy}")
+                
+                # Memory addressing을 통한 변화량
+                latent_diff = np.linalg.norm(latents - latents_hat, axis=-1)
+                self.logger.info(f"L2 distance (z - ẑ) per latent: {latent_diff}")
+                
+                self.logger.info("-" * 40)
+        
+        # 4. 전체 비교 (둘 다 있는 경우)
+        if 'normal' in data and 'abnormal' in data and len(data['normal']['losses']) > 0 and len(data['abnormal']['losses']) > 0:
+            self.logger.info(f"\nNORMAL vs ABNORMAL COMPARISON")
+            
+            # Loss 비교
+            normal_losses = data['normal']['losses']
+            abnormal_losses = data['abnormal']['losses']
+            self.logger.info(f"Average Loss - Normal: {np.mean(normal_losses):.6f}, Abnormal: {np.mean(abnormal_losses):.6f}")
+            
+            # Memory entropy 비교
+            normal_entropy = []
+            abnormal_entropy = []
+            
+            for i in range(len(data['normal']['memory_weights'])):
+                weights = data['normal']['memory_weights'][i]
+                entropy = -np.sum(weights * np.log(weights + 1e-8), axis=-1)
+                normal_entropy.extend(entropy)
+                
+            for i in range(len(data['abnormal']['memory_weights'])):
+                weights = data['abnormal']['memory_weights'][i]
+                entropy = -np.sum(weights * np.log(weights + 1e-8), axis=-1)
+                abnormal_entropy.extend(entropy)
+                
+            self.logger.info(f"Average Memory Entropy - Normal: {np.mean(normal_entropy):.4f}, Abnormal: {np.mean(abnormal_entropy):.4f}")
+            
+            # Cosine similarity 비교
+            normal_cosine = []
+            abnormal_cosine = []
+            
+            for i in range(len(data['normal']['latents'])):
+                latents = data['normal']['latents'][i]
+                latents_hat = data['normal']['latents_hat'][i]
+                latents_unit = latents / (np.linalg.norm(latents, axis=-1, keepdims=True) + 1e-8)
+                latents_hat_unit = latents_hat / (np.linalg.norm(latents_hat, axis=-1, keepdims=True) + 1e-8)
+                cosine_sim = np.sum(latents_unit * latents_hat_unit, axis=-1)
+                normal_cosine.extend(cosine_sim)
+            
+            for i in range(len(data['abnormal']['latents'])):
+                latents = data['abnormal']['latents'][i]
+                latents_hat = data['abnormal']['latents_hat'][i]
+                latents_unit = latents / (np.linalg.norm(latents, axis=-1, keepdims=True) + 1e-8)
+                latents_hat_unit = latents_hat / (np.linalg.norm(latents_hat, axis=-1, keepdims=True) + 1e-8)
+                cosine_sim = np.sum(latents_unit * latents_hat_unit, axis=-1)
+                abnormal_cosine.extend(cosine_sim)
+                
+            self.logger.info(f"Average Cosine Similarity - Normal: {np.mean(normal_cosine):.4f}, Abnormal: {np.mean(abnormal_cosine):.4f}")
+        
+        self.logger.info("=" * 60)
+
+    def plot_attention_flexible(
+        self,
+        head_mode: str = 'sum',  # 'sum' or 'separate'
+        self_depth_mode: str = 'sum',  # 'sum' or 'separate' 
+        sample_idx: int = 0,
+    ):
+        """
+        Flexible attention plotting with various options
+        Plots normal and abnormal samples separately and saves them as individual files
+        
+        Args:
+            head_mode: 'sum' (average heads) or 'separate' (plot each head)
+            self_depth_mode: 'sum' (average depths) or 'separate' (plot each depth)
+            sample_idx: which sample to analyze for each type (default: 0)
+        """
+        self.model.eval()
+
+        def find_sample_by_label(loader, target_label, sample_idx=0):
+            """Find a specific sample with target_label from loader"""
+            samples_found = 0
+            for (X, y) in loader:
+                mask = (y == target_label)
+                if mask.any():
+                    target_samples = X[mask]
+                    target_labels = y[mask]
+                    if samples_found + target_samples.shape[0] > sample_idx:
+                        relative_idx = sample_idx - samples_found
+                        return target_samples[relative_idx:relative_idx+1], target_labels[relative_idx:relative_idx+1]
+                    samples_found += target_samples.shape[0]
+            return None, None
+
+        def plot_single_sample(X_batch, y_batch, sample_type_name):
+            """Plot attention for a single sample and return the plot path"""
+            X_batch = X_batch.to(self.device)
+            loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = self.model(X_batch, return_attn_weight=True)
+            
+            # Select first (and only) sample from batch
+            single_attn_weight_enc = attn_weight_enc[0, :, :, :]  # (H, F, N)
+            single_attn_weight_dec = attn_weight_dec[0, :, :, :]  # (H, F, N)
+            single_attn_weight_self_list = [self_attn[0] for self_attn in attn_weight_self_list]  # List of (H, N, N)
+            label = y_batch[0].item()
+            
+            # Determine subplot layout
+            num_enc_plots = 1 if head_mode == 'sum' else single_attn_weight_enc.shape[0]  # H heads
+            num_dec_plots = 1 if head_mode == 'sum' else single_attn_weight_dec.shape[0]  # H heads
+            
+            if self_depth_mode == 'sum':
+                num_self_plots = 1 if head_mode == 'sum' else single_attn_weight_enc.shape[0]  # H heads
+            else:  # separate depths
+                num_self_plots = len(single_attn_weight_self_list) if head_mode == 'sum' else len(single_attn_weight_self_list) * single_attn_weight_enc.shape[0]
+            
+            total_plots = num_enc_plots + num_self_plots + num_dec_plots
+            
+            # Create subplots
+            cols = min(total_plots, 6)  # Max 6 columns
+            rows = (total_plots + cols - 1) // cols
+            fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 4 * rows))
+            
+            # Ensure axes is always 2D
+            if rows == 1 and cols == 1:
+                axes = np.array([[axes]])
+            elif rows == 1:
+                axes = axes.reshape(1, -1)
+            elif cols == 1:
+                axes = axes.reshape(-1, 1)
+            
+            plot_idx = 0
+            
+            # 1. Encoder Attention
+            if head_mode == 'sum':
+                enc_data = single_attn_weight_enc.mean(dim=0).detach().cpu().numpy()  # (F, N)
+                ax = axes[plot_idx // cols, plot_idx % cols]
+                im = ax.imshow(enc_data, cmap='viridis', aspect='auto')
+                ax.set_title(f'{sample_type_name} Encoder (Heads Avg)\nLabel: {label}')
+                ax.set_xlabel('Latent')
+                ax.set_ylabel('Feature')
+                plt.colorbar(im, ax=ax)
+                plot_idx += 1
+            else:
+                for head_idx in range(single_attn_weight_enc.shape[0]):
+                    enc_data = single_attn_weight_enc[head_idx].detach().cpu().numpy()  # (F, N)
+                    ax = axes[plot_idx // cols, plot_idx % cols]
+                    im = ax.imshow(enc_data, cmap='viridis', aspect='auto')
+                    title_suffix = f'\nLabel: {label}' if head_idx == 0 else ''
+                    ax.set_title(f'{sample_type_name} Encoder H{head_idx}{title_suffix}')
+                    ax.set_xlabel('Latent')
+                    ax.set_ylabel('Feature')
+                    plt.colorbar(im, ax=ax)
+                    plot_idx += 1
+            
+            # 2. Self Attention
+            if self_depth_mode == 'sum':
+                all_self_attn = torch.stack(single_attn_weight_self_list, dim=0)  # (Depth, H, N, N)
+                depth_averaged = all_self_attn.mean(dim=0)  # (H, N, N)
+                
+                if head_mode == 'sum':
+                    self_data = depth_averaged.mean(dim=0).detach().cpu().numpy()  # (N, N)
+                    ax = axes[plot_idx // cols, plot_idx % cols]
+                    im = ax.imshow(self_data, cmap='viridis', aspect='auto')
+                    ax.set_title(f'{sample_type_name} Self (D+H Avg)')
+                    ax.set_xlabel('Latent')
+                    ax.set_ylabel('Latent')
+                    plt.colorbar(im, ax=ax)
+                    plot_idx += 1
+                else:
+                    for head_idx in range(depth_averaged.shape[0]):
+                        self_data = depth_averaged[head_idx].detach().cpu().numpy()
+                        ax = axes[plot_idx // cols, plot_idx % cols]
+                        im = ax.imshow(self_data, cmap='viridis', aspect='auto')
+                        ax.set_title(f'{sample_type_name} Self H{head_idx} (D Avg)')
+                        ax.set_xlabel('Latent')
+                        ax.set_ylabel('Latent')
+                        plt.colorbar(im, ax=ax)
+                        plot_idx += 1
+            else:
+                for depth_idx, self_attn in enumerate(single_attn_weight_self_list):
+                    if head_mode == 'sum':
+                        self_data = self_attn.mean(dim=0).detach().cpu().numpy()
+                        ax = axes[plot_idx // cols, plot_idx % cols]
+                        im = ax.imshow(self_data, cmap='viridis', aspect='auto')
+                        ax.set_title(f'{sample_type_name} Self D{depth_idx} (H Avg)')
+                        ax.set_xlabel('Latent')
+                        ax.set_ylabel('Latent')
+                        plt.colorbar(im, ax=ax)
+                        plot_idx += 1
+                    else:
+                        for head_idx in range(self_attn.shape[0]):
+                            self_data = self_attn[head_idx].detach().cpu().numpy()
+                            ax = axes[plot_idx // cols, plot_idx % cols]
+                            im = ax.imshow(self_data, cmap='viridis', aspect='auto')
+                            ax.set_title(f'{sample_type_name} Self D{depth_idx}H{head_idx}')
+                            ax.set_xlabel('Latent')
+                            ax.set_ylabel('Latent')
+                            plt.colorbar(im, ax=ax)
+                            plot_idx += 1
+            
+            # 3. Decoder Attention
+            if head_mode == 'sum':
+                dec_data = single_attn_weight_dec.mean(dim=0).detach().cpu().numpy()
+                ax = axes[plot_idx // cols, plot_idx % cols]
+                im = ax.imshow(dec_data, cmap='viridis', aspect='auto')
+                ax.set_title(f'{sample_type_name} Decoder (Heads Avg)')
+                ax.set_xlabel('Latent')
+                ax.set_ylabel('Feature')
+                plt.colorbar(im, ax=ax)
+                plot_idx += 1
+            else:
+                for head_idx in range(single_attn_weight_dec.shape[0]):
+                    dec_data = single_attn_weight_dec[head_idx].detach().cpu().numpy()
+                    ax = axes[plot_idx // cols, plot_idx % cols]
+                    im = ax.imshow(dec_data, cmap='viridis', aspect='auto')
+                    ax.set_title(f'{sample_type_name} Decoder H{head_idx}')
+                    ax.set_xlabel('Latent')
+                    ax.set_ylabel('Feature')
+                    plt.colorbar(im, ax=ax)
+                    plot_idx += 1
+            
+            # Hide unused subplots
+            for idx in range(plot_idx, rows * cols):
+                axes[idx // cols, idx % cols].axis('off')
+            
+            plt.tight_layout()
+            
+            # Generate filename
+            filename_parts = ['attention', sample_type_name.lower(), f'idx{sample_idx}']
+            if head_mode == 'separate':
+                filename_parts.append('heads_sep')
+            if self_depth_mode == 'separate':
+                filename_parts.append('depths_sep')
+            
+            filename = '_'.join(filename_parts)
+            base_path = self.train_config['base_path']
+            out_path = os.path.join(base_path, f'{filename}.png')
+            plt.savefig(out_path, bbox_inches='tight', dpi=200)
+            plt.close()
+            
+            return out_path, label
+
+        # Find normal and abnormal samples
+        X_normal, y_normal = find_sample_by_label(self.test_loader, target_label=0, sample_idx=sample_idx)
+        X_abnormal, y_abnormal = find_sample_by_label(self.test_loader, target_label=1, sample_idx=sample_idx)
+        
+        saved_paths = []
+        
+        # Plot normal sample
+        if X_normal is not None:
+            normal_path, normal_label = plot_single_sample(X_normal, y_normal, 'Normal')
+            saved_paths.append(('Normal', normal_path, normal_label))
+            print(f"Normal sample attention analysis saved to '{normal_path}' (label={normal_label})")
+        else:
+            print(f"Warning: Could not find normal sample at index {sample_idx}")
+        
+        # Plot abnormal sample
+        if X_abnormal is not None:
+            abnormal_path, abnormal_label = plot_single_sample(X_abnormal, y_abnormal, 'Abnormal')
+            saved_paths.append(('Abnormal', abnormal_path, abnormal_label))
+            print(f"Abnormal sample attention analysis saved to '{abnormal_path}' (label={abnormal_label})")
+        else:
+            print(f"Warning: Could not find abnormal sample at index {sample_idx}")
+        
+        print(f"Configuration: head_mode={head_mode}, self_depth_mode={self_depth_mode}")
+        
+        return saved_paths
+    
+    def plot_attn_simple(self, sample_idx: int = 0):
+        """Simple 1x3 plot (original functionality)"""
+        return self.plot_attention_flexible(
+            head_mode='sum', 
+            self_depth_mode='sum',
+            sample_idx=sample_idx
+        )
+
+    def plot_attn_all_heads(self, sample_idx: int = 0):
+        """Plot all heads separately but sum depths"""
+        return self.plot_attention_flexible(
+            head_mode='separate', 
+            self_depth_mode='sum',
+            sample_idx=sample_idx
+        )
+
+    def plot_attn_all_depths(self, sample_idx: int = 0):
+        """Plot all depths separately but sum heads"""
+        return self.plot_attention_flexible(
+            head_mode='sum', 
+            self_depth_mode='separate',
+            sample_idx=sample_idx
+        )
+
+    def plot_attn_everything(self, sample_idx: int = 0):
+        """Plot everything separately (heads AND depths)"""
+        return self.plot_attention_flexible(
+            head_mode='separate', 
+            self_depth_mode='separate',
+            sample_idx=sample_idx
+        )
+
+
+
+
+
+    @torch.no_grad()
+    def plot_attn_dec_memory(self, sample_idx: int = 0):
+        """
+        Plot decoder attention maps for normal/abnormal samples using latents vs latents_hat
+        Creates a 2x2 plot showing:
+        - Top left: Normal sample with latents
+        - Top right: Normal sample with latents_hat
+        - Bottom left: Abnormal sample with latents
+        - Bottom right: Abnormal sample with latents_hat
+        
+        Args:
+            sample_idx: which sample to analyze for each type (default: 0)
+        """
+        self.model.eval()
+
+        def find_sample_by_label(loader, target_label, sample_idx=0):
+            """Find a specific sample with target_label from loader"""
+            samples_found = 0
+            for (X, y) in loader:
+                mask = (y == target_label)
+                if mask.any():
+                    target_samples = X[mask]
+                    target_labels = y[mask]
+                    if samples_found + target_samples.shape[0] > sample_idx:
+                        relative_idx = sample_idx - samples_found
+                        return target_samples[relative_idx:relative_idx+1], target_labels[relative_idx:relative_idx+1]
+                    samples_found += target_samples.shape[0]
+            return None, None
+
+        def get_decoder_attention(X_batch, use_latents_hat=False):
+            """Get decoder attention map for a sample"""
+            X_batch = X_batch.to(self.device)
+            
+            # Get latents and latents_hat
+            _, latents, latents_hat = self.model(X_batch, return_latents=True)
+            
+            # Choose which latents to use
+            if use_latents_hat:
+                memory_input = latents_hat[0:1]  # (1, N, D)
+            else:
+                memory_input = latents[0:1]  # (1, N, D)
+            
+            # Get decoder query with positional encoding
+            decoder_query = self.model.decoder_query + self.model.pos_encoding  # (1, F, D)
+            
+            # Forward through decoder to get attention weights
+            # We need to manually call the decoder's attention mechanism
+            # This assumes the decoder has an attention mechanism that returns weights
+            
+            # If the decoder uses multi-head attention, we'll need to access it directly
+            # For now, let's assume we can get attention from the model's forward pass
+            with torch.no_grad():
+                # Get attention weights from decoder
+                loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
+                    self.model(X_batch, return_attn_weight=True)
+                
+                # Decoder attention: (B, H, F, N) - from features to latents
+                dec_attn = attn_weight_dec[0, :, :, :].mean(dim=0)  # Average over heads: (F, N)
+                
+            return dec_attn.detach().cpu().numpy()
+
+        # Find normal and abnormal samples
+        X_normal, y_normal = find_sample_by_label(self.test_loader, target_label=0, sample_idx=sample_idx)
+        X_abnormal, y_abnormal = find_sample_by_label(self.test_loader, target_label=1, sample_idx=sample_idx)
+        
+        if X_normal is None or X_abnormal is None:
+            print(f"Warning: Could not find required samples at index {sample_idx}")
+            return None
+        
+        # Get all 4 attention maps
+        normal_latents_attn = get_decoder_attention(X_normal, use_latents_hat=False)
+        normal_latents_hat_attn = get_decoder_attention(X_normal, use_latents_hat=True)
+        abnormal_latents_attn = get_decoder_attention(X_abnormal, use_latents_hat=False)
+        abnormal_latents_hat_attn = get_decoder_attention(X_abnormal, use_latents_hat=True)
+        
+        # Create 2x2 subplot
+        fig, axes = plt.subplots(2, 2, figsize=(12, 10), dpi=200)
+        
+        # Plot configurations
+        plots = [
+            (normal_latents_attn, f'Normal (latents)\nLabel: {y_normal[0].item()}', axes[0, 0]),
+            (normal_latents_hat_attn, f'Normal (latents_hat)\nLabel: {y_normal[0].item()}', axes[0, 1]),
+            (abnormal_latents_attn, f'Abnormal (latents)\nLabel: {y_abnormal[0].item()}', axes[1, 0]),
+            (abnormal_latents_hat_attn, f'Abnormal (latents_hat)\nLabel: {y_abnormal[0].item()}', axes[1, 1])
+        ]
+        
+        # Find global min/max for consistent color scaling
+        all_attns = [normal_latents_attn, normal_latents_hat_attn, 
+                    abnormal_latents_attn, abnormal_latents_hat_attn]
+        vmin = min(attn.min() for attn in all_attns)
+        vmax = max(attn.max() for attn in all_attns)
+        
+        # Plot each attention map
+        for attn_data, title, ax in plots:
+            im = ax.imshow(attn_data, cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
+            ax.set_title(title, fontsize=12)
+            ax.set_xlabel('Latent Index')
+            ax.set_ylabel('Feature Index')
+            plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        
+        # Overall title
+        fig.suptitle(f'Decoder Attention Maps: Latents vs Latents_hat • {self.train_config["dataset_name"].upper()}', 
+                    fontsize=14, y=0.98)
+        
+        plt.tight_layout()
+        
+        # Save the plot
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, f'decoder_attention_memory_comparison_idx{sample_idx}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"Decoder attention memory comparison saved to '{out_path}'")
+        print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
+        
+        return out_path

@@ -80,6 +80,19 @@ def train_test(args, model_config, train_config, analysis_config, run):
         analyzer.plot_attn_single()
     if args.plot_hist_diff_memory_addressing:
         analyzer.plot_hist_diff_memory_addressing()
+    if args.get_single_samples:
+        analyzer.get_single_samples()
+    if args.plot_attn_simple:
+        analyzer.plot_attn_simple()
+    if args.plot_attn_all_heads:
+        analyzer.plot_attn_all_heads()
+    if args.plot_attn_all_depths:
+        analyzer.plot_attn_all_depths()
+    if args.plot_attn_everything:
+        analyzer.plot_attn_everything()
+    if args.plot_attn_dec_memory:
+        analyzer.plot_attn_dec_memory()
+
     return 
 
 
@@ -155,6 +168,13 @@ if __name__ == "__main__":
     # parser.add_argument('--plot_umap_latent_vs_memory', action='store_true')
     parser.add_argument('--plot_attn_single', action='store_true')
     parser.add_argument('--plot_hist_diff_memory_addressing', action='store_true')
+    parser.add_argument('--get_single_samples', action='store_true')
+    parser.add_argument('--plot_attn_simple', action='store_true')
+    parser.add_argument('--plot_attn_all_heads', action='store_true')
+    parser.add_argument('--plot_attn_all_depths', action='store_true')
+    parser.add_argument('--plot_attn_everything', action='store_true')
+    parser.add_argument('--plot_attn_single_self_sum', action='store_true')
+    parser.add_argument('--plot_attn_dec_memory', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:
