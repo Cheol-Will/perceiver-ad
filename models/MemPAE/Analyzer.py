@@ -1693,8 +1693,8 @@ class Analyzer(Trainer):
             
             # Calculate L2 distance between latents and latents_hat
             # latents: (B, N, D), latents_hat: (B, N, D)
-            l2_distances = torch.norm(latents - latents_hat, dim=-1)  # (B, N)
-            l2_distances = l2_distances.mean(dim=-1)  # Average over latent dimension -> (B,)
+            l2_distances = torch.norm(latents - latents_hat, dim=[1,2])  # (B, N)
+            # l2_distances = l2_distances.mean(dim=-1)  # Average over latent dimension -> (B,)
             
             # Separate normal and abnormal
             normal_mask = (y == 0)
