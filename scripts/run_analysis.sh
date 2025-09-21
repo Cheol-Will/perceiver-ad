@@ -51,7 +51,9 @@ for data in "${data_list[@]}"; do
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
         --exp_name "$exp_name" \
-        --plot_attn_single
+        --plot_hist_diff_memory_addressing
+        # --plot_tsne_latent_vs_memory
+        # --plot_attn_single
         # --plot_tsne_latent_vs_memory
         # --plot_tsne_single_class_with_memory
         # --plot_umap_latent_vs_memory

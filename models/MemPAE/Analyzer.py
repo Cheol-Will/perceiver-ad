@@ -259,21 +259,35 @@ class Analyzer(Trainer):
         use_latents_hat: bool = False,
         use_latents_avg: bool = False,
         use_both_latents: bool = False,  
+        latent_idx: int = None,
     ):
         # get latents and memory vector
         latents, latents_hat, labels = self.get_latent()
         
-        if use_both_latents:
-            filename = 'both_latents_avg' if use_latents_avg else 'both_latents'
-        elif use_latents_hat:
-            filename = 'latents_hat_avg' if use_latents_avg else 'latents_hat'
-        else:
-            filename = 'latents_avg' if use_latents_avg else 'latents'
+        if latent_idx is not None:
+            if use_both_latents:
+                filename = f'both_latent{latent_idx}' 
+            elif use_latents_hat:
+                filename = f'latent_hat{latent_idx}'
+            else:
+                filename = f'latent{latent_idx}' 
+        else:    
+            if use_both_latents:
+                filename = 'both_latents_avg' if use_latents_avg else 'both_latents'
+            elif use_latents_hat:
+                filename = 'latents_hat_avg' if use_latents_avg else 'latents_hat'
+            else:
+                filename = 'latents_avg' if use_latents_avg else 'latents'
 
         memory_latents = self.model.memory.memories  # (num_memory, D)
         memory_latents = F.normalize(memory_latents, dim=-1)
         memory_latents = memory_latents.detach().cpu().numpy()
-    
+
+        if latent_idx is not None:
+            latents = latents[:, latent_idx, :]   
+            latents_hat = latents_hat[:, latent_idx, :]   
+            # latents_hat
+
         datasets = []
         category_labels = []
         
@@ -1662,3 +1676,101 @@ class Analyzer(Trainer):
         print(f"Head-wise attention analysis saved to '{out_path}'")
         
         return
+    @torch.no_grad()
+    def plot_hist_diff_memory_addressing(self):
+        """
+        Plot histogram of L2 distances between latents before and after memory addressing.
+        Shows the difference for normal vs abnormal samples from test_loader.
+        """
+        self.model.eval()
+        
+        normal_distances = []
+        abnormal_distances = []
+        
+        for (X, y) in self.test_loader:
+            X_input = X.to(self.device)
+            _, latents, latents_hat = self.model(X_input, return_latents=True)
+            
+            # Calculate L2 distance between latents and latents_hat
+            # latents: (B, N, D), latents_hat: (B, N, D)
+            l2_distances = torch.norm(latents - latents_hat, dim=-1)  # (B, N)
+            l2_distances = l2_distances.mean(dim=-1)  # Average over latent dimension -> (B,)
+            
+            # Separate normal and abnormal
+            normal_mask = (y == 0)
+            abnormal_mask = (y == 1)
+            
+            if normal_mask.any():
+                normal_distances.append(l2_distances[normal_mask].cpu().numpy())
+            if abnormal_mask.any():
+                abnormal_distances.append(l2_distances[abnormal_mask].cpu().numpy())
+        
+        # Concatenate all distances
+        if normal_distances:
+            normal_distances = np.concatenate(normal_distances, axis=0)
+        else:
+            normal_distances = np.array([])
+            
+        if abnormal_distances:
+            abnormal_distances = np.concatenate(abnormal_distances, axis=0)
+        else:
+            abnormal_distances = np.array([])
+        
+        # Check if we have data
+        if normal_distances.size == 0 and abnormal_distances.size == 0:
+            print("No data found for histogram plotting.")
+            return
+        
+        # Determine global range for consistent binning
+        all_distances = []
+        if normal_distances.size > 0:
+            all_distances.append(normal_distances)
+        if abnormal_distances.size > 0:
+            all_distances.append(abnormal_distances)
+        
+        if len(all_distances) > 0:
+            all_distances = np.concatenate(all_distances)
+            global_min = all_distances.min()
+            global_max = all_distances.max()
+            
+            # Handle edge case where all distances are the same
+            if global_min == global_max:
+                eps = 1e-6 if global_min == 0 else abs(global_min) * 1e-3
+                global_min -= eps
+                global_max += eps
+            
+            bins = np.linspace(global_min, global_max, 50)
+        else:
+            bins = 50
+        
+        # Create single plot
+        plt.figure(figsize=(10, 6), dpi=200)
+        
+        if normal_distances.size > 0:
+            plt.hist(normal_distances, bins=bins, alpha=0.6, density=True, 
+                    label=f'Normal (n={len(normal_distances)})', color='#1f77b4')
+        if abnormal_distances.size > 0:
+            plt.hist(abnormal_distances, bins=bins, alpha=0.6, density=True, 
+                    label=f'Abnormal (n={len(abnormal_distances)})', color='#d62728')
+        
+        plt.xlabel('L2 Distance (latents vs latents_hat)')
+        plt.ylabel('Density')
+        plt.title(f'Memory Addressing L2 Distance • {self.train_config["dataset_name"].upper()}')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        # Save the plot
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, 'hist_memory_addressing_l2_distance.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        # Print statistics
+        if normal_distances.size > 0:
+            print(f"Normal samples L2 distance - Mean: {normal_distances.mean():.4f}, Std: {normal_distances.std():.4f}")
+        if abnormal_distances.size > 0:
+            print(f"Abnormal samples L2 distance - Mean: {abnormal_distances.mean():.4f}, Std: {abnormal_distances.std():.4f}")
+        
+        print(f"Memory addressing L2 distance histogram saved to '{out_path}'.")
