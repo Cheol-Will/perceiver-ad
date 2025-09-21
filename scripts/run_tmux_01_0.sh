@@ -5,7 +5,7 @@
 # data_list=(arrhythmia optdigits breastw cardio campaign cardiotocography census fraud glass ionosphere mammography nslkdd  pendigits pima satellite "satimage-2" shuttle thyroid wbc wine) 
 # data_list=(census fraud "satimage-2" shuttle) 
 
-data_list=(campaign) 
+data_list=(census) 
 # data_list=(pendigits "satimage-2" breastw pima glass ionosphere wbc wine thyroid arrhythmia cardio cardiotocography mammography) 
 model_list=(KNN Disent MCM DRL) 
 train_ratio_list=(0.3)

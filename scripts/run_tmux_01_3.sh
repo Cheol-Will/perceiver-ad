@@ -6,7 +6,7 @@
 # data_list=(census fraud "satimage-2" shuttle) 
 
 # data_list=(pendigits "satimage-2" breastw pima glass ionosphere wbc wine thyroid arrhythmia cardio cardiotocography mammographys) 
-data_list=(campaign) 
+data_list=(census) 
 train_ratio_list=(0.3 0.5 0.8)
 hidden_dim=64
 learning_rate=0.001
