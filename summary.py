@@ -8,6 +8,7 @@ pd.set_option('display.max_rows', None)
 
 BASE_DIR = "results"
 TRAIN_RATIOS = [0.1, 0.3, 0.5, 0.8, 1.0]
+TRAIN_RATIOS = [0.2, 0.4, 0.6, 0.8, 1.0]
 METRICS_CANON = ["AUC-ROC", "AUC-PR", 'f1']
 METRIC_ALIAS = {
     "AUC-ROC": "AUC-ROC", "AUROC": "AUC-ROC", "AUCROC": "AUC-ROC",
@@ -428,15 +429,16 @@ def render_hp(pivots):
             add_avg_rank=True, use_rank=False, use_std=False, 
             use_baseline_pr=True, is_temp_tune=False, is_sort=False, is_plot=True)
 
+
 def render_train_ratio(pivots):
     data = [
         'arrhythmia', 
-        'cardio', 
-        'campaign', # too slow
+        # 'cardio', 
+        # 'campaign', # too slow
         'pima', 
         'pendigits', 
-        'cardiotocography', 
-        'mammography', 
+        # 'cardiotocography', 
+        # 'mammography', 
         'satimage-2', 
         'breastw',
         'glass',
@@ -444,14 +446,14 @@ def render_train_ratio(pivots):
         'wbc',
         'wine',
         'thyroid',
-        'optdigits',
+        # 'optdigits',
         'shuttle', # all good.
     ]
     models = [
         # 'KNN',
-        'Disent',
         'MCM',
         'DRL',
+        'Disent',
     ]
     my_models = [
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
@@ -460,8 +462,9 @@ def render_train_ratio(pivots):
         # 'ratio_0.1_AUCROC', 'ratio_0.5_AUCROC', 
         # 'ratio_0.1_AUCPR', 'ratio_0.5_AUCPR',
         # 'ratio_1.0_AUCROC',
-        'ratio_0.3_AUCPR',
-        'ratio_0.5_AUCPR',
+        'ratio_0.2_AUCPR',
+        'ratio_0.4_AUCPR',
+        'ratio_0.6_AUCPR',
         'ratio_0.8_AUCPR',
         'ratio_1.0_AUCPR',
     ]    
@@ -470,7 +473,6 @@ def render_train_ratio(pivots):
         df = render(pivots, data, models, my_models, base, 
                 add_avg_rank=False, use_rank=False, use_std=False, 
                 use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
-
 
 
 def render_ours_on_npt(pivots, ):
@@ -611,9 +613,6 @@ def render_ours_on_npt(pivots, ):
 
     return 
 
-
-
-
 def main(args):
     keys = [
         # 'ratio_0.1_AUCROC', 'ratio_0.5_AUCROC', 
@@ -653,7 +652,7 @@ def main(args):
         # 'MCMPAE-ws-pos_query+token-d64-lr0.005',
 
         ##################################################################################
-        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         # 'PAE-ws-d64-lr0.001', # Final architecture for PAE
         # 'PAE-L4-d64-lr0.001', # Final architecture for PAE
         # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
@@ -825,7 +824,7 @@ def main(args):
         render_ours_on_npt(pivots, )
     if args.train_ratio:
         render_train_ratio(pivots)
-
+        # render_memory_analysis(pivots)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--synthetic', action='store_true')
