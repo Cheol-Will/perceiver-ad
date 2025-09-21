@@ -442,6 +442,7 @@ class MemPAE(nn.Module):
     def forward(
         self, 
         x, 
+        return_for_analysis: bool = False,
         return_attn_weight: bool = False, 
         return_pred: bool = False, 
         return_memory_weight: bool = False,
@@ -516,6 +517,9 @@ class MemPAE(nn.Module):
                 if self.use_entropy_loss_as_score:
                     entropy_loss = self.entropy_loss_fn(memory_weight)
                     loss = loss + self.entropy_loss_weight * entropy_loss
+
+        if return_for_analysis:
+            return loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, attn_weight_self_list, attn_weight_dec
 
         # for analysis
         if return_latents:

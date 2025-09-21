@@ -660,7 +660,9 @@ def main(args):
         # MemPAE with small memory Ablation
         # 'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
         'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-use_ent_score-ent10-d64-lr0.001-t0.1',
         # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
         # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
