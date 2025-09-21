@@ -65,6 +65,7 @@ def get_parser():
     parser.add_argument('--latent_ratio', type=float, default=None)    
     parser.add_argument('--memory_ratio', type=float, default=None)    
     parser.add_argument('--top_k', type=int, default=None)    
+    parser.add_argument('--mlp_mixer_decoder', action='store_true')    
 
     return parser
 
@@ -208,6 +209,7 @@ def replace_transformer_config(args, model_config):
             model_config['use_entropy_loss_as_score'] = args.use_entropy_loss_as_score # default False
             model_config['is_recurrent'] = args.is_recurrent # default False
             model_config['top_k'] = args.top_k # None
+            model_config['mlp_mixer_decoder'] = args.mlp_mixer_decoder # None
 
         if args.model_type in ['PVAE', 'PVQVAE']:
             model_config['beta'] = args.beta if args.beta is not None else model_config['beta'] 

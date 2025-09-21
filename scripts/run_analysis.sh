@@ -3,7 +3,11 @@
 # data_list=(satimage-2) # from MCM
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
 
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography nslkdd shuttle fraud census) # from MCM
+data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography ) # from MCM
+# data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign) # from MCM
+# data_list=(mammography census fraud shuttle nslkdd) # from MCM
+# data_list=(pendigits) # from MCM
+# data_list=(campaign) # from MCM
 # data_list=(pendigits) # from MCM
 # data_list=(cardiotocography) # from MCM
 
@@ -32,7 +36,9 @@ model_type='MemPAE'
 hidden_dim=64
 learning_rate=0.001
 temperature=0.1
+# entropy_loss_weight=0.001
 for data in "${data_list[@]}"; do
+    # exp_name="$model_type-ws-pos_query+token-use_ent_score-ent$entropy_loss_weight-d$hidden_dim-lr$learning_rate-t$temperature"
     exp_name="$model_type-ws-pos_query+token-d$hidden_dim-lr$learning_rate-t$temperature"
     echo "$exp_name on $data"
     python analysis.py \
@@ -44,9 +50,20 @@ for data in "${data_list[@]}"; do
         --hidden_dim "$hidden_dim" \
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
-        --exp_name "$exp_name"\
-        --plot_pos_encoding
+        --exp_name "$exp_name" \
+        --plot_attn_single
+        # --plot_tsne_latent_vs_memory
+        # --plot_tsne_single_class_with_memory
+        # --plot_umap_latent_vs_memory
+        # --use_latents_avg
+        # --plot_tsne_original_with_memory
+        # --plot_tsne_latent_vs_memory
+        # --plot_tsne_memory_separate \
+        # --plot_pos_encoding
         # --plot_histogram
         # --plot_recon
         # --plot_tsne_recon
 done
+
+        # --use_entropy_loss_as_score \
+        # --entropy_loss_weight "$entropy_loss_weight"\

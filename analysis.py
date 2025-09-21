@@ -60,6 +60,23 @@ def train_test(args, model_config, train_config, analysis_config, run):
         analyzer.plot_pos_encoding(use_mask=True)    
     if args.plot_attn:
         analyzer.plot_attn(use_mask=True)    
+    if args.plot_tsne_latent_vs_memory:
+        # analyzer.plot_tsne_latent_vs_memory(use_latents_avg=args.use_latents_avg)
+        # analyzer.plot_tsne_latent_vs_memory(use_latents_hat=True, use_latents_avg=args.use_latents_avg)
+        analyzer.plot_tsne_latent_vs_memory(use_latents_avg=args.use_latents_avg, use_both_latents=True)
+    if args.plot_umap_latent_vs_memory:
+        analyzer.plot_umap_latent_vs_memory(use_latents_avg=args.use_latents_avg, use_both_latents=True)
+    if args.plot_tsne_memory_separate:
+        analyzer.plot_tsne_memory_separate(use_latents_hat=True)
+        # analyzer.plot_tsne_memory_separate()
+    if args.plot_tsne_original_with_memory:
+        analyzer.plot_tsne_original_with_memory()
+    # if args.plot_tsne_single_class_with_memory:
+    #     analyzer.plot_tsne_single_class_with_memory()
+    #     analyzer.plot_tsne_single_class_with_memory(use_normal=False)
+    if args.plot_attn_single:
+        analyzer.plot_attn_single()
+
     return 
 
 
@@ -126,6 +143,15 @@ if __name__ == "__main__":
     parser.add_argument('--plot_attn_and_corr', action='store_true')
     parser.add_argument('--plot_tsne_recon', action='store_true')
     parser.add_argument('--plot_pos_encoding', action='store_true')
+    parser.add_argument('--plot_tsne_latent_vs_memory', action='store_true')
+    parser.add_argument('--use_latents_avg', action='store_true')
+    parser.add_argument('--plot_tsne_memory_separate', action='store_true')
+    parser.add_argument('--plot_tsne_original_with_memory', action='store_true')
+    parser.add_argument('--plot_umap_latent_vs_memory', action='store_true')
+    # parser.add_argument('--plot_umap_latent_vs_memory', action='store_true')
+    parser.add_argument('--plot_attn_single', action='store_true')
+
+
 
     args = parser.parse_args()
     if args.exp_name is None:

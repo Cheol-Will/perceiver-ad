@@ -401,7 +401,7 @@ def render_hp(pivots):
         'campaign', 
         'mammography', 
         'satimage-2', # middle
-        'nslkdd', # large 
+        # 'nslkdd', # large 
         'fraud', # large
         'shuttle', # large
         'census', # large
@@ -432,7 +432,7 @@ def render_train_ratio(pivots):
     data = [
         'arrhythmia', 
         'cardio', 
-        # 'campaign', # too slow
+        'campaign', # too slow
         'pima', 
         'pendigits', 
         'cardiotocography', 
@@ -443,7 +443,9 @@ def render_train_ratio(pivots):
         'ionosphere',
         'wbc',
         'wine',
-        # 'thyroid',
+        'thyroid',
+        'optdigits',
+        'shuttle', # all good.
     ]
     models = [
         # 'KNN',
@@ -659,10 +661,12 @@ def main(args):
         # MemPAE with small memory Ablation
         # 'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
+        'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
         # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
         # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
 
+        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001',
         ##################################################################################        
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
         # 'MemPAE-ws-cross_attn-rin-pos_query+token-L3-d64-lr0.001', # possible
