@@ -374,6 +374,8 @@ class MemPAE(nn.Module):
             assert entropy_loss_weight is not None
         if not use_pos_enc_as_query:
             assert not use_mask_token
+        if top_k is not None:
+            top_k = min(top_k, num_memories)
 
         print("Init MemPAE with weight_sharing" if is_weight_sharing else "Init MemPAE without weight sharing")
         print(f"latent_loss_weight={latent_loss_weight} and entropy_loss_weight={entropy_loss_weight}")
