@@ -91,7 +91,11 @@ def train_test(args, model_config, train_config, analysis_config, run):
     if args.plot_attn_everything:
         analyzer.plot_attn_everything()
     if args.plot_attn_dec_memory:
-        analyzer.plot_attn_dec_memory()
+        analyzer.plot_attn_dec_memory(sample_idx=0)
+        analyzer.plot_attn_dec_memory(sample_idx=1)
+        analyzer.plot_attn_dec_memory(sample_idx=2)
+        analyzer.plot_attn_dec_memory(sample_idx=3)
+        analyzer.plot_attn_dec_memory(sample_idx=4)
 
     return 
 
