@@ -54,8 +54,8 @@ for data in "${data_list[@]}"; do
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
         --exp_name "$exp_name" \
-        --plot_attn_dec_memory \
         --plot_attn_pair
+        # --plot_attn_dec_memory \
         # --plot_attn_single \
         # --plot_attn_simple
         # --use_entropy_loss_as_score \

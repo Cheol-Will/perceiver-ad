@@ -2499,6 +2499,7 @@ class Analyzer(Trainer):
         # Save the plot
         base_path = self.train_config['base_path']
         out_path = os.path.join(base_path, f'attention_pair_comparison_idx{sample_idx}_{abnormal_idx}.png')
+        out_path = os.path.join(base_path, f'attention_pair_comparison_idx{sample_idx}_{abnormal_idx}.pdf')
         plt.savefig(out_path, bbox_inches='tight', dpi=200)
         plt.close()
         
