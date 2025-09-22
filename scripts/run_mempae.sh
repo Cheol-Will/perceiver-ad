@@ -3,10 +3,10 @@ set -euo pipefail
 
 # data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite) # from MCM
 # data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography ) # from MCM
-# data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography ) # from MCM
+data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography ) # from MCM
 
 # data_list=("satimage-2" nslkdd fraud)
-data_list=(shuttle census)
+# data_list=(shuttle census)
 
 
 # data_list=(
@@ -36,7 +36,7 @@ temperature=0.1
 model_type="MemPAE"
 # latent_ratio=4.0
 train_ratio_list=(1.0)
-entropy_loss_weight=10
+entropy_loss_weight=3
 
 for data in "${data_list[@]}"; do
     for train_ratio in "${train_ratio_list[@]}"; do
