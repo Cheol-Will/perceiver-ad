@@ -96,6 +96,11 @@ def train_test(args, model_config, train_config, analysis_config, run):
         analyzer.plot_attn_dec_memory(sample_idx=2)
         analyzer.plot_attn_dec_memory(sample_idx=3)
         analyzer.plot_attn_dec_memory(sample_idx=4)
+    if args.plot_attn_pair:
+        analyzer.plot_attn_pair(0)
+        analyzer.plot_attn_pair(1)
+        analyzer.plot_attn_pair(2)
+        analyzer.plot_attn_pair(2,0)
 
     return 
 
@@ -179,6 +184,7 @@ if __name__ == "__main__":
     parser.add_argument('--plot_attn_everything', action='store_true')
     parser.add_argument('--plot_attn_single_self_sum', action='store_true')
     parser.add_argument('--plot_attn_dec_memory', action='store_true')
+    parser.add_argument('--plot_attn_pair', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:

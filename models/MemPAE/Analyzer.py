@@ -2262,10 +2262,6 @@ class Analyzer(Trainer):
             sample_idx=sample_idx
         )
 
-
-
-
-
     @torch.no_grad()
     def plot_attn_dec_memory(self, sample_idx: int = 0):
         """
@@ -2382,3 +2378,131 @@ class Analyzer(Trainer):
         print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
         
         return out_path
+
+
+    @torch.no_grad()
+    def plot_attn_pair(self, sample_idx: int = 0, abnormal_idx: int = None):
+        """
+        Create a 2x3 plot showing attention maps for normal and abnormal samples
+        Row 0: Normal sample (encoder, self, decoder)
+        Row 1: Abnormal sample (encoder, self, decoder)
+        """
+        self.model.eval()
+
+        if abnormal_idx is None:
+            abnormal_idx = sample_idx
+
+        def find_sample_by_label(loader, target_label, sample_idx=0):
+            """Find a specific sample with target_label from loader"""
+            samples_found = 0
+            for (X, y) in loader:
+                mask = (y == target_label)
+                if mask.any():
+                    target_samples = X[mask]
+                    target_labels = y[mask]
+                    if samples_found + target_samples.shape[0] > sample_idx:
+                        relative_idx = sample_idx - samples_found
+                        return target_samples[relative_idx:relative_idx+1], target_labels[relative_idx:relative_idx+1]
+                    samples_found += target_samples.shape[0]
+            return None, None
+
+        def get_attention_maps(X_batch):
+            """Get averaged attention maps for a sample"""
+            X_batch = X_batch.to(self.device)
+            loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
+                self.model(X_batch, return_attn_weight=True)
+            
+            # Average over heads and select first sample
+            enc_attn = attn_weight_enc[0].mean(dim=0).detach().cpu().numpy()  # (F, N)
+            dec_attn = attn_weight_dec[0].mean(dim=0).detach().cpu().numpy()  # (F, N)
+            
+            # Average self attention over both layers and heads
+            if attn_weight_self_list:
+                all_self_attn = torch.stack([self_attn[0] for self_attn in attn_weight_self_list], dim=0)  # (Depth, H, N, N)
+                self_attn = all_self_attn.mean(dim=(0, 1)).detach().cpu().numpy()  # (N, N)
+            else:
+                # Fallback to identity if no self attention
+                N = enc_attn.shape[1]
+                self_attn = np.eye(N)
+            
+            return enc_attn, self_attn, dec_attn
+
+        # Find normal and abnormal samples
+        X_normal, y_normal = find_sample_by_label(self.test_loader, target_label=0, sample_idx=sample_idx)
+        X_abnormal, y_abnormal = find_sample_by_label(self.test_loader, target_label=1, sample_idx=abnormal_idx)
+        
+        if X_normal is None or X_abnormal is None:
+            print(f"Warning: Could not find required samples at index {sample_idx}")
+            return None
+        
+        # Get attention maps for both samples
+        normal_enc, normal_self, normal_dec = get_attention_maps(X_normal)
+        abnormal_enc, abnormal_self, abnormal_dec = get_attention_maps(X_abnormal)
+        
+        # Create 2x3 subplot
+        fig, axes = plt.subplots(2, 3, figsize=(15, 8), dpi=200)
+        
+        # Plot configurations: (data, title, colormap)
+        plots = [
+            # Row 0: Normal sample
+            (normal_enc, f'Normal Encoder\n(Label: {y_normal[0].item()})', 'viridis'),
+            (normal_self, 'Normal Self-Attention', 'viridis'),
+            (normal_dec, 'Normal Decoder', 'viridis'),
+            # Row 1: Abnormal sample  
+            (abnormal_enc, f'Abnormal Encoder\n(Label: {y_abnormal[0].item()})', 'viridis'),
+            (abnormal_self, 'Abnormal Self-Attention', 'viridis'),
+            (abnormal_dec, 'Abnormal Decoder', 'viridis')
+        ]
+        
+        # Find global min/max for consistent color scaling within each attention type
+        enc_vmin, enc_vmax = min(normal_enc.min(), abnormal_enc.min()), max(normal_enc.max(), abnormal_enc.max())
+        self_vmin, self_vmax = min(normal_self.min(), abnormal_self.min()), max(normal_self.max(), abnormal_self.max())
+        dec_vmin, dec_vmax = min(normal_dec.min(), abnormal_dec.min()), max(normal_dec.max(), abnormal_dec.max())
+        
+        # Color scale ranges for each column
+        v_ranges = [
+            (enc_vmin, enc_vmax),   # Encoder column
+            (self_vmin, self_vmax), # Self-attention column
+            (dec_vmin, dec_vmax)    # Decoder column
+        ]
+        
+        # Plot each attention map
+        for idx, (attn_data, title, cmap) in enumerate(plots):
+            row, col = idx // 3, idx % 3
+            vmin, vmax = v_ranges[col]
+            
+            im = axes[row, col].imshow(attn_data, cmap=cmap, aspect='auto', vmin=vmin, vmax=vmax)
+            axes[row, col].set_title(title, fontsize=12)
+            
+            # Set appropriate axis labels based on attention type
+            if col == 0:  # Encoder
+                axes[row, col].set_xlabel('Latent Index')
+                axes[row, col].set_ylabel('Feature Index')
+            elif col == 1:  # Self-attention
+                axes[row, col].set_xlabel('Latent Index')
+                axes[row, col].set_ylabel('Latent Index')
+            else:  # Decoder
+                axes[row, col].set_xlabel('Latent Index')
+                axes[row, col].set_ylabel('Feature Index')
+            axes[row, col].set_xticks([])
+            axes[row, col].set_yticks([])
+            
+            # Add colorbar to each subplot
+            plt.colorbar(im, ax=axes[row, col], fraction=0.046, pad=0.04)
+        
+        # Overall title
+        fig.suptitle(f'Attention Maps Comparison (Sample {sample_idx}) • {self.train_config["dataset_name"].upper()}', 
+                    fontsize=16, y=0.98)
+        
+        plt.tight_layout()
+        
+        # Save the plot
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, f'attention_pair_comparison_idx{sample_idx}_{abnormal_idx}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"Attention pair comparison saved to '{out_path}'")
+        print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
+        
+        return out_path 

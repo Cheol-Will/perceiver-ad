@@ -4,6 +4,7 @@
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
 
 data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography ) # from MCM
+data_list=(pendigits) # from MCM
 
 # data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign) # from MCM
 # data_list=(mammography census fraud shuttle nslkdd) # from MCM
@@ -40,8 +41,8 @@ temperature=0.1
 entropy_loss_weight=10
 # entropy_loss_weight=0.001
 for data in "${data_list[@]}"; do
-    exp_name="$model_type-ws-pos_query+token-use_ent_score-ent$entropy_loss_weight-d$hidden_dim-lr$learning_rate-t$temperature"
-    # exp_name="$model_type-ws-pos_query+token-d$hidden_dim-lr$learning_rate-t$temperature"
+    # exp_name="$model_type-ws-pos_query+token-use_ent_score-ent$entropy_loss_weight-d$hidden_dim-lr$learning_rate-t$temperature"
+    exp_name="$model_type-ws-pos_query+token-d$hidden_dim-lr$learning_rate-t$temperature"
     echo "$exp_name on $data"
     python analysis.py \
         --dataname "$data" \
@@ -49,13 +50,17 @@ for data in "${data_list[@]}"; do
         --is_weight_sharing \
         --use_pos_enc_as_query \
         --use_mask_token \
-        --use_entropy_loss_as_score \
-        --entropy_loss_weight "$entropy_loss_weight"\
         --hidden_dim "$hidden_dim" \
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
         --exp_name "$exp_name" \
         --plot_attn_dec_memory \
+        --plot_attn_pair
+        # --plot_attn_single \
+        # --plot_attn_simple
+        # --use_entropy_loss_as_score \
+        # --entropy_loss_weight "$entropy_loss_weight"\
+
         # --get_single_samples
         # --plot_attn_simple \
         # --plot_attn_all_heads \
