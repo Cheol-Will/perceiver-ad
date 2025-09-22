@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite) # from MCM
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography "satimage-2" nslkdd fraud census) # from MCM
-
+data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography "satimage-2" nslkdd ) # from MCM
+# data_list=(fraud census)
 
 # data_list=(
 #     global_anomalies_45_wine_42
