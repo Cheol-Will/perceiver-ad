@@ -3,13 +3,19 @@
 # data_list=(satimage-2) # from MCM
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
 
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography ) # from MCM
-data_list=(pendigits) # from MCM
+# data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography ) # from MCM
+# data_list=("satimage-2") # from MCM
+# data_list=(pendigits) # from MCM
+
+# data_list=(cardio cardiotocography) # from MCM
 
 # data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign) # from MCM
 # data_list=(mammography census fraud shuttle nslkdd) # from MCM
 # data_list=(pendigits) # from MCM
 # data_list=(campaign) # from MCM
+# data_list=(shuttle) # from MCM
+data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
+data_list=(breastw cardio ionosphere pendigits "satimage-2" shuttle wbc)
 # data_list=(pendigits) # from MCM
 # data_list=(cardiotocography) # from MCM
 
@@ -54,7 +60,10 @@ for data in "${data_list[@]}"; do
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
         --exp_name "$exp_name" \
-        --plot_attn_pair
+        --plot_2x4
+        # --plot_feature_reconstruction_distribution\
+        # --plot_histogram
+        # --plot_attn_pair
         # --plot_attn_dec_memory \
         # --plot_attn_single \
         # --plot_attn_simple

@@ -101,6 +101,18 @@ def train_test(args, model_config, train_config, analysis_config, run):
         analyzer.plot_attn_pair(1)
         analyzer.plot_attn_pair(2)
         analyzer.plot_attn_pair(2,0)
+    
+    if args.plot_2x4:
+        analyzer.plot_2x4(0)
+        analyzer.plot_2x4(1)
+        analyzer.plot_2x4(2)
+        analyzer.plot_2x4(abnormal_avg=True)
+    
+    if args.plot_feature_reconstruction_distribution: 
+        for i in range(36):
+            analyzer.plot_feature_reconstruction_distribution(
+                feature_idx=i
+            )
 
     return 
 
@@ -185,7 +197,8 @@ if __name__ == "__main__":
     parser.add_argument('--plot_attn_single_self_sum', action='store_true')
     parser.add_argument('--plot_attn_dec_memory', action='store_true')
     parser.add_argument('--plot_attn_pair', action='store_true')
-
+    parser.add_argument('--plot_feature_reconstruction_distribution', action='store_true')
+    parser.add_argument('--plot_2x4', action='store_true')
     args = parser.parse_args()
     if args.exp_name is None:
         args.exp_name = args.model_type 

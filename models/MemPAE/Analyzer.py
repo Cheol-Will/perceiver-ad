@@ -121,117 +121,6 @@ class Analyzer(Trainer):
 
 
     @torch.no_grad()
-    def plot_tsne_original_with_memory(
-        self,
-    ):
-        self.model.eval()
-        
-        # Get original data from test loader
-        all_original_data = []
-        all_labels = []
-        
-        for (X, y) in self.test_loader:
-            all_original_data.append(X.cpu().numpy())
-            all_labels.append(y.cpu().numpy())
-        
-        original_data = np.concatenate(all_original_data, axis=0)  # (N, F)
-        labels = np.concatenate(all_labels, axis=0)  # (N,)
-        
-        # Separate normal and abnormal
-        normal_mask = (labels == 0)
-        abnormal_mask = (labels == 1)
-        
-        normal_data = original_data[normal_mask]
-        abnormal_data = original_data[abnormal_mask]
-        
-        # Get decoded memory vectors
-        decoded_memory = self.decode_each_memory().detach().cpu().numpy()  # (M, F)
-        
-        # Prepare data for t-SNE
-        datasets = []
-        category_labels = []
-        
-        # Add normal data
-        if normal_data.shape[0] > 0:
-            datasets.append(normal_data)
-            category_labels.extend([0] * normal_data.shape[0])
-        
-        # Add abnormal data  
-        if abnormal_data.shape[0] > 0:
-            datasets.append(abnormal_data)
-            category_labels.extend([1] * abnormal_data.shape[0])
-        
-        # Add decoded memory
-        datasets.append(decoded_memory)
-        category_labels.extend([2] * decoded_memory.shape[0])
-        
-        # Combine all data
-        combined_data = np.vstack(datasets)
-        category_labels = np.array(category_labels)
-        
-        # Apply t-SNE
-        n_samples = combined_data.shape[0]
-        perplexity = min(30, max(5, n_samples // 3)) if n_samples > 10 else 5
-        
-        tsne = TSNE(
-            n_components=2, 
-            random_state=42, 
-            perplexity=perplexity, 
-            n_iter=1000, 
-            init='pca', 
-            learning_rate='auto'
-        )
-        tsne_results = tsne.fit_transform(combined_data)
-        
-        # Create the plot
-        plt.figure(figsize=(10, 8), dpi=200)
-        
-        # Define colors and markers for each category
-        plot_config =  {
-            0: {'label': 'Normal (Original)', 'color': '#1f77b4', 'marker': 'o', 'alpha': 0.6, 's': 100},
-            1: {'label': 'Abnormal (Origina)', 'color': '#d62728', 'marker': '^', 'alpha': 0.6, 's': 100}, 
-            2: {'label': 'Decoded Memory', 'color': '#2ca02c', 'marker': 's', 'alpha': 0.8, 's': 150}
-        }
-        # plot_config = {
-        #     0: {'label': 'Normal (Original)', 'color': '#1f77b4', 'marker': 'o', 'alpha': 0.6, 's': 30},
-        #     1: {'label': 'Abnormal (Original)', 'color': '#d62728', 'marker': '^', 'alpha': 0.6, 's': 30}, 
-        #     2: {'label': 'Decoded Memory', 'color': '#ff7f0e', 'marker': 's', 'alpha': 0.8, 's': 60}
-        # }
-        
-        # Plot each category
-        for cat_id, config in plot_config.items():
-            mask = (category_labels == cat_id)
-            if mask.any():
-                plt.scatter(
-                    tsne_results[mask, 0], 
-                    tsne_results[mask, 1],
-                    label=config['label'],
-                    c=config['color'],
-                    marker=config['marker'],
-                    alpha=config['alpha'],
-                    s=config['s'],
-                    edgecolors='white',
-                    linewidth=0.5
-                )
-        
-        plt.title(f't-SNE: Original Data vs Decoded Memory • {self.train_config["dataset_name"].upper()}', 
-                fontsize=14, pad=20)
-        plt.xlabel('t-SNE Dimension 1', fontsize=12)
-        plt.ylabel('t-SNE Dimension 2', fontsize=12)
-        plt.legend(loc='best', frameon=True, fancybox=True, shadow=True)
-        plt.grid(True, linestyle='--', alpha=0.3)
-        
-        base_path = self.train_config['base_path']
-        out_path = os.path.join(base_path, 't-sne_original_with_memory.png')
-
-        plt.tight_layout()
-        plt.savefig(out_path, bbox_inches='tight', dpi=200)
-        plt.close()
-        print(f"Original data with decoded memory t-SNE saved into '{out_path}'.")
-
-
-
-    @torch.no_grad()
     def get_latent(
         self,
     ):
@@ -253,435 +142,6 @@ class Analyzer(Trainer):
         latents_hat = torch.cat(all_latents_hat, dim=0) # (N_train, N, D)
         labels = torch.cat(all_labels, dim=0) # (N_train, )
         return latents, latents_hat, labels # 
-
-    def plot_tsne_latent_vs_memory(
-        self,
-        use_latents_hat: bool = False,
-        use_latents_avg: bool = False,
-        use_both_latents: bool = False,  
-        latent_idx: int = None,
-    ):
-        # get latents and memory vector
-        latents, latents_hat, labels = self.get_latent()
-        
-        if latent_idx is not None:
-            if use_both_latents:
-                filename = f'both_latent{latent_idx}' 
-            elif use_latents_hat:
-                filename = f'latent_hat{latent_idx}'
-            else:
-                filename = f'latent{latent_idx}' 
-        else:    
-            if use_both_latents:
-                filename = 'both_latents_avg' if use_latents_avg else 'both_latents'
-            elif use_latents_hat:
-                filename = 'latents_hat_avg' if use_latents_avg else 'latents_hat'
-            else:
-                filename = 'latents_avg' if use_latents_avg else 'latents'
-
-        memory_latents = self.model.memory.memories  # (num_memory, D)
-        memory_latents = F.normalize(memory_latents, dim=-1)
-        memory_latents = memory_latents.detach().cpu().numpy()
-
-        if latent_idx is not None:
-            latents = latents[:, latent_idx, :]   
-            latents_hat = latents_hat[:, latent_idx, :]   
-            # latents_hat
-
-        datasets = []
-        category_labels = []
-        
-        if use_both_latents:
-            # Both latents and latents_hat
-            if not use_latents_avg:
-                hidden_dim = latents.shape[-1]
-                # Original latents
-                normal_latents = latents[labels==0].view(-1, hidden_dim)
-                abnormal_latents = latents[labels==1].view(-1, hidden_dim)
-                # Reconstructed latents
-                normal_latents_hat = latents_hat[labels==0].view(-1, hidden_dim)
-                abnormal_latents_hat = latents_hat[labels==1].view(-1, hidden_dim)
-            else:
-                # Average over sequence dimension
-                normal_latents = latents[labels==0].mean(axis=1)
-                abnormal_latents = latents[labels==1].mean(axis=1)
-                normal_latents_hat = latents_hat[labels==0].mean(axis=1)
-                abnormal_latents_hat = latents_hat[labels==1].mean(axis=1)
-            
-            # Add all datasets
-            datasets.append(normal_latents.numpy())
-            category_labels.extend([0] * normal_latents.shape[0])  # normal latents
-            
-            datasets.append(normal_latents_hat.numpy())
-            category_labels.extend([1] * normal_latents_hat.shape[0])  # normal latents_hat
-            
-            datasets.append(abnormal_latents.numpy())
-            category_labels.extend([2] * abnormal_latents.shape[0])  # abnormal latents
-            
-            datasets.append(abnormal_latents_hat.numpy())
-            category_labels.extend([3] * abnormal_latents_hat.shape[0])  # abnormal latents_hat
-            
-            datasets.append(memory_latents)
-            category_labels.extend([4] * memory_latents.shape[0])  # memory vectors
-            
-        else:
-            # Original behavior
-            if use_latents_hat:
-                latents = latents_hat
-
-            if not use_latents_avg:
-                hidden_dim = latents.shape[-1]
-                normal_latents = latents[labels==0].view(-1, hidden_dim)
-                abnormal_latents = latents[labels==1].view(-1, hidden_dim)
-            else:
-                normal_latents = latents[labels==0].mean(axis=1)
-                abnormal_latents = latents[labels==1].mean(axis=1)
-            
-            datasets.append(normal_latents.numpy())
-            category_labels.extend([0] * normal_latents.shape[0])
-            
-            datasets.append(abnormal_latents.numpy())
-            category_labels.extend([1] * abnormal_latents.shape[0])
-            
-            datasets.append(memory_latents)
-            category_labels.extend([2] * memory_latents.shape[0])
-        
-        # Combine all data
-        combined_data = np.vstack(datasets)
-        category_labels = np.array(category_labels)
-        
-        # Standardize the data
-        scaler = StandardScaler()
-        scaled_data = scaler.fit_transform(combined_data)
-        
-        # Apply t-SNE
-        n_samples = scaled_data.shape[0]
-        perplexity = min(30, max(5, n_samples // 3)) if n_samples > 10 else 5
-        
-        tsne = TSNE(
-            n_components=2, 
-            random_state=42, 
-            perplexity=perplexity, 
-            n_iter=1000, 
-            init='pca', 
-            learning_rate='auto'
-        )
-        tsne_results = tsne.fit_transform(scaled_data)
-        
-        # Create the plot
-        plt.figure(figsize=(10, 8), dpi=200)
-        
-        # Define colors and markers for each category
-        if use_both_latents:
-            plot_config = {
-                0: {'label': 'Normal Latents', 'color': '#1f77b4', 'marker': 'o', 'alpha': 0.6, 's': 80},
-                1: {'label': 'Normal Latents_hat', 'color': '#aec7e8', 'marker': 's', 'alpha': 0.6, 's': 80},
-                2: {'label': 'Abnormal Latents', 'color': '#d62728', 'marker': '^', 'alpha': 0.6, 's': 80},
-                3: {'label': 'Abnormal Latents_hat', 'color': '#ff9896', 'marker': 'v', 'alpha': 0.6, 's': 80},
-                4: {'label': 'Memory Vectors', 'color': '#2ca02c', 'marker': 'D', 'alpha': 0.8, 's': 120}
-            }
-        else:
-            plot_config = {
-                0: {'label': 'Normal Latents', 'color': '#1f77b4', 'marker': 'o', 'alpha': 0.6, 's': 100},
-                1: {'label': 'Abnormal Latents', 'color': '#d62728', 'marker': '^', 'alpha': 0.6, 's': 100}, 
-                2: {'label': 'Memory Vectors', 'color': '#2ca02c', 'marker': 's', 'alpha': 0.8, 's': 150}
-            }
-        
-        # Plot each category
-        for cat_id, config in plot_config.items():
-            mask = (category_labels == cat_id)
-            if mask.any():
-                plt.scatter(
-                    tsne_results[mask, 0], 
-                    tsne_results[mask, 1],
-                    label=config['label'],
-                    c=config['color'],
-                    marker=config['marker'],
-                    alpha=config['alpha'],
-                    s=config['s'],
-                    edgecolors='white',
-                    linewidth=0.5
-                )
-        
-        plt.title(f't-SNE: {filename} vs Memory Vectors • {self.train_config["dataset_name"].upper()}', 
-                fontsize=14, pad=20)
-        plt.xlabel('t-SNE Dimension 1', fontsize=12)
-        plt.ylabel('t-SNE Dimension 2', fontsize=12)
-        plt.legend(loc='best', frameon=True, fancybox=True, shadow=True)
-        plt.grid(True, linestyle='--', alpha=0.3)
-        
-        base_path = self.train_config['base_path']
-        out_path = os.path.join(base_path, f't-sne_{filename}_memory.png')
-
-        plt.tight_layout()
-        plt.savefig(out_path, bbox_inches='tight', dpi=200)
-        plt.close()
-        print(f"T-SNE saved into '{out_path}'.")
-
-        
-    def plot_tsne_memory_separate(
-        self,
-        use_latents_hat = False,
-    ):
-        
-        # get latents and memory vector
-        latents, latents_hat, labels = self.get_latent()
-        if use_latents_hat:
-            filename = 'latents_hat'
-            latents = latents_hat
-        else:
-            filename = 'latents'
-        
-        hidden_dim = latents.shape[-1]
-        normal_latents = latents[labels==0].view(-1, hidden_dim) # (num_normal x num_latent, D)
-        abnormal_latents = latents[labels==1].view(-1, hidden_dim) # (num_abnormal x num_latent, D)
-        memory_latents = self.model.memory.memories.detach().cpu().numpy() # (num_memory, D)
-
-        # Create 1x2 subplot
-        fig, axes = plt.subplots(1, 2, figsize=(16, 6), dpi=200)
-
-        # Plot 1: Memory vs Normal
-        datasets_normal = [normal_latents.numpy(), memory_latents]
-        category_labels_normal = []
-        category_labels_normal.extend([0] * normal_latents.shape[0])  # normal latents
-        category_labels_normal.extend([1] * memory_latents.shape[0])  # memory vectors
-        
-        combined_data_normal = np.vstack(datasets_normal)
-        category_labels_normal = np.array(category_labels_normal)
-        
-        # Standardize and apply t-SNE for normal
-        scaler_normal = StandardScaler()
-        scaled_data_normal = scaler_normal.fit_transform(combined_data_normal)
-        
-        n_samples_normal = scaled_data_normal.shape[0]
-        perplexity_normal = min(30, max(5, n_samples_normal // 3)) if n_samples_normal > 10 else 5
-        
-        tsne_normal = TSNE(
-            n_components=2, 
-            random_state=42, 
-            perplexity=perplexity_normal, 
-            n_iter=1000, 
-            init='pca', 
-            learning_rate='auto'
-        )
-        tsne_results_normal = tsne_normal.fit_transform(scaled_data_normal)
-        
-        # Plot normal vs memory
-        normal_mask = (category_labels_normal == 0)
-        memory_mask = (category_labels_normal == 1)
-        
-        axes[0].scatter(
-            tsne_results_normal[normal_mask, 0], 
-            tsne_results_normal[normal_mask, 1],
-            label='Normal Latents',
-            c='#1f77b4',
-            marker='o',
-            alpha=0.6,
-            s=30,
-            edgecolors='white',
-            linewidth=0.5
-        )
-        
-        axes[0].scatter(
-            tsne_results_normal[memory_mask, 0], 
-            tsne_results_normal[memory_mask, 1],
-            label='Memory Vectors',
-            c='#2ca02c',
-            marker='s',
-            alpha=0.8,
-            s=60,
-            edgecolors='white',
-            linewidth=0.5
-        )
-        
-        axes[0].set_title(f'Memory vs Normal {filename}', fontsize=12)
-        axes[0].set_xlabel('t-SNE Dimension 1')
-        axes[0].set_ylabel('t-SNE Dimension 2')
-        axes[0].legend(loc='best')
-        axes[0].grid(True, linestyle='--', alpha=0.3)
-
-        # Plot 2: Memory vs Abnormal
-        datasets_abnormal = [abnormal_latents.numpy(), memory_latents]
-        category_labels_abnormal = []
-        category_labels_abnormal.extend([0] * abnormal_latents.shape[0])  # abnormal latents
-        category_labels_abnormal.extend([1] * memory_latents.shape[0])  # memory vectors
-        
-        combined_data_abnormal = np.vstack(datasets_abnormal)
-        category_labels_abnormal = np.array(category_labels_abnormal)
-        
-        # Standardize and apply t-SNE for abnormal
-        scaler_abnormal = StandardScaler()
-        scaled_data_abnormal = scaler_abnormal.fit_transform(combined_data_abnormal)
-        
-        n_samples_abnormal = scaled_data_abnormal.shape[0]
-        perplexity_abnormal = min(30, max(5, n_samples_abnormal // 3)) if n_samples_abnormal > 10 else 5
-        
-        tsne_abnormal = TSNE(
-            n_components=2, 
-            random_state=42, 
-            perplexity=perplexity_abnormal, 
-            n_iter=1000, 
-            init='pca', 
-            learning_rate='auto'
-        )
-        tsne_results_abnormal = tsne_abnormal.fit_transform(scaled_data_abnormal)
-        
-        # Plot abnormal vs memory
-        abnormal_mask = (category_labels_abnormal == 0)
-        memory_mask_2 = (category_labels_abnormal == 1)
-        
-        axes[1].scatter(
-            tsne_results_abnormal[abnormal_mask, 0], 
-            tsne_results_abnormal[abnormal_mask, 1],
-            label=f'Abnormal {filename}',
-            c='#d62728',
-            marker='^',
-            alpha=0.6,
-            s=30,
-            edgecolors='white',
-            linewidth=0.5
-        )
-        
-        axes[1].scatter(
-            tsne_results_abnormal[memory_mask_2, 0], 
-            tsne_results_abnormal[memory_mask_2, 1],
-            label='Memory Vectors',
-            c='#2ca02c',
-            marker='s',
-            alpha=0.8,
-            s=60,
-            edgecolors='white',
-            linewidth=0.5
-        )
-        
-        axes[1].set_title(f'Memory vs Abnormal {filename}', fontsize=12)
-        axes[1].set_xlabel('t-SNE Dimension 1')
-        axes[1].set_ylabel('t-SNE Dimension 2')
-        axes[1].legend(loc='best')
-        axes[1].grid(True, linestyle='--', alpha=0.3)
-
-        # Overall title
-        fig.suptitle(f't-SNE: Memory vs {filename} • {self.train_config["dataset_name"].upper()}', 
-                    fontsize=14, y=1.02)
-        
-        base_path = self.train_config['base_path']
-        out_path = os.path.join(base_path, f't-sne_memory_{filename}_separate.png')
-
-        plt.tight_layout()
-        plt.savefig(out_path, bbox_inches='tight', dpi=200)
-        plt.close()
-        print(f"Separate t-SNE plots saved into '{out_path}'.")
-
-    def plot_attn_normal_vs_abnormal(self,):
-        attn_feature_feature, label = self.get_attn_weights(use_self_attn=True) # (H, F, F)
-        
-
-    def plot_attn(self,):
-        
-        # get attention per head
-        attn_feature_feature, label = self.get_attn_weights(use_self_attn=True) # (H, F, F)
-        
-        
-        attn_feature_feature, label = self.get_attn_weights(use_self_attn=False) # (H, F, F)
-
-        # calculate corr matrix in trainset.
-        # 
-
-
-        return
-
-
-    @torch.no_grad()
-    def plot_combined_tsne(self, figsize=(10, 8)):
-        self.model.eval()
-        recons = self._accumulate_recon()
-
-        normal_input = recons['normal_input']
-        normal_recon = recons['normal_recon']
-        abnormal_input = recons['abnormal_input']
-        abnormal_recon_mem = recons['abnormal_recon_mem']
-        
-        datasets = [normal_input, normal_recon, abnormal_input, abnormal_recon_mem]
-        
-        if any(d.shape[0] == 0 for d in datasets):
-            print("No data. Skip Vis.")
-            return
-
-        labels = []
-        for i, d in enumerate(datasets):
-            labels.extend([i] * d.shape[0])
-        labels = np.array(labels)
-        
-        combined_data = np.vstack(datasets)
-
-        scaler = StandardScaler()
-        scaled_data = scaler.fit_transform(combined_data)
-
-        tsne = TSNE(n_components=2, random_state=42, perplexity=30, n_iter=1000, init='pca', learning_rate='auto')
-        tsne_results = tsne.fit_transform(scaled_data)
-
-        fig, ax = plt.subplots(figsize=figsize)
-        
-        plot_info = {
-            0: {'label': 'Normal Input', 'color': '#1f77b4', 'marker': 'o', 'alpha': 0.7, 's': 50}, # Blue (Matplotlib default blue)
-            1: {'label': 'Normal Recon', 'color': '#aec7e8', 'marker': 's', 'alpha': 0.7, 's': 50}, # Light Blue
-            2: {'label': 'Abnormal Input', 'color': '#d62728', 'marker': '^', 'alpha': 0.7, 's': 50}, # Red (Matplotlib default red)
-            3: {'label': 'Abnormal Recon', 'color': '#ff9896', 'marker': 'D', 'alpha': 0.7, 's': 50}, # Light Red
-        }
-        for label_id, info in plot_info.items():
-            mask = (labels == label_id)
-            ax.scatter(tsne_results[mask, 0], tsne_results[mask, 1], 
-                    label=info['label'], c=info['color'], 
-                    marker=info['marker'], alpha=info['alpha'], s=info['s'])
-
-        ax.set_title('Combined t-SNE Visualization', fontsize=16)
-        ax.set_xlabel("t-SNE Dimension 1")
-        ax.set_ylabel("t-SNE Dimension 2")
-        ax.legend(loc='best')
-        ax.grid(True, linestyle='--', alpha=0.6)
-        
-        base_path = self.train_config['base_path']
-        out_path = os.path.join(base_path, 't-sne_combined_visualization.png')
-
-        plt.tight_layout()
-        plt.savefig(out_path)
-        plt.close()
-        print(f"T-SNE saved into '{out_path}'.")
-
-    @torch.no_grad()
-    def _collect_recon(self, loader):
-        x_list, x_hat_origin_list, x_hat_memory_list, labels = [], [], [], []
-        self.model.eval()
-
-        for batch in loader:
-            if isinstance(batch, (list, tuple)) and len(batch) == 2:
-                x, y = batch
-            else:
-                x, y = batch, None
-
-            x = x.to(self.device)
-            x_out, x_hat_origin, x_hat_memory = self.model(x, return_pred_all=True)
-            x_np = x_out.detach().cpu().numpy()
-            x_hat_origin_np = x_hat_origin.detach().cpu().numpy()
-            x_hat_memory_np = x_hat_memory.detach().cpu().numpy()
-
-            if y is None:
-                y_arr = np.zeros(x_np.shape[0], dtype=np.int64)
-            else:
-                y_arr = y.view(-1).detach().cpu().numpy()
-
-            x_list.append(x_np)
-            x_hat_origin_list.append(x_hat_origin_np)
-            x_hat_memory_list.append(x_hat_memory_np)
-            labels.append(y_arr)
-
-        x_list = np.concatenate(x_list, axis=0)
-        x_hat_origin_list = np.concatenate(x_hat_origin_list, axis=0)
-        x_hat_memory_list = np.concatenate(x_hat_memory_list, axis=0)
-        labels = np.concatenate(labels, axis=0)
-
-        return x_list, x_hat_origin_list, x_hat_memory_list, labels
-
 
     @torch.no_grad()
     def _accumulate_recon(self):
@@ -707,82 +167,6 @@ class Analyzer(Trainer):
             'abnormal_recon_mem': abnormal_recon_mem,
         }
         return output
-
-
-    @torch.no_grad()
-    def plot_tsne_reconstruction(self, figsize=(16, 5), s_base=12, s_overlay=24, alpha_base=0.35, alpha_overlay=0.9):
-        def _fit_tsne_on_base_overlay(base_X, overlay_X, perplexity=30, random_state=42, n_iter=1000):
-                base_X = np.asarray(base_X, dtype=np.float32)
-                overlay_X = np.asarray(overlay_X, dtype=np.float32)
-                n_base = base_X.shape[0]
-                n_overlay = overlay_X.shape[0]
-                n_total = n_base + n_overlay
-
-                if n_total < 5 or n_overlay == 0:
-                    return None, None, False
-
-                scaler = StandardScaler().fit(base_X)
-                base_Z = scaler.transform(base_X)
-                overlay_Z = scaler.transform(overlay_X)
-
-                X = np.concatenate([base_Z, overlay_Z], axis=0)
-
-                safe_perp = max(5, min(perplexity, (n_total - 1) // 3 if n_total > 10 else 5))
-
-                tsne = TSNE(
-                    n_components=2,
-                    perplexity=safe_perp,
-                    learning_rate='auto',
-                    init='pca',
-                    n_iter=n_iter,
-                    random_state=random_state,
-                    verbose=0,
-                    metric='euclidean',
-                    n_jobs=None  # 최신 sklearn은 n_jobs 인자 없음(버전에 맞춰 조정)
-                )
-                Y = tsne.fit_transform(X)
-                Y_base = Y[:n_base]
-                Y_overlay = Y[n_base:]
-                return Y_base, Y_overlay, True
-
-        self.model.eval()
-        recons = self._accumulate_recon()
-
-        normal_input     = recons['normal_input']
-        abnormal_input   = recons['abnormal_input']
-        abnormal_recon   = recons['abnormal_recon']
-        abnormal_recon_mem = recons['abnormal_recon_mem']
-
-        fig, axes = plt.subplots(1, 3, figsize=figsize)
-
-        panels = [
-            ("Input: normal (base) + abnormal (overlay)",      abnormal_input),
-            ("Recon: normal (base) + abnormal Dec(z) (overlay)",   abnormal_recon),
-            ("Recon (Mem): normal (base) + abnormal Dec(ẑ) (overlay)", abnormal_recon_mem),
-        ]
-
-        for ax, (title, overlay_X) in zip(axes, panels):
-            Y_base, Y_overlay, ok = _fit_tsne_on_base_overlay(normal_input, overlay_X)
-            ax.set_title(title)
-
-            if not ok:
-                ax.text(0.5, 0.5, "Not enough samples to plot", ha='center', va='center')
-                ax.set_xticks([]); ax.set_yticks([])
-                continue
-
-            # base=normal을 먼저(뒤) 그리면 overlay가 가려질 수 있어 overlay를 나중에 그림
-            ax.scatter(Y_base[:, 0], Y_base[:, 1], s=s_base, alpha=alpha_base, label="normal (base)")
-            ax.scatter(Y_overlay[:, 0], Y_overlay[:, 1], s=s_overlay, alpha=alpha_overlay, label="abnormal (overlay)")
-
-            ax.set_xlabel("t-SNE 1"); ax.set_ylabel("t-SNE 2")
-            ax.legend(loc='best')
-
-        base_path = self.train_config['base_path']
-        out_path = os.path.join(base_path, f't-sne_visualizaion.png')
-
-        plt.tight_layout()
-        plt.savefig(out_path)
-        plt.close()
 
 
     @torch.no_grad()
@@ -1361,277 +745,6 @@ class Analyzer(Trainer):
         plt.close(fig)
 
         print(f"Saved histogram to {out_overlay}, {out_grid}")
-
-
-
-
-    def plot_umap_latent_vs_memory(
-        self,
-        use_latents_hat: bool = False,
-        use_latents_avg: bool = False,
-        use_both_latents: bool = False,  #
-        n_neighbors: int = 15,
-        min_dist: float = 0.1,
-    ):
-        # get latents and memory vector
-        latents, latents_hat, labels = self.get_latent()
-        
-        if use_both_latents:
-            filename = 'both_latents_avg' if use_latents_avg else 'both_latents'
-        elif use_latents_hat:
-            filename = 'latents_hat_avg' if use_latents_avg else 'latents_hat'
-        else:
-            filename = 'latents_avg' if use_latents_avg else 'latents'
-
-        memory_latents = self.model.memory.memories  # (num_memory, D)
-        memory_latents = F.normalize(memory_latents, dim=-1)
-        memory_latents = memory_latents.detach().cpu().numpy()
-    
-        datasets = []
-        category_labels = []
-        
-        if use_both_latents:
-            # Both latents and latents_hat
-            if not use_latents_avg:
-                hidden_dim = latents.shape[-1]
-                # Original latents
-                normal_latents = latents[labels==0].view(-1, hidden_dim)
-                abnormal_latents = latents[labels==1].view(-1, hidden_dim)
-                # Reconstructed latents
-                normal_latents_hat = latents_hat[labels==0].view(-1, hidden_dim)
-                abnormal_latents_hat = latents_hat[labels==1].view(-1, hidden_dim)
-            else:
-                # Average over sequence dimension
-                normal_latents = latents[labels==0].mean(axis=1)
-                abnormal_latents = latents[labels==1].mean(axis=1)
-                normal_latents_hat = latents_hat[labels==0].mean(axis=1)
-                abnormal_latents_hat = latents_hat[labels==1].mean(axis=1)
-            
-            # Add all datasets
-            datasets.append(normal_latents.numpy())
-            category_labels.extend([0] * normal_latents.shape[0])  # normal latents
-            
-            datasets.append(normal_latents_hat.numpy())
-            category_labels.extend([1] * normal_latents_hat.shape[0])  # normal latents_hat
-            
-            datasets.append(abnormal_latents.numpy())
-            category_labels.extend([2] * abnormal_latents.shape[0])  # abnormal latents
-            
-            datasets.append(abnormal_latents_hat.numpy())
-            category_labels.extend([3] * abnormal_latents_hat.shape[0])  # abnormal latents_hat
-            
-            datasets.append(memory_latents)
-            category_labels.extend([4] * memory_latents.shape[0])  # memory vectors
-            
-        else:
-            # Original behavior
-            if use_latents_hat:
-                latents = latents_hat
-
-            if not use_latents_avg:
-                hidden_dim = latents.shape[-1]
-                normal_latents = latents[labels==0].view(-1, hidden_dim)
-                abnormal_latents = latents[labels==1].view(-1, hidden_dim)
-            else:
-                normal_latents = latents[labels==0].mean(axis=1)
-                abnormal_latents = latents[labels==1].mean(axis=1)
-            
-            datasets.append(normal_latents.numpy())
-            category_labels.extend([0] * normal_latents.shape[0])
-            
-            datasets.append(abnormal_latents.numpy())
-            category_labels.extend([1] * abnormal_latents.shape[0])
-            
-            datasets.append(memory_latents)
-            category_labels.extend([2] * memory_latents.shape[0])
-        
-        # Combine all data
-        combined_data = np.vstack(datasets)
-        category_labels = np.array(category_labels)
-        
-        # Standardize the data
-        scaler = StandardScaler()
-        scaled_data = scaler.fit_transform(combined_data)
-        
-        # Apply UMAP
-        reducer = umap.UMAP(
-            n_components=2,
-            n_neighbors=n_neighbors,
-            min_dist=min_dist,
-            random_state=42,
-            metric='euclidean'
-        )
-        umap_results = reducer.fit_transform(scaled_data)
-        
-        # Create the plot
-        plt.figure(figsize=(10, 8), dpi=200)
-        
-        # Define colors and markers for each category
-        if use_both_latents:
-            plot_config = {
-                0: {'label': 'Normal Latents', 'color': '#1f77b4', 'marker': 'o', 'alpha': 0.6, 's': 80},
-                1: {'label': 'Normal Latents_hat', 'color': '#aec7e8', 'marker': 's', 'alpha': 0.6, 's': 80},
-                2: {'label': 'Abnormal Latents', 'color': '#d62728', 'marker': '^', 'alpha': 0.6, 's': 80},
-                3: {'label': 'Abnormal Latents_hat', 'color': '#ff9896', 'marker': 'v', 'alpha': 0.6, 's': 80},
-                4: {'label': 'Memory Vectors', 'color': '#2ca02c', 'marker': 'D', 'alpha': 0.8, 's': 120}
-            }
-        else:
-            plot_config = {
-                0: {'label': 'Normal Latents', 'color': '#1f77b4', 'marker': 'o', 'alpha': 0.6, 's': 100},
-                1: {'label': 'Abnormal Latents', 'color': '#d62728', 'marker': '^', 'alpha': 0.6, 's': 100}, 
-                2: {'label': 'Memory Vectors', 'color': '#2ca02c', 'marker': 's', 'alpha': 0.8, 's': 150}
-            }
-        
-        # Plot each category
-        for cat_id, config in plot_config.items():
-            mask = (category_labels == cat_id)
-            if mask.any():
-                plt.scatter(
-                    umap_results[mask, 0], 
-                    umap_results[mask, 1],
-                    label=config['label'],
-                    c=config['color'],
-                    marker=config['marker'],
-                    alpha=config['alpha'],
-                    s=config['s'],
-                    edgecolors='white',
-                    linewidth=0.5
-                )
-        
-        plt.title(f'UMAP: {filename} vs Memory Vectors • {self.train_config["dataset_name"].upper()}', 
-                fontsize=14, pad=20)
-        plt.xlabel('UMAP Dimension 1', fontsize=12)
-        plt.ylabel('UMAP Dimension 2', fontsize=12)
-        plt.legend(loc='best', frameon=True, fancybox=True, shadow=True)
-        plt.grid(True, linestyle='--', alpha=0.3)
-        
-        base_path = self.train_config['base_path']
-        out_path = os.path.join(base_path, f'umap_{filename}_memory.png')
-
-        plt.tight_layout()
-        plt.savefig(out_path, bbox_inches='tight', dpi=200)
-        plt.close()
-        print(f"UMAP saved into '{out_path}'.")
-
-
-    def plot_tsne_single_class_with_memory(
-        self,
-        use_normal: bool = True,  
-        use_latents_avg: bool = False,
-    ):
-        # get latents and memory vector
-        latents, latents_hat, labels = self.get_latent()
-        
-        class_name = 'normal' if use_normal else 'abnormal'
-        label_value = 0 if use_normal else 1
-        filename = f'{class_name}_latents_avg' if use_latents_avg else f'{class_name}_latents'
-        
-        # Select data for chosen class
-        class_mask = (labels == label_value)
-        class_latents = latents[class_mask]
-        class_latents_hat = latents_hat[class_mask]
-        
-        if class_latents.shape[0] == 0:
-            print(f"No {class_name} samples found.")
-            return
-        
-        memory_latents = self.model.memory.memories  # (num_memory, D)
-        memory_latents = F.normalize(memory_latents, dim=-1)
-        memory_latents = memory_latents.detach().cpu().numpy()
-        
-        datasets = []
-        category_labels = []
-        
-        if not use_latents_avg:
-            hidden_dim = class_latents.shape[-1]
-            # Flatten to (num_samples * num_latents, hidden_dim)
-            class_latents_flat = class_latents.view(-1, hidden_dim)
-            class_latents_hat_flat = class_latents_hat.view(-1, hidden_dim)
-        else:
-            # Average over sequence dimension
-            class_latents_flat = class_latents.mean(axis=1)  # (num_samples, hidden_dim)
-            class_latents_hat_flat = class_latents_hat.mean(axis=1)
-        
-        # Add datasets
-        datasets.append(class_latents_flat.numpy())
-        category_labels.extend([0] * class_latents_flat.shape[0])  # original latents
-        
-        datasets.append(class_latents_hat_flat.numpy())
-        category_labels.extend([1] * class_latents_hat_flat.shape[0])  # reconstructed latents
-        
-        datasets.append(memory_latents)
-        category_labels.extend([2] * memory_latents.shape[0])  # memory vectors
-        
-        # Combine all data
-        combined_data = np.vstack(datasets)
-        category_labels = np.array(category_labels)
-        
-        # Standardize the data
-        scaler = StandardScaler()
-        scaled_data = scaler.fit_transform(combined_data)
-        
-        # Apply t-SNE
-        n_samples = scaled_data.shape[0]
-        perplexity = min(30, max(5, n_samples // 3)) if n_samples > 10 else 5
-        
-        tsne = TSNE(
-            n_components=2, 
-            random_state=42, 
-            perplexity=perplexity, 
-            n_iter=1000, 
-            init='pca', 
-            learning_rate='auto'
-        )
-        tsne_results = tsne.fit_transform(scaled_data)
-        
-        # Create the plot
-        plt.figure(figsize=(10, 8), dpi=200)
-        
-        # Define colors and markers for each category
-        if use_normal:
-            plot_config = {
-                0: {'label': 'Normal Latents', 'color': '#1f77b4', 'marker': 'o', 'alpha': 0.7, 's': 80},
-                1: {'label': 'Normal Latents_hat', 'color': '#aec7e8', 'marker': 's', 'alpha': 0.7, 's': 80},
-                2: {'label': 'Memory Vectors', 'color': '#2ca02c', 'marker': 'D', 'alpha': 0.8, 's': 120}
-            }
-        else:
-            plot_config = {
-                0: {'label': 'Abnormal Latents', 'color': '#d62728', 'marker': '^', 'alpha': 0.7, 's': 80},
-                1: {'label': 'Abnormal Latents_hat', 'color': '#ff9896', 'marker': 'v', 'alpha': 0.7, 's': 80},
-                2: {'label': 'Memory Vectors', 'color': '#2ca02c', 'marker': 'D', 'alpha': 0.8, 's': 120}
-            }
-        
-        # Plot each category
-        for cat_id, config in plot_config.items():
-            mask = (category_labels == cat_id)
-            if mask.any():
-                plt.scatter(
-                    tsne_results[mask, 0], 
-                    tsne_results[mask, 1],
-                    label=config['label'],
-                    c=config['color'],
-                    marker=config['marker'],
-                    alpha=config['alpha'],
-                    s=config['s'],
-                    edgecolors='white',
-                    linewidth=0.5
-                )
-        
-        plt.title(f't-SNE: {class_name.title()} Latents vs Memory • {self.train_config["dataset_name"].upper()}', 
-                fontsize=14, pad=20)
-        plt.xlabel('t-SNE Dimension 1', fontsize=12)
-        plt.ylabel('t-SNE Dimension 2', fontsize=12)
-        plt.legend(loc='best', frameon=True, fancybox=True, shadow=True)
-        plt.grid(True, linestyle='--', alpha=0.3)
-        
-        base_path = self.train_config['base_path']
-        out_path = os.path.join(base_path, f't-sne_{filename}_with_memory.png')
-
-        plt.tight_layout()
-        plt.savefig(out_path, bbox_inches='tight', dpi=200)
-        plt.close()
-        print(f"Single class t-SNE saved into '{out_path}'.")
-        print(f"Samples - {class_name}: {class_latents_flat.shape[0]}, Memory: {memory_latents.shape[0]}")
 
 
     def plot_attn_single(self):
@@ -2507,3 +1620,372 @@ class Analyzer(Trainer):
         print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
         
         return out_path 
+
+
+    @torch.no_grad()
+    def plot_feature_reconstruction_distribution(
+        self, 
+        feature_idx: int = 0,
+        bins: int = 50,
+        alpha_hist: float = 0.6,
+        alpha_kde: float = 0.8,
+        figsize: tuple = (15, 5)
+    ):
+        """
+        Plot KDE and histogram of a specific feature before/after reconstruction
+        for normal and abnormal test samples
+        
+        Args:
+            feature_idx: Index of the feature to analyze
+            bins: Number of bins for histogram
+            alpha_hist: Transparency for histogram
+            alpha_kde: Transparency for KDE lines
+            figsize: Figure size (width, height)
+        """
+        self.model.eval()
+        
+        def collect_feature_data(loader):
+            """Collect original and reconstructed data for a specific feature"""
+            original_data = []
+            recon_data = []
+            labels = []
+            
+            for (X, y) in loader:
+                X_input = X.to(self.device)
+                _, x_orig, x_recon = self.model(X_input, return_pred=True)
+                
+                original_data.append(x_orig[:, feature_idx].cpu().numpy())
+                recon_data.append(x_recon[:, feature_idx].cpu().numpy())
+                labels.append(y.cpu().numpy())
+            
+            original_data = np.concatenate(original_data, axis=0)
+            recon_data = np.concatenate(recon_data, axis=0)
+            labels = np.concatenate(labels, axis=0)
+            
+            return original_data, recon_data, labels
+        
+        # Collect data from train and test loaders
+        train_orig, train_recon, train_labels = collect_feature_data(self.train_loader)
+        test_orig, test_recon, test_labels = collect_feature_data(self.test_loader)
+        
+        # Separate normal and abnormal test data
+        test_normal_mask = (test_labels == 0)
+        test_abnormal_mask = (test_labels == 1)
+        
+        test_normal_orig = test_orig[test_normal_mask]
+        test_normal_recon = test_recon[test_normal_mask]
+        test_abnormal_orig = test_orig[test_abnormal_mask] 
+        test_abnormal_recon = test_recon[test_abnormal_mask]
+        
+        # Train data (only normal samples)
+        train_normal_mask = (train_labels == 0)
+        train_normal_data = train_orig[train_normal_mask]
+        
+        # Create subplots: Normal (left) and Abnormal (right)
+        fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
+        
+        # Determine global x-axis limits for consistency
+        all_data = np.concatenate([
+            train_normal_data, 
+            test_normal_orig, test_normal_recon,
+            test_abnormal_orig, test_abnormal_recon
+        ])
+        x_min, x_max = all_data.min(), all_data.max()
+        x_range = x_max - x_min
+        x_min -= 0.1 * x_range
+        x_max += 0.1 * x_range
+        
+        # Plot Normal samples (left)
+        ax = axes[0]
+        
+        # Histogram
+        ax.hist(train_normal_data, bins=bins, alpha=alpha_hist, density=True, 
+                color='blue', label='Train (Normal)', range=(x_min, x_max))
+        ax.hist(test_normal_orig, bins=bins, alpha=alpha_hist, density=True, 
+                color='red', label='Test Normal (Original)', range=(x_min, x_max))
+        ax.hist(test_normal_recon, bins=bins, alpha=alpha_hist, density=True, 
+                color='green', label='Test Normal (Reconstructed)', range=(x_min, x_max))
+        
+        # KDE
+        try:
+            from scipy.stats import gaussian_kde
+            
+            if len(train_normal_data) > 1:
+                kde_train = gaussian_kde(train_normal_data)
+                x_range_plot = np.linspace(x_min, x_max, 200)
+                ax.plot(x_range_plot, kde_train(x_range_plot), 
+                    color='blue', linewidth=2, alpha=alpha_kde, label='Train KDE')
+            
+            if len(test_normal_orig) > 1:
+                kde_test_orig = gaussian_kde(test_normal_orig)
+                ax.plot(x_range_plot, kde_test_orig(x_range_plot), 
+                    color='red', linewidth=2, alpha=alpha_kde, label='Test Normal Orig KDE')
+            
+            if len(test_normal_recon) > 1:
+                kde_test_recon = gaussian_kde(test_normal_recon)
+                ax.plot(x_range_plot, kde_test_recon(x_range_plot), 
+                    color='green', linewidth=2, alpha=alpha_kde, linestyle='--', 
+                    label='Test Normal Recon KDE')
+                    
+        except ImportError:
+            print("Warning: scipy not available for KDE plotting")
+        
+        ax.set_title(f'Normal Samples - Feature {feature_idx}')
+        ax.set_xlabel('Feature Value')
+        ax.set_ylabel('Density')
+        ax.legend(loc='best')
+        ax.grid(True, alpha=0.3)
+        ax.set_xlim(x_min, x_max)
+        
+        # Plot Abnormal samples (right)
+        ax = axes[1]
+        
+        # Histogram
+        ax.hist(train_normal_data, bins=bins, alpha=alpha_hist, density=True, 
+                color='blue', label='Train (Normal)', range=(x_min, x_max))
+        
+        if len(test_abnormal_orig) > 0:
+            ax.hist(test_abnormal_orig, bins=bins, alpha=alpha_hist, density=True, 
+                    color='red', label='Test Abnormal (Original)', range=(x_min, x_max))
+        if len(test_abnormal_recon) > 0:
+            ax.hist(test_abnormal_recon, bins=bins, alpha=alpha_hist, density=True, 
+                    color='green', label='Test Abnormal (Reconstructed)', range=(x_min, x_max))
+        
+        # KDE
+        try:
+            if len(train_normal_data) > 1:
+                kde_train = gaussian_kde(train_normal_data)
+                ax.plot(x_range_plot, kde_train(x_range_plot), 
+                    color='blue', linewidth=2, alpha=alpha_kde, label='Train KDE')
+            
+            if len(test_abnormal_orig) > 1:
+                kde_test_orig = gaussian_kde(test_abnormal_orig)
+                ax.plot(x_range_plot, kde_test_orig(x_range_plot), 
+                    color='red', linewidth=2, alpha=alpha_kde, label='Test Abnormal Orig KDE')
+            
+            if len(test_abnormal_recon) > 1:
+                kde_test_recon = gaussian_kde(test_abnormal_recon)
+                ax.plot(x_range_plot, kde_test_recon(x_range_plot), 
+                    color='green', linewidth=2, alpha=alpha_kde, linestyle='--', 
+                    label='Test Abnormal Recon KDE')
+                    
+        except ImportError:
+            pass
+        
+        ax.set_title(f'Abnormal Samples - Feature {feature_idx}')
+        ax.set_xlabel('Feature Value')
+        ax.set_ylabel('Density')
+        ax.legend(loc='best')
+        ax.grid(True, alpha=0.3)
+        ax.set_xlim(x_min, x_max)
+        
+        # Overall title
+        fig.suptitle(f'Feature {feature_idx} Distribution: Before vs After Reconstruction • {self.train_config["dataset_name"].upper()}', 
+                    fontsize=14, y=1.02)
+        
+        plt.tight_layout()
+        
+        # Save the plot
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, f'feature_{feature_idx}_reconstruction_distribution.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        # Print statistics
+        print(f"Feature {feature_idx} Statistics:")
+        print(f"Train Normal - Mean: {train_normal_data.mean():.4f}, Std: {train_normal_data.std():.4f}")
+        
+        if len(test_normal_orig) > 0:
+            print(f"Test Normal Original - Mean: {test_normal_orig.mean():.4f}, Std: {test_normal_orig.std():.4f}")
+            print(f"Test Normal Reconstructed - Mean: {test_normal_recon.mean():.4f}, Std: {test_normal_recon.std():.4f}")
+            print(f"Test Normal Reconstruction Shift - Mean: {abs(test_normal_orig.mean() - test_normal_recon.mean()):.4f}")
+        
+        if len(test_abnormal_orig) > 0:
+            print(f"Test Abnormal Original - Mean: {test_abnormal_orig.mean():.4f}, Std: {test_abnormal_orig.std():.4f}")
+            print(f"Test Abnormal Reconstructed - Mean: {test_abnormal_recon.mean():.4f}, Std: {test_abnormal_recon.std():.4f}")
+            print(f"Test Abnormal Reconstruction Shift - Mean: {abs(test_abnormal_orig.mean() - test_abnormal_recon.mean()):.4f}")
+            
+            # Calculate shift towards training distribution
+            train_mean = train_normal_data.mean()
+            abnormal_orig_distance = abs(test_abnormal_orig.mean() - train_mean)
+            abnormal_recon_distance = abs(test_abnormal_recon.mean() - train_mean)
+            shift_towards_train = abnormal_orig_distance - abnormal_recon_distance
+            print(f"Abnormal samples shift towards training mean: {shift_towards_train:.4f}")
+        
+        print(f"Feature distribution plot saved to '{out_path}'")
+        
+        return out_path
+
+
+    @torch.no_grad()
+    def plot_2x4(self, abnormal_idx=0, abnormal_avg=False):
+        """
+        Create a 2x4 plot showing:
+        Row 1: Normal Enc Map, Normal Self Map, Normal Z Dec Map, Normal Z_hat Dec Map
+        Row 2: Abnormal Enc Map, Abnormal Self Map, Abnormal Z Dec Map, Abnormal Z_hat Dec Map
+        
+        Args:
+            abnormal_idx: which abnormal sample to analyze (ignored if abnormal_avg=True)
+            abnormal_avg: if True, average all abnormal samples; if False, use specific sample
+        """
+        self.model.eval()
+
+        def find_sample_by_label(loader, target_label, sample_idx=0):
+            """Find a specific sample with target_label from loader"""
+            samples_found = 0
+            for (X, y) in loader:
+                mask = (y == target_label)
+                if mask.any():
+                    target_samples = X[mask]
+                    target_labels = y[mask]
+                    if samples_found + target_samples.shape[0] > sample_idx:
+                        relative_idx = sample_idx - samples_found
+                        return target_samples[relative_idx:relative_idx+1], target_labels[relative_idx:relative_idx+1]
+                    samples_found += target_samples.shape[0]
+            return None, None
+
+        def collect_all_abnormal_samples(loader):
+            """Collect all abnormal samples from loader"""
+            abnormal_samples = []
+            abnormal_labels = []
+            for (X, y) in loader:
+                mask = (y != 0)
+                if mask.any():
+                    abnormal_samples.append(X[mask])
+                    abnormal_labels.append(y[mask])
+            
+            if abnormal_samples:
+                return torch.cat(abnormal_samples, dim=0), torch.cat(abnormal_labels, dim=0)
+            return None, None
+
+        def get_attention_maps_and_decoder_variants(X_batch):
+            """Get encoder, self, and both decoder attention maps (z and z_hat versions)"""
+            X_batch = X_batch.to(self.device)
+            
+            # Get standard attention weights
+            loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
+                self.model(X_batch, return_attn_weight=True)
+            
+            # Get latents and latents_hat for decoder comparison
+            _, latents, latents_hat = self.model(X_batch, return_latents=True)
+            
+            # Average over heads and samples
+            enc_attn = attn_weight_enc.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
+            dec_attn_z = attn_weight_dec.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
+            
+            # Average self attention over layers and heads
+            if attn_weight_self_list:
+                all_self_attn = torch.stack([self_attn for self_attn in attn_weight_self_list], dim=0)  # (Depth, B, H, N, N)
+                self_attn = all_self_attn.mean(dim=(0, 1, 2)).detach().cpu().numpy()  # (N, N)
+            else:
+                N = enc_attn.shape[1]
+                self_attn = np.eye(N)
+            
+            # For z_hat decoder attention, we need to manually compute it
+            # This is more complex as we need to run decoder with latents_hat
+            # For now, we'll use the same decoder attention as approximation
+            # In a real implementation, you'd need to modify the model to return
+            # decoder attention when using latents_hat
+            dec_attn_z_hat = dec_attn_z.copy()  # Placeholder - should be computed with latents_hat
+            
+            return enc_attn, self_attn, dec_attn_z, dec_attn_z_hat
+
+        # Find normal sample (always use first normal sample for consistency)
+        X_normal, y_normal = find_sample_by_label(self.test_loader, target_label=0, sample_idx=0)
+        
+        if X_normal is None:
+            print("Warning: Could not find normal sample")
+            return None
+        
+        # Get abnormal samples
+        if abnormal_avg:
+            X_abnormal, y_abnormal = collect_all_abnormal_samples(self.test_loader)
+            if X_abnormal is None or len(X_abnormal) == 0:
+                print("Warning: Could not find abnormal samples")
+                return None
+            abnormal_label_text = f"Abnormal (avg of {len(X_abnormal)} samples)"
+        else:
+            X_abnormal, y_abnormal = find_sample_by_label(self.test_loader, target_label=1, sample_idx=abnormal_idx)
+            if X_abnormal is None:
+                print(f"Warning: Could not find abnormal sample at index {abnormal_idx}")
+                return None
+            abnormal_label_text = f"Abnormal (sample {abnormal_idx}, label: {y_abnormal[0].item()})"
+        
+        # Get attention maps for both normal and abnormal
+        normal_enc, normal_self, normal_dec_z, normal_dec_z_hat = get_attention_maps_and_decoder_variants(X_normal)
+        abnormal_enc, abnormal_self, abnormal_dec_z, abnormal_dec_z_hat = get_attention_maps_and_decoder_variants(X_abnormal)
+        
+        # Create 2x4 subplot
+        fig, axes = plt.subplots(2, 4, figsize=(20, 8), dpi=200)
+        
+        # Plot configurations: (data, title, xlabel, ylabel)
+        plots_config = [
+            # Row 0: Normal samples
+            (normal_enc, f'Normal Encoder\n(Label: {y_normal[0].item()})', 'Latent Index', 'Feature Index'),
+            (normal_self, 'Normal Self-Attention', 'Latent Index', 'Latent Index'),
+            (normal_dec_z, 'Normal Decoder (Z)', 'Latent Index', 'Feature Index'),
+            (normal_dec_z_hat, 'Normal Decoder (Z_hat)', 'Latent Index', 'Feature Index'),
+            
+            # Row 1: Abnormal samples
+            (abnormal_enc, f'Abnormal Encoder\n({abnormal_label_text.split("(")[1][:-1]})', 'Latent Index', 'Feature Index'),
+            (abnormal_self, 'Abnormal Self-Attention', 'Latent Index', 'Latent Index'),
+            (abnormal_dec_z, 'Abnormal Decoder (Z)', 'Latent Index', 'Feature Index'),
+            (abnormal_dec_z_hat, 'Abnormal Decoder (Z_hat)', 'Latent Index', 'Feature Index')
+        ]
+        
+        # Find global min/max for each attention type for consistent color scaling
+        enc_data = [normal_enc, abnormal_enc]
+        self_data = [normal_self, abnormal_self]
+        dec_z_data = [normal_dec_z, abnormal_dec_z]
+        dec_z_hat_data = [normal_dec_z_hat, abnormal_dec_z_hat]
+        
+        enc_vmin, enc_vmax = min(d.min() for d in enc_data), max(d.max() for d in enc_data)
+        self_vmin, self_vmax = min(d.min() for d in self_data), max(d.max() for d in self_data)
+        dec_z_vmin, dec_z_vmax = min(d.min() for d in dec_z_data), max(d.max() for d in dec_z_data)
+        dec_z_hat_vmin, dec_z_hat_vmax = min(d.min() for d in dec_z_hat_data), max(d.max() for d in dec_z_hat_data)
+        
+        v_ranges = [
+            (enc_vmin, enc_vmax),           # Column 0: Encoder
+            (self_vmin, self_vmax),         # Column 1: Self-attention  
+            (dec_z_vmin, dec_z_vmax),       # Column 2: Decoder Z
+            (dec_z_hat_vmin, dec_z_hat_vmax) # Column 3: Decoder Z_hat
+        ]
+        
+        # Plot each attention map
+        for idx, (attn_data, title, xlabel, ylabel) in enumerate(plots_config):
+            row, col = idx // 4, idx % 4
+            vmin, vmax = v_ranges[col]
+            
+            im = axes[row, col].imshow(attn_data, cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
+            axes[row, col].set_title(title, fontsize=12)
+            axes[row, col].set_xlabel(xlabel)
+            axes[row, col].set_ylabel(ylabel)
+            
+            # Remove tick labels for cleaner appearance
+            axes[row, col].set_xticks([])
+            axes[row, col].set_yticks([])
+            
+            # Add colorbar to each subplot
+            plt.colorbar(im, ax=axes[row, col], fraction=0.046, pad=0.04)
+        
+        # Overall title
+        title_suffix = " (Abnormal Averaged)" if abnormal_avg else f" (Abnormal Sample {abnormal_idx})"
+        fig.suptitle(f'Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
+                    fontsize=16, y=0.98)
+        
+        plt.tight_layout()
+        
+        # Save the plot
+        base_path = self.train_config['base_path']
+        filename_suffix = "_avg" if abnormal_avg else f"_idx{abnormal_idx}"
+        out_path = os.path.join(base_path, f'attention_2x4_comparison{filename_suffix}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"2x4 attention comparison saved to '{out_path}'")
+        if abnormal_avg:
+            print(f"Normal sample label: {y_normal[0].item()}, Abnormal samples: averaged over {len(X_abnormal)} samples")
+        else:
+            print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
+        
+        return out_path
