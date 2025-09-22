@@ -103,10 +103,10 @@ def train_test(args, model_config, train_config, analysis_config, run):
         analyzer.plot_attn_pair(2,0)
     
     if args.plot_2x4:
-        analyzer.plot_2x4(0)
-        analyzer.plot_2x4(1)
-        analyzer.plot_2x4(2)
-        analyzer.plot_2x4(abnormal_avg=True)
+        analyzer.plot_2x4(0, plot_heads=False)
+        analyzer.plot_2x4(1, plot_heads=False)
+        analyzer.plot_2x4(2, plot_heads=False)
+        analyzer.plot_2x4(abnormal_avg=True, plot_heads=False)
     
     if args.plot_feature_reconstruction_distribution: 
         for i in range(36):
