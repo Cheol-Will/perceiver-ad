@@ -640,7 +640,7 @@ def main(args):
         'nslkdd', # large 
         'fraud', # large
         'shuttle', # large
-        # 'census', # large
+        'census', # large
     ]
     data.sort()
 
@@ -669,7 +669,9 @@ def main(args):
         # 'MemPAE-ws-pos_query+token-np-top5-L3-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-top5-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-np-top3-L5-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-np-top1-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-l2-d64-lr0.001',
         # 'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-use_ent_score-ent10-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-use_ent_score-ent3-d64-lr0.001-t0.1',
