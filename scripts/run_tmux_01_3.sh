@@ -7,19 +7,19 @@
 
 # data_list=(pendigits "satimage-2" breastw pima glass ionosphere wbc wine thyroid arrhythmia cardio cardiotocography mammography) 
 data_list=(mammography) 
-# data_list=(
-#     arrhythmia
-#     pima
-#     pendigits
-#     ionosphere
-#     "satimage-2" 
-#     wbc
-#     wine
-#     thyroid
-#     breastw
-#     glass
-#     shuttle
-# ) 
+data_list=(
+    arrhythmia
+    pima
+    pendigits
+    ionosphere
+    "satimage-2" 
+    wbc
+    wine
+    thyroid
+    breastw
+    glass
+    shuttle
+) 
 hidden_dim=64
 learning_rate=0.001
 temperature=0.1
