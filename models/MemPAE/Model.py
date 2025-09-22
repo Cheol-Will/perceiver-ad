@@ -521,7 +521,10 @@ class MemPAE(nn.Module):
                     loss = loss + self.entropy_loss_weight * entropy_loss
 
         if return_for_analysis:
-            return loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, attn_weight_self_list, attn_weight_dec
+            _, attn_weight_dec_z = self.decoder(decoder_query, latents, latents, return_weight=True)
+            attn_weight_dec_z_hat = attn_weight_dec
+            
+            return loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat
 
         # for analysis
         if return_latents:

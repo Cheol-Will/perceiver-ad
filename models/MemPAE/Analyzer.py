@@ -1816,6 +1816,7 @@ class Analyzer(Trainer):
         
         return out_path
 
+
     @torch.no_grad()
     def plot_2x4(self, abnormal_idx=0, abnormal_avg=False, plot_heads=False):
         """
@@ -1862,19 +1863,18 @@ class Analyzer(Trainer):
             """Get encoder, self, and both decoder attention maps (z and z_hat versions)"""
             X_batch = X_batch.to(self.device)
             
-            # Get standard attention weights
-            loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
-                self.model(X_batch, return_attn_weight=True)
-            
-            # Get latents and latents_hat for decoder comparison
-            _, latents, latents_hat = self.model(X_batch, return_latents=True)
+            # Get all analysis data including both decoder attentions
+            loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
+                self.model(X_batch, return_for_analysis=True)
             
             if plot_heads:
                 # Keep head dimension for head-wise plotting (assumes 4 heads)
                 # Encoder: (B, H, F, N) -> average over batch -> (H, F, N)
                 enc_attn = attn_weight_enc.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
-                # Decoder: (B, H, F, N) -> average over batch -> (H, F, N)
-                dec_attn_z = attn_weight_dec.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
+                # Decoder Z: (B, H, F, N) -> average over batch -> (H, F, N)
+                dec_attn_z = attn_weight_dec_z.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
+                # Decoder Z_hat: (B, H, F, N) -> average over batch -> (H, F, N)
+                dec_attn_z_hat = attn_weight_dec_z_hat.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
                 
                 # Self attention: average over layers but keep heads
                 if attn_weight_self_list:
@@ -1883,14 +1883,12 @@ class Analyzer(Trainer):
                 else:
                     N = enc_attn.shape[2]  # Note: shape is now (H, F, N)
                     self_attn = np.tile(np.eye(N)[None, :, :], (4, 1, 1))  # (H=4, N, N)
-                
-                # Placeholder for z_hat decoder attention (same as z for now)
-                dec_attn_z_hat = dec_attn_z.copy()  # (H=4, F, N)
-                
+                    
             else:
                 # Average over heads and samples (original behavior)
                 enc_attn = attn_weight_enc.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
-                dec_attn_z = attn_weight_dec.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
+                dec_attn_z = attn_weight_dec_z.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
+                dec_attn_z_hat = attn_weight_dec_z_hat.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
                 
                 # Average self attention over layers and heads
                 if attn_weight_self_list:
@@ -1899,9 +1897,6 @@ class Analyzer(Trainer):
                 else:
                     N = enc_attn.shape[1]
                     self_attn = np.eye(N)
-                
-                # Placeholder for z_hat decoder attention
-                dec_attn_z_hat = dec_attn_z.copy()
             
             return enc_attn, self_attn, dec_attn_z, dec_attn_z_hat
 
