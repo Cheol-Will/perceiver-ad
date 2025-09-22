@@ -50,11 +50,12 @@ temperature=0.1
 model_type="MemPAE"
 # latent_ratio=4.0
 train_ratio_list=(1.0)
+lambda=0.01
 top_k=5
 depth=5
 for data in "${data_list[@]}"; do
     for train_ratio in "${train_ratio_list[@]}"; do
-        exp_name="$model_type-ws-pos_query+token-np-top$top_k-L$depth-d$hidden_dim-lr$learning_rate-t$temperature"
+        exp_name="$model_type-ws-pos_query+token-np-lambda-top$top_k-L$depth-d$hidden_dim-lr$learning_rate-t$temperature"
         echo "Running $exp_name on $data."
         python analysis.py \
             --dataname "$data" \
@@ -63,6 +64,7 @@ for data in "${data_list[@]}"; do
             --use_pos_enc_as_query \
             --use_mask_token \
             --not_use_power_of_two\
+            --latent_loss_weight "$lambda"\
             --top_k $top_k\
             --depth $depth\
             --hidden_dim "$hidden_dim" \
@@ -71,6 +73,7 @@ for data in "${data_list[@]}"; do
             --exp_name "$exp_name" \
             --train_ratio "$train_ratio" \
             --plot_2x4
+            # --get_single_samples
     done
 done
 

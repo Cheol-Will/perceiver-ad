@@ -2,6 +2,23 @@
 set -euo pipefail
 
 data_list=(
+    dependency_anomalies_18_Ionosphere_42
+    dependency_anomalies_45_wine_42
+    dependency_anomalies_14_glass_42
+    dependency_anomalies_42_WBC_42
+    dependency_anomalies_18_Ionosphere_42
+    dependency_anomalies_4_breastw_42
+    dependency_anomalies_29_Pima_42
+    dependency_anomalies_6_cardio_42
+    dependency_anomalies_7_Cardiotocography_42
+    dependency_anomalies_38_thyroid_42
+    dependency_anomalies_26_optdigits_42
+    dependency_anomalies_31_satimage-2_42
+    dependency_anomalies_30_satellite_42
+    dependency_anomalies_23_mammography_42
+    dependency_anomalies_5_campaign_42
+    dependency_anomalies_32_shuttle_42
+
     global_anomalies_45_wine_42
     global_anomalies_14_glass_42
     global_anomalies_42_WBC_42
