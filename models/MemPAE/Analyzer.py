@@ -2072,11 +2072,14 @@ class Analyzer(Trainer):
             # Save the plot
             base_path = self.train_config['base_path']
             filename_suffix = "_avg" if abnormal_avg else f"_idx{abnormal_idx}"
-            out_path = os.path.join(base_path, f'attention_2x4_comparison{filename_suffix}.png')
+            out_path = os.path.join(base_path, f'attention_2x4_comparison{filename_suffix}_{self.train_config["dataset_name"]}.pdf')
+            plt.savefig(out_path, bbox_inches='tight', dpi=200)
+            out_path = os.path.join(base_path, f'attention_2x4_comparison{filename_suffix}_{self.train_config["dataset_name"]}.png')
             plt.savefig(out_path, bbox_inches='tight', dpi=200)
             plt.close()
-            
             print(f"2x4 attention comparison saved to '{out_path}'")
+
+
             if abnormal_avg:
                 print(f"Normal sample label: {y_normal[0].item()}, Abnormal samples: averaged over {len(X_abnormal)} samples")
             else:
