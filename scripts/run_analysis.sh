@@ -2,13 +2,8 @@
 
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign) # from MCM
-data_list=(
-    shuttle
-    "satimage-2"
-    fraud
-    census
-)
+data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign shuttle "satimage-2" fraud) # from MCM
+
 # hidden_dim=64
 # learning_rate=0.001
 # temperature=0.1
