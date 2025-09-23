@@ -6,6 +6,7 @@ set -euo pipefail
 data_list=("satimage-2") # from MCM
 #  nslkdd
 # fraud 
+data_list=(mammography)
 hidden_dim=64
 learning_rate=0.001
 temperature=0.1
