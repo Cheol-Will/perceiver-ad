@@ -383,11 +383,7 @@ def plot_train_ratio():
         ax.set_xticklabels(trainset_ratio, fontsize=10)
         ax.tick_params(axis='y', labelsize=10)      
         ax.grid(True, linestyle='--', linewidth=0.5)
-        # ax.set_ylim(bottom=0.2)
-        # if i == 0:
-        #     ax.set_ylabel('AUC-PR')
-    
-    # Add single legend for entire figure
+
     fig.legend(legend_handles, legend_labels, loc='upper right', bbox_to_anchor=(0.98, 0.95), ncol=1, fontsize=12)
     
     plt.tight_layout()
@@ -458,12 +454,8 @@ def render_npt():
 
 def render_main_table():
     keys = [
-        # 'ratio_0.1_AUCROC', 'ratio_0.5_AUCROC', 
-        # 'ratio_0.1_AUCPR', 'ratio_0.5_AUCPR',
         'ratio_1.0_AUCROC',
         'ratio_1.0_AUCPR',
-        # 'ratio_0.8_AUCPR',
-        # 'ratio_0.5_AUCPR',
     ]
     models=  [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
@@ -475,15 +467,8 @@ def render_main_table():
 
     data = [
         'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
-        'ionosphere', 'pima', 'wbc', 'wine', 'thyroid',
-        'optdigits', 'pendigits', 'satellite', 
-        'campaign', 
-        'mammography', 
-        'satimage-2', # middle
-        'nslkdd', # large 
-        'fraud', # large
-        'shuttle', # large
-        'census', # large
+        'ionosphere', 'pima', 'wbc', 'wine', 'thyroid', 'optdigits', 'pendigits', 'satellite', 
+        'campaign', 'mammography', 'satimage-2', 'nslkdd', 'fraud', 'shuttle', 'census',
     ]
     data.sort()
 
