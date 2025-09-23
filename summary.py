@@ -642,9 +642,9 @@ def main(args):
         'mammography', 
         'satimage-2', # middle
         'nslkdd', # large 
-        # 'fraud', # large
-        # 'shuttle', # large
-        # 'census', # large
+        'fraud', # large
+        'shuttle', # large
+        'census', # large
     ]
     data.sort()
 
@@ -665,11 +665,11 @@ def main(args):
         # 'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
-        'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query-L6-d64-lr0.001-t0.1'
         # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
