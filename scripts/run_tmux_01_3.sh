@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-data_list=(nslkdd) # from MCM
+data_list=("satimage-2") # from MCM
 hidden_dim=64
 learning_rate=0.001
 temperature=0.01
