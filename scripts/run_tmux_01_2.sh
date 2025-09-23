@@ -8,7 +8,7 @@ learning_rate=0.001
 temperature=0.1
 model_type="MemPAE"
 train_ratio_list=(1.0)
-depth=0
+depth=6
 for data in "${data_list[@]}"; do
     for train_ratio in "${train_ratio_list[@]}"; do
         exp_name="$model_type-ws-pos_query+token-L$depth-d$hidden_dim-lr$learning_rate-t$temperature"
