@@ -670,7 +670,7 @@ def main(args):
         # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
         ##################################################################################
         'MemPAE-ws-pos_query+token-d64-lr0.001', # t=1
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.5', # 
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.5', # 
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05', # done
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # (working on)
