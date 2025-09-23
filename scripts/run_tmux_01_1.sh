@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-data_list=(shuttle "satimage-2" nslkdd ) # from MCM
+# data_list=(shuttle "satimage-2" nslkdd ) # from MCM
+data_list=(census) # from MCM
 # fraud census0
 hidden_dim=64
 learning_rate=0.001
 temperature=0.1
 model_type="MemPAE"
 train_ratio_list=(1.0)
-depth=0
+depth=2
 for data in "${data_list[@]}"; do
     for train_ratio in "${train_ratio_list[@]}"; do
         exp_name="$model_type-ws-pos_query+token-L$depth-d$hidden_dim-lr$learning_rate-t$temperature"
@@ -23,7 +24,7 @@ for data in "${data_list[@]}"; do
             --hidden_dim "$hidden_dim" \
             --learning_rate "$learning_rate" \
             --temperature "$temperature" \
-            --exp_name "$exp_name" \
+            --exp_name "$exp_name"\
             --train_ratio "$train_ratio"
     done
 done
