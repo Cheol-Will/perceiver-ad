@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-data_list=(campaign ) # from MCM
+data_list=(census) # from MCM
 # data_list=(census fraud nslkdd shuttle)
 hidden_dim=64
 learning_rate=0.001
-temperature=0.5
+temperature=0.01
 model_type="MemPAE"
 train_ratio_list=(1.0)
 for data in "${data_list[@]}"; do

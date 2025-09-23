@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-data_list=(shuttle) # from MCM
+data_list=("satimage-2" shuttle) # from MCM
 hidden_dim=64
 learning_rate=0.001
 temperature=0.01
