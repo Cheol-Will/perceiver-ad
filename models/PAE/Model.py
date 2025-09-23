@@ -185,6 +185,35 @@ class FeatureTokenizer(nn.Module):
         x_embedded = x.unsqueeze(-1) * self.embedding_matrix  # (batch_size, num_features, hidden_dim)
         return x_embedded
 
+
+class MLPMixerDecoder(nn.Module):
+    def __init__(
+        self, 
+        hidden_dim,
+        num_latents,
+        num_features,
+        dropout_prob,
+    ):
+        super().__init__()
+        self.lin1 = nn.Linear(num_latents, hidden_dim)
+        self.act1 = nn.GELU()
+        self.drop1 = nn.Dropout(dropout_prob)
+        self.lin2 = nn.Linear(hidden_dim, hidden_dim)
+        self.act2 = nn.ReLU()
+        self.drop2 = nn.Dropout(dropout_prob)
+        self.lin3 = nn.Linear(hidden_dim, num_features)
+        
+    def forward(self, x):
+        assert x.ndim == 3
+        x = x.permute(0, 2, 1) # B, D, N
+        x = self.drop1(self.act1(self.lin1(x))) # B, D, H
+        x = self.drop2(self.act2(self.lin2(x))) # B, D, H
+        x = self.lin3(x) # B, D, F
+        x = x.permute(0, 2, 1) # B, F, D
+
+        return x
+
+
 class OutputProjection(nn.Module):
     def __init__(self, num_features, hidden_dim):
         super(OutputProjection, self).__init__()
@@ -218,6 +247,7 @@ class PAE(nn.Module):
         is_weight_sharing: bool = False,
         use_mask_token: bool = False,
         use_pos_enc_as_query: bool = False,
+        mlp_mixer_decoder: bool = False,
     ):
         super(PAE, self).__init__()
         assert num_latents is not None
@@ -236,7 +266,18 @@ class PAE(nn.Module):
             ])
             
         self.encoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
-        self.decoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
+        if mlp_mixer_decoder: 
+            print("Init MLPMixerDecoder.")
+            self.decoder = MLPMixerDecoder(  
+                hidden_dim,
+                num_latents,
+                num_features,
+                dropout_prob
+            )
+        else:
+            self.decoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
+      
+      
         self.proj = OutputProjection(num_features, hidden_dim)
         self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
         self.latents_query = nn.Parameter(torch.empty(1, num_latents, hidden_dim))
@@ -258,6 +299,7 @@ class PAE(nn.Module):
         self.use_pos_enc_as_query = use_pos_enc_as_query
         self.use_mask_token = use_mask_token
         self.depth = depth
+        self.mlp_mixer_decoder = mlp_mixer_decoder
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -287,7 +329,7 @@ class PAE(nn.Module):
         else:
             for block in self.block:
                 latents = block(latents)
-
+        
         # decoder
         if self.use_pos_enc_as_query:
             if self.use_mask_token:
@@ -298,7 +340,13 @@ class PAE(nn.Module):
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
             
-        output, decoder_attn = self.decoder(decoder_query, latents, latents, return_weight=True)
+        if self.mlp_mixer_decoder:
+            decoder_attn = None
+            output = self.decoder(latents)
+        else:
+            output, decoder_attn = self.decoder(decoder_query, latents, latents, return_weight=True)
+
+
         x_hat = self.proj(output)
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
 

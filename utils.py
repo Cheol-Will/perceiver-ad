@@ -199,7 +199,12 @@ def replace_transformer_config(args, model_config):
             
         if args.num_latents is not None:
             model_config['num_latents'] = args.num_latents
-        
+
+
+        if args.model_type in['MemPAE', 'PAE']: 
+            model_config['mlp_mixer_decoder'] = args.mlp_mixer_decoder # None
+
+
         if args.model_type in ['MemPAE', 'TripletMemPAE', 'PairMemPAE']: 
             model_config['sim_type'] = args.sim_type if args.sim_type is not None else model_config['sim_type']
             model_config['temperature'] = args.temperature if args.temperature is not None else model_config['temperature']
@@ -209,7 +214,6 @@ def replace_transformer_config(args, model_config):
             model_config['use_entropy_loss_as_score'] = args.use_entropy_loss_as_score # default False
             model_config['is_recurrent'] = args.is_recurrent # default False
             model_config['top_k'] = args.top_k # None
-            model_config['mlp_mixer_decoder'] = args.mlp_mixer_decoder # None
 
         if args.model_type in ['PVAE', 'PVQVAE']:
             model_config['beta'] = args.beta if args.beta is not None else model_config['beta'] 

@@ -448,21 +448,28 @@ def render_hp(pivots):
 def render_train_ratio(pivots, print_summary = False):
     data = [
         'arrhythmia', 
+        'breastw',
         'cardio', 
-        # 'campaign', # too slow
-        'pima', 
-        'pendigits', 
         'cardiotocography', 
         'mammography', 
-        'satimage-2', 
-        'breastw',
         'glass',
         'ionosphere',
         'wbc',
         'wine',
-        'thyroid',
-        # 'optdigits',
+        'pima', 
+        'pendigits', 
+
         'shuttle', # all good.
+        
+        
+        # 'satimage-2', 
+        # 'thyroid',
+        # 'nslkdd',
+        # 'optdigits',
+        # 'fraud',
+        # 'satellite',
+        # 'campaign', # too slow
+        # 'census',
     ]
     models = [
         # 'KNN',
@@ -714,7 +721,8 @@ def main(args):
         # 'MCMPAE-ws-pos_query+token-d64-lr0.005',
         ##################################################################################
         # PAE
-        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        'AutoEncoder',
+        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         ##################################################################################
         # L: depth
         # 'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
