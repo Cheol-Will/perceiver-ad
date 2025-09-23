@@ -317,7 +317,60 @@ class MLPMixerDecoder(nn.Module):
 
         return x
 
+class MLPEncoder(nn.Module):
+    def __init__(
+        self, 
+        hidden_dim: int,
+        num_features,
+        dropout_prob: float,
+    ):
+        super().__init__()
+        self.lin1 = nn.Linear(num_features, hidden_dim)
+        self.act1 = nn.ReLU()
+        self.drop1 = nn.Dropout(dropout_prob)
+        self.lin2 = nn.Linear(hidden_dim, hidden_dim)
+        self.act2 = nn.ReLU()
+        self.drop2 = nn.Dropout(dropout_prob)
+        self.lin3 = nn.Linear(hidden_dim, hidden_dim)
         
+    def forward(self, x):
+        if x.ndim == 2:
+            x = x.unsqueeze(1) # (B, 1, F)
+        x = self.drop1(self.act1(self.lin1(x))) # B, 1, D
+        x = self.drop2(self.act2(self.lin2(x))) # B, 1, D
+        x = self.lin3(x) # B, 1, D
+
+        return x
+
+
+class MLPDecoder(nn.Module):
+    def __init__(
+        self, 
+        hidden_dim: int,
+        num_latents: int,
+        num_features: int,
+        dropout_prob: float,
+    ):
+        super().__init__()
+        self.lin1 = nn.Linear(hidden_dim*num_latents, hidden_dim*num_latents)
+        self.act1 = nn.ReLU()
+        self.drop1 = nn.Dropout(dropout_prob)
+        self.lin2 = nn.Linear(hidden_dim*num_latents, hidden_dim*num_latents)
+        self.act2 = nn.ReLU()
+        self.drop2 = nn.Dropout(dropout_prob)
+        self.lin3 = nn.Linear(hidden_dim*num_latents, num_features)
+        
+    def forward(self, x):
+        # make output (B, F)
+        assert x.ndim == 3
+
+        batch_size = x.shape[0]
+        x = x.view(batch_size, -1)
+        x = self.drop1(self.act1(self.lin1(x))) # B, ND
+        x = self.drop2(self.act2(self.lin2(x))) # B, ND
+        x = self.lin3(x) # B, F
+
+        return x
 
 
 class OutputProjection(nn.Module):
@@ -363,7 +416,9 @@ class MemPAE(nn.Module):
         use_entropy_loss_as_score: bool = False,
         top_k: int = None,
         is_recurrent: bool = False,
-        mlp_mixer_decoder: bool = False,
+        mlp_encoder: bool = False, # make one token
+        mlp_decoder: bool = False, # flatten latent_hat and apply mlp
+        mlp_mixer_decoder: bool = False, # 
     ):
         super(MemPAE, self).__init__()
         assert num_latents is not None
@@ -391,8 +446,16 @@ class MemPAE(nn.Module):
                 for _ in range(depth)
             ])
         
-        self.encoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
-        if mlp_mixer_decoder: 
+        if mlp_encoder:
+            print("Init MLPEncoder.")
+            self.encoder = MLPEncoder(hidden_dim, num_features, dropout_prob)
+        else:
+            self.encoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
+        
+        if mlp_decoder: 
+            print("Init MLPDecoder.")
+            self.decoder = MLPDecoder(hidden_dim, num_latents, num_features, dropout_prob)
+        elif mlp_mixer_decoder: 
             # input: (B, N, D)
             # output: (B, F)
             print("Init MLPMixerDecoder.")
@@ -432,6 +495,8 @@ class MemPAE(nn.Module):
         self.entropy_loss_weight = entropy_loss_weight
         self.use_entropy_loss_as_score = use_entropy_loss_as_score
         self.is_recurrent = is_recurrent
+        self.mlp_encoder = mlp_encoder
+        self.mlp_decoder = mlp_decoder
         self.mlp_mixer_decoder = mlp_mixer_decoder
         self.reset_parameters()
 
@@ -454,26 +519,30 @@ class MemPAE(nn.Module):
     
         batch_size, num_features = x.shape # (B, F)
 
-        # feature tokenizer
-        feature_embedding = self.feature_tokenizer(x) # (B, F, D)
-        feature_embedding = feature_embedding + self.pos_encoding
 
-        # encoder 
-        latents_query = self.latents_query.expand(batch_size, -1, -1) # (B, N, D)
-        latents, attn_weight_enc = self.encoder(latents_query, feature_embedding, feature_embedding, return_weight=True) 
-
-        # self attention
-        attn_weight_self_list = []
-        if self.is_weight_sharing:
-            for _ in range(self.depth):
-                latents, attn_weight_self = self.block(latents, return_weight=True)
-                attn_weight_self_list.append(attn_weight_self)
-                if self.is_recurrent:
-                    latents, _ = self.memory(latents)
+        if self.mlp_encoder:
+            latents = self.encoder(x) # (B, F) -> (B, 1, D)
         else:
-            for block in self.block:
-                latents ,attn_weight_self = block(latents, return_weight=True)
-                attn_weight_self_list.append(attn_weight_self)
+            # feature tokenizer
+            feature_embedding = self.feature_tokenizer(x) # (B, F, D)
+            feature_embedding = feature_embedding + self.pos_encoding
+
+            # encoder 
+            latents_query = self.latents_query.expand(batch_size, -1, -1) # (B, N, D)
+            latents, attn_weight_enc = self.encoder(latents_query, feature_embedding, feature_embedding, return_weight=True) 
+
+            # self attention
+            attn_weight_self_list = []
+            if self.is_weight_sharing:
+                for _ in range(self.depth):
+                    latents, attn_weight_self = self.block(latents, return_weight=True)
+                    attn_weight_self_list.append(attn_weight_self)
+                    if self.is_recurrent:
+                        latents, _ = self.memory(latents)
+            else:
+                for block in self.block:
+                    latents ,attn_weight_self = block(latents, return_weight=True)
+                    attn_weight_self_list.append(attn_weight_self)
 
         if self.is_recurrent:
             latents_hat = latents # addressing is already performed
@@ -491,13 +560,18 @@ class MemPAE(nn.Module):
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
 
-        if self.mlp_mixer_decoder:
-            attn_weight_dec = None
-            output = self.decoder(latents_hat)
+
+        if self.mlp_decoder:
+            x_hat = self.decoder(latents_hat)
+
         else:
-            output, attn_weight_dec = self.decoder(decoder_query, latents_hat, latents_hat, return_weight=True)
-        
-        x_hat = self.proj(output)
+            if self.mlp_mixer_decoder:
+                attn_weight_dec = None
+                output = self.decoder(latents_hat)
+            else:
+                output, attn_weight_dec = self.decoder(decoder_query, latents_hat, latents_hat, return_weight=True)
+            
+            x_hat = self.proj(output)
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
 
         # latent loss

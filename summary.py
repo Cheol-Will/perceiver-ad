@@ -414,15 +414,10 @@ def render_hp(pivots):
     data = [
         'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
         'ionosphere', 'pima', 'wbc', 'wine', 'thyroid',
-        'optdigits', 'pendigits', 'satellite', 
-        'campaign', 
-        'mammography', 
-        'satimage-2', # middle
-        # 'nslkdd', # large 
-        'fraud', # large
-        'shuttle', # large
-        'census', # large
+        'optdigits', 'pendigits', 'satellite', 'campaign', 'mammography', 
+        'satimage-2', 'nslkdd', 'fraud', 'shuttle', 'census', # large
     ]
+    data.sort()
     models = ['KNN']
     my_models = [
         'MemPAE-ws-pos_query+token-latent_ratio0.5-d64-lr0.001-t0.1',
@@ -458,16 +453,15 @@ def render_train_ratio(pivots, print_summary = False):
         'wine',
         'pima', 
         'pendigits', 
-
+        'thyroid',
         'shuttle', # all good.
         
         
-        # 'satimage-2', 
-        # 'thyroid',
+        'satimage-2', 
+        'satellite',
+        'optdigits',
         # 'nslkdd',
-        # 'optdigits',
         # 'fraud',
-        # 'satellite',
         # 'campaign', # too slow
         # 'census',
     ]
