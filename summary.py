@@ -652,7 +652,7 @@ def main(args):
         # 'MCMPAE-ws-pos_query+token-d64-lr0.005',
 
         ##################################################################################
-        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         # 'PAE-ws-d64-lr0.001', # Final architecture for PAE
         # 'PAE-L4-d64-lr0.001', # Final architecture for PAE
         # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
@@ -844,6 +844,8 @@ def main(args):
     if args.train_ratio:
         render_train_ratio(pivots)
         # render_memory_analysis(pivots)
+
+        
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--synthetic', action='store_true')
