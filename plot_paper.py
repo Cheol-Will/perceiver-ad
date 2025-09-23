@@ -5,6 +5,8 @@ import argparse
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker 
 import seaborn as sns
+from summary import collect_results, convert_results_to_csv, make_pivots, render
+    
 pd.set_option('display.max_rows', None)
 
 use_latex = False
@@ -454,6 +456,50 @@ def render_npt():
     print(f"NPT Mean: {npt_mean:.4f}")
     print(f"Ours Mean: {ours_mean:.4f}")
 
+def render_main_table():
+    keys = [
+        # 'ratio_0.1_AUCROC', 'ratio_0.5_AUCROC', 
+        # 'ratio_0.1_AUCPR', 'ratio_0.5_AUCPR',
+        'ratio_1.0_AUCROC',
+        'ratio_1.0_AUCPR',
+        # 'ratio_0.8_AUCPR',
+        # 'ratio_0.5_AUCPR',
+    ]
+    models=  [
+        'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
+        # 'AutoEncoder', 
+        'DeepSVDD', 'GOAD', 
+        'NeuTraL', 'ICL', 'MCM', 'DRL',
+        'Disent',
+    ]
+
+    data = [
+        'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
+        'ionosphere', 'pima', 'wbc', 'wine', 'thyroid',
+        'optdigits', 'pendigits', 'satellite', 
+        'campaign', 
+        'mammography', 
+        'satimage-2', # middle
+        'nslkdd', # large 
+        'fraud', # large
+        'shuttle', # large
+        'census', # large
+    ]
+    data.sort()
+
+    my_models = [
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
+    ]
+    results = collect_results()
+    df_all, dfs = convert_results_to_csv(results, save_csv=False)
+    pivots = make_pivots(dfs, save_csv=False)
+    
+    for base in keys:
+        render(pivots, data, models, my_models, base, 
+               add_avg_rank=True, use_rank=False, use_std=False, 
+               use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=True)
+
+    
 
 
 if __name__ == '__main__':
@@ -461,3 +507,4 @@ if __name__ == '__main__':
     plot_contam()
     plot_train_ratio()
     render_npt()
+    render_main_table()

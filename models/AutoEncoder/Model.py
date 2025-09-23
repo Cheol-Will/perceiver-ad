@@ -29,8 +29,10 @@ class AutoEncoder(nn.Module):
         self.decoder = nn.Sequential(*decoder)
 
 
-    def forward(self, x):
+    def forward(self, x, return_analysis=False):
         z = self.encoder(x)
         x_hat = self.decoder(z)
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1)
+        if return_analysis:
+            return loss, x, z, x_hat
         return loss

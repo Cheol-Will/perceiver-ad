@@ -7,7 +7,7 @@ import time
 from utils import get_parser, get_logger, load_yaml
 
 BASELINE_MODELS = ['OCSVM', 'KNN', 'IForest', 'LOF', 'PCA', 'ECOD', 
-                   'DeepSVDD', 'AutoEncoder', 'GOAD', 'ICL', 'NeuTraL']
+                   'DeepSVDD', 'GOAD', 'ICL', 'NeuTraL']
 
 def build_analyzer(model_config, train_config, analysis_config):
     model_type = train_config['model_type']
@@ -23,6 +23,8 @@ def build_analyzer(model_config, train_config, analysis_config):
         from models.Disent.Analyzer import Analyzer
     elif model_type == 'PAE':
         from models.PAE.Analyzer import Analyzer        
+    elif model_type == 'AutoEncoder':
+        from models.AutoEncoder.Analyzer import Analyzer        
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Analyzer import Analyzer
     else:
@@ -81,6 +83,8 @@ def train_test(args, model_config, train_config, analysis_config, run):
         # to show that transformer are handling input-depedent information.
         analyzer.plot_2x3([0, 1]) 
         # analyzer.plot_2x3([])
+    if args.plot_grad_z_x:
+        analyzer.plot_grad_z_x()
 
     return 
 
@@ -168,6 +172,7 @@ if __name__ == "__main__":
     parser.add_argument('--plot_feature_reconstruction_distribution', action='store_true')
     parser.add_argument('--plot_2x4', action='store_true')
     parser.add_argument('--plot_2x3', action='store_true')
+    parser.add_argument('--plot_grad_z_x', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:

@@ -2,7 +2,7 @@
 
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
-# data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign shuttle "satimage-2" fraud) # from MCM
+data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign shuttle "satimage-2" fraud) # from MCM
 data_list=(pendigits) # from MCM
 
 data_list=(
@@ -11,6 +11,26 @@ data_list=(
     pendigits
     wbc
     # wine
+)
+data_list=(
+    wine
+    glass
+    wbc
+    ionosphere
+    breastw
+    pima
+    cardio
+    cardiotocography
+    thyroid
+    optdigits
+    "satimage-2"
+    satellite
+    pendigits
+    mammography
+    campaign
+    shuttle
+    nslkdd
+    fraud
 )
 # hidden_dim=64
 # learning_rate=0.001
