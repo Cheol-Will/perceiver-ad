@@ -342,6 +342,37 @@ class MLPEncoder(nn.Module):
 
         return x
 
+
+class MLPDecoder(nn.Module):
+    def __init__(
+        self, 
+        hidden_dim: int,
+        num_latents: int,
+        num_features: int,
+        dropout_prob: float,
+    ):
+        super().__init__()
+        self.lin1 = nn.Linear(hidden_dim*num_latents, hidden_dim*num_latents)
+        self.act1 = nn.ReLU()
+        self.drop1 = nn.Dropout(dropout_prob)
+        self.lin2 = nn.Linear(hidden_dim*num_latents, hidden_dim*num_latents)
+        self.act2 = nn.ReLU()
+        self.drop2 = nn.Dropout(dropout_prob)
+        self.lin3 = nn.Linear(hidden_dim*num_latents, num_features)
+        
+    def forward(self, x):
+        # make output (B, F)
+        assert x.ndim == 3
+
+        batch_size = x.shape[0]
+        x = x.view(batch_size, -1)
+        x = self.drop1(self.act1(self.lin1(x))) # B, ND
+        x = self.drop2(self.act2(self.lin2(x))) # B, ND
+        x = self.lin3(x) # B, F
+
+        return x
+
+
 class OutputProjection(nn.Module):
     def __init__(self, num_features, hidden_dim):
         super(OutputProjection, self).__init__()
@@ -385,7 +416,8 @@ class MemPAE(nn.Module):
         use_entropy_loss_as_score: bool = False,
         top_k: int = None,
         is_recurrent: bool = False,
-        mlp_encoder: bool = False, #
+        mlp_encoder: bool = False, # make one token
+        mlp_decoder: bool = False, # flatten latent_hat and apply mlp
         mlp_mixer_decoder: bool = False, # 
     ):
         super(MemPAE, self).__init__()
@@ -420,7 +452,10 @@ class MemPAE(nn.Module):
         else:
             self.encoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
         
-        if mlp_mixer_decoder: 
+        if mlp_decoder: 
+            print("Init MLPDecoder.")
+            self.decoder = MLPDecoder(hidden_dim, num_latents, num_features, dropout_prob)
+        elif mlp_mixer_decoder: 
             # input: (B, N, D)
             # output: (B, F)
             print("Init MLPMixerDecoder.")
@@ -461,6 +496,7 @@ class MemPAE(nn.Module):
         self.use_entropy_loss_as_score = use_entropy_loss_as_score
         self.is_recurrent = is_recurrent
         self.mlp_encoder = mlp_encoder
+        self.mlp_decoder = mlp_decoder
         self.mlp_mixer_decoder = mlp_mixer_decoder
         self.reset_parameters()
 
@@ -524,13 +560,18 @@ class MemPAE(nn.Module):
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
 
-        if self.mlp_mixer_decoder:
-            attn_weight_dec = None
-            output = self.decoder(latents_hat)
+
+        if self.mlp_decoder:
+            x_hat = self.decoder(latents_hat)
+
         else:
-            output, attn_weight_dec = self.decoder(decoder_query, latents_hat, latents_hat, return_weight=True)
-        
-        x_hat = self.proj(output)
+            if self.mlp_mixer_decoder:
+                attn_weight_dec = None
+                output = self.decoder(latents_hat)
+            else:
+                output, attn_weight_dec = self.decoder(decoder_query, latents_hat, latents_hat, return_weight=True)
+            
+            x_hat = self.proj(output)
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
 
         # latent loss
