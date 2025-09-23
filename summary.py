@@ -302,7 +302,7 @@ def render(
     df_std  = df_std.loc[order]
 
     # df_mean.loc['MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1', 'census'] = 0.22
-    df_mean.loc['MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1', 'nslkdd'] = 0.97
+    # df_mean.loc['MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1', 'nslkdd'] = 0.97
 
     df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
     df_std.loc[:, 'AVG_AUC']  = df_std.mean(axis=1, numeric_only=True)
