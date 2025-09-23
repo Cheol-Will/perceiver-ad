@@ -53,35 +53,12 @@ def train_test(args, model_config, train_config, analysis_config, run):
         analyzer.compare_regresssion_with_attn(use_sup_attn=True, lambda_attn=args.lambda_attn, model_type='decision_tree')
     if analysis_config['plot_attn_and_corr']:
         analyzer.plot_attn_and_corr()
-    if analysis_config['plot_tsne_recon']:
-        # analyzer.plot_tsne_reconstruction()
-        analyzer.plot_combined_tsne()
     if args.plot_pos_encoding:
         analyzer.plot_pos_encoding(use_mask=True)    
     if args.plot_attn:
         analyzer.plot_attn(use_mask=True)    
-    if args.plot_tsne_latent_vs_memory:
-        # analyzer.plot_tsne_latent_vs_memory(use_latents_avg=args.use_latents_avg)
-        # analyzer.plot_tsne_latent_vs_memory(use_latents_hat=True, use_latents_avg=args.use_latents_avg)
-        # analyzer.plot_tsne_latent_vs_memory(use_latents_avg=args.use_latents_avg, use_both_latents=True)
-        analyzer.plot_tsne_latent_vs_memory(use_latents_avg=args.use_latents_avg, use_both_latents=True, latent_idx=0)
-        
-    if args.plot_umap_latent_vs_memory:
-        analyzer.plot_umap_latent_vs_memory(use_latents_avg=args.use_latents_avg, use_both_latents=True)
-    if args.plot_tsne_memory_separate:
-        analyzer.plot_tsne_memory_separate(use_latents_hat=True)
-        # analyzer.plot_tsne_memory_separate()
-    if args.plot_tsne_original_with_memory:
-        analyzer.plot_tsne_original_with_memory()
-    # if args.plot_tsne_single_class_with_memory:
-    #     analyzer.plot_tsne_single_class_with_memory()
-    #     analyzer.plot_tsne_single_class_with_memory(use_normal=False)
     if args.plot_attn_single:
         analyzer.plot_attn_single()
-    if args.plot_hist_diff_memory_addressing:
-        analyzer.plot_hist_diff_memory_addressing()
-    if args.get_single_samples:
-        analyzer.get_single_samples()
     if args.plot_attn_simple:
         analyzer.plot_attn_simple()
     if args.plot_attn_all_heads:
@@ -90,29 +67,20 @@ def train_test(args, model_config, train_config, analysis_config, run):
         analyzer.plot_attn_all_depths()
     if args.plot_attn_everything:
         analyzer.plot_attn_everything()
-    if args.plot_attn_dec_memory:
-        analyzer.plot_attn_dec_memory(sample_idx=0)
-        analyzer.plot_attn_dec_memory(sample_idx=1)
-        analyzer.plot_attn_dec_memory(sample_idx=2)
-        analyzer.plot_attn_dec_memory(sample_idx=3)
-        analyzer.plot_attn_dec_memory(sample_idx=4)
-    if args.plot_attn_pair:
-        analyzer.plot_attn_pair(0)
-        analyzer.plot_attn_pair(1)
-        analyzer.plot_attn_pair(2)
-        analyzer.plot_attn_pair(2,0)
-    
-    if args.plot_2x4:
-        analyzer.plot_2x4(0, plot_heads=False)
-        analyzer.plot_2x4(1, plot_heads=False)
-        analyzer.plot_2x4(2, plot_heads=False)
-        analyzer.plot_2x4(abnormal_avg=True, plot_heads=False)
-    
     if args.plot_feature_reconstruction_distribution: 
         for i in range(36):
             analyzer.plot_feature_reconstruction_distribution(
                 feature_idx=i
             )
+    if args.plot_2x4:
+        #to show that memory adderessing makes anormaly's decoding attention map similar to that of normal samples.
+        for i in range(30):
+            analyzer.plot_2x4(i, plot_heads=False) 
+        analyzer.plot_2x4(abnormal_avg=True, plot_heads=False)
+    if args.plot_2x3:
+        # to show that transformer are handling input-depedent information.
+        analyzer.plot_2x3([0, 1]) 
+        # analyzer.plot_2x3([])
 
     return 
 
@@ -199,6 +167,8 @@ if __name__ == "__main__":
     parser.add_argument('--plot_attn_pair', action='store_true')
     parser.add_argument('--plot_feature_reconstruction_distribution', action='store_true')
     parser.add_argument('--plot_2x4', action='store_true')
+    parser.add_argument('--plot_2x3', action='store_true')
+
     args = parser.parse_args()
     if args.exp_name is None:
         args.exp_name = args.model_type 

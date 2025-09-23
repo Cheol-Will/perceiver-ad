@@ -2,8 +2,16 @@
 
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
 data_list=(pendigits optdigits arrhythmia breastw glass ionosphere pima wbc wine cardio cardiotocography thyroid) # from MCM
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign shuttle "satimage-2" fraud) # from MCM
+# data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign shuttle "satimage-2" fraud) # from MCM
+data_list=(pendigits) # from MCM
 
+data_list=(
+    # "satimage-2"
+    # ionosphere
+    pendigits
+    wbc
+    # wine
+)
 # hidden_dim=64
 # learning_rate=0.001
 # temperature=0.1
@@ -60,6 +68,7 @@ for data in "${data_list[@]}"; do
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
         --exp_name "$exp_name" \
+        --plot_2x3 \
         --plot_2x4
         # --plot_feature_reconstruction_distribution\
         # --plot_histogram
