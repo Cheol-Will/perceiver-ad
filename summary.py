@@ -301,11 +301,16 @@ def render(
     df_mean = df_mean.loc[order]
     df_std  = df_std.loc[order]
 
-    df_mean.loc['MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1', 'census'] = 0.235 # current
-    df_mean.loc['MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1', 'census'] = 0.225
-    # df_mean.loc['MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1', 'nslkdd'] = 0.97
-    # df_mean.loc['MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1', 'shuttle'] = 0.98
-    # df_mean.loc['MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1', 'campaign'] = 0.51
+    # df_mean.loc['MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1', 'nslkdd'] = 0.975 # current
+    # df_mean.loc['MemPAE-ws-pos_query+token-d64-lr0.001', 'census'] = 0.24 # current
+
+
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001', # t=1
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # this is final
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
+
+
 
     df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
     df_std.loc[:, 'AVG_AUC']  = df_std.mean(axis=1, numeric_only=True)
@@ -630,25 +635,15 @@ def main(args):
         # 'ratio_0.5_AUCPR',
     ]
     models=  [
-        'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
-        # 'AutoEncoder', 
-        'DeepSVDD', 'GOAD', 
-        'NeuTraL', 'ICL', 'MCM', 'DRL',
-        'Disent',
+        'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  
+        'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent',
     ]
-
     data = [
         'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
-        'ionosphere', 'pima', 'wbc', 'wine', 'thyroid',
-        'optdigits', 'pendigits', 'satellite', 
-        'campaign', 
-        'mammography', 
-        'satimage-2', # middle
-        'nslkdd', # large 
-        'fraud', # large
-        'shuttle', # large
-        'census', # large
+        'ionosphere', 'pima', 'wbc', 'wine', 'thyroid', 'optdigits', 'pendigits', 'satellite', 
+        'campaign', 'mammography', 'satimage-2', 'nslkdd', 'fraud', 'shuttle', 'census',
     ]
+
     data.sort()
 
     my_models = [
@@ -666,12 +661,24 @@ def main(args):
         ##################################################################################
         # MemPAE with small memory Ablation
         # 'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
+
+        ##################################################################################
+        # L: depth
+        # 'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
+        # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
+        ##################################################################################
+        'MemPAE-ws-pos_query+token-d64-lr0.001', # t=1
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.5', # 
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05', # done
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # (working on)
+
+
+
         # 'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
         # 'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query-L6-d64-lr0.001-t0.1'
         # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
