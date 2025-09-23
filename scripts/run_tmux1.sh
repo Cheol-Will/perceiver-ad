@@ -3,8 +3,8 @@
 
 set -euo pipefail
 
-data_list=(census) # from MCM
-#  nslkdd
+data_list=(nslkdd) # from MCM
+#  
 # fraud 
 hidden_dim=64
 learning_rate=0.001
