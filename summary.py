@@ -458,12 +458,11 @@ def render_train_ratio(pivots, print_summary = False):
         'wine',
         'pima', 
         'pendigits', 
-
+        'thyroid',
         'shuttle', # all good.
         
         
         # 'satimage-2', 
-        # 'thyroid',
         # 'nslkdd',
         # 'optdigits',
         # 'fraud',
