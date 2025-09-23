@@ -457,11 +457,11 @@ def render_train_ratio(pivots, print_summary = False):
         'shuttle', # all good.
         
         
-        # 'satimage-2', 
-        # 'nslkdd',
+        'satimage-2', 
+        'satellite',
         'optdigits',
+        # 'nslkdd',
         # 'fraud',
-        # 'satellite',
         # 'campaign', # too slow
         # 'census',
     ]
