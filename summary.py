@@ -286,6 +286,7 @@ def render(
     is_synthetic = False,
     synthetic_type = None,
     is_plot = False,
+    is_print = True,
 ):
     tr, metr = base.split('_')[1], base.split('_')[2]  # e.g., '1.0', 'AUCPR'
     k_mean = f"ratio_{tr}_{metr}_mean"
@@ -385,7 +386,6 @@ def render(
 
     df_render.index = [c.replace("pos_query+token", "pos") if "pos_query+token" in c else c
                         for c in df_render.index]
-
                         
     df_render.index = [c.replace("MemPAE-ws-cross_attn", "MPCA") if "MemPAE-ws-cross_attn" in c else c
                         for c in df_render.index]
@@ -398,10 +398,14 @@ def render(
     df_render.to_csv(f'metrics/{file_name}.csv')
     df_render.T.to_csv(f'metrics/{file_name}_T.csv')
     print(f"file saved in {file_name}")
-    print(base)
-    print(df_render)
-    # print(df_render.T)
-    print()
+
+    if is_print:
+        print(base)
+        print(df_render)
+        # print(df_render.T)
+        print()
+
+    
 
     return df_render
 
@@ -441,8 +445,7 @@ def render_hp(pivots):
             add_avg_rank=True, use_rank=False, use_std=False, 
             use_baseline_pr=True, is_temp_tune=False, is_sort=False, is_plot=True)
 
-
-def render_train_ratio(pivots):
+def render_train_ratio(pivots, print_summary = False):
     data = [
         'arrhythmia', 
         # 'cardio', 
@@ -480,14 +483,70 @@ def render_train_ratio(pivots):
         'ratio_0.8_AUCPR',
         'ratio_1.0_AUCPR',
     ]    
-    # print(pivots)
+
+    # First, collect all dataframes for each ratio
+    dict_df = {}
     for base in keys:
         df = render(pivots, data, models, my_models, base, 
                 add_avg_rank=False, use_rank=False, use_std=False, 
                 use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
+        dict_df[base] = df # consists of row=model, column=data
+
+    # Get all models from the first dataframe
+    all_models = dict_df[keys[0]].index.tolist()
+    
+    # Create a dictionary to store results for each dataset
+    dataset_results = {}
+    
+    # For each dataset, create a model vs ratio table
+    for dataset in data:
+        # Create a new dataframe for this dataset: rows=models, columns=ratios
+        ratio_labels = [key.replace('ratio_', '').replace('_AUCPR', '') for key in keys]
+        
+        # Initialize the dataframe
+        model_vs_ratio_df = pd.DataFrame(index=all_models, columns=ratio_labels)
+        
+        # Fill the dataframe with values from each ratio
+        for i, base_key in enumerate(keys):
+            ratio_label = ratio_labels[i]
+            if dataset in dict_df[base_key].columns:
+                model_vs_ratio_df[ratio_label] = dict_df[base_key][dataset]
+        
+        # Store the result
+        dataset_results[dataset] = model_vs_ratio_df
+        
+        # Print the result for this dataset
+        print(f"\nDataset: {dataset.upper()}")
+        print("="*60)
+        print("Model vs Training Ratio (AUCPR)")
+        print(model_vs_ratio_df.round(4))
+        
+        # Save to CSV
+        os.makedirs('metrics/train_ratio', exist_ok=True)
+        model_vs_ratio_df.to_csv(f'metrics/train_ratio/{dataset}_model_vs_ratio.csv')
+    
+    if print_summary : 
+        print("\n" + "="*80)
+        print("BEST MODEL PER RATIO PER DATASET")
+        print("="*80)
+        
+        best_models_summary = {}
+        for dataset in data:
+            best_models_summary[dataset] = {}
+            df = dataset_results[dataset]
+            
+            print(f"\n{dataset.upper()}:")
+            for ratio in df.columns:
+                if not df[ratio].isna().all():  # Check if column has any values
+                    best_model = df[ratio].idxmax()
+                    best_score = df[ratio].max()
+                    best_models_summary[dataset][ratio] = (best_model, best_score)
+                    print(f"  Ratio {ratio}: {best_model} ({best_score:.4f})")
+        
+    return dataset_results
 
 
-def render_ours_on_npt(pivots, ):
+def render_ours_on_npt(pivots):
     data = [
         'wine',
         # 'lympho',
