@@ -448,12 +448,12 @@ def render_hp(pivots):
 def render_train_ratio(pivots, print_summary = False):
     data = [
         'arrhythmia', 
-        # 'cardio', 
+        'cardio', 
         # 'campaign', # too slow
         'pima', 
         'pendigits', 
-        # 'cardiotocography', 
-        # 'mammography', 
+        'cardiotocography', 
+        'mammography', 
         'satimage-2', 
         'breastw',
         'glass',
@@ -706,21 +706,15 @@ def main(args):
     data.sort()
 
     my_models = [
+        ##################################################################################
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
-
+        # 'MemAE-d64-lr0.001-t0.1'
         # 'MCMPAE-ws-pos_query+token-d32-lr0.001',
         # 'MCMPAE-ws-pos_query+token-d64-lr0.001',
         # 'MCMPAE-ws-pos_query+token-d64-lr0.005',
-
         ##################################################################################
+        # PAE
         # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
-        # 'PAE-ws-d64-lr0.001', # Final architecture for PAE
-        # 'PAE-L4-d64-lr0.001', # Final architecture for PAE
-        # 'PAE-pos_query+token-d64-lr0.001', # Final architecture for PAE
-        ##################################################################################
-        # MemPAE with small memory Ablation
-        # 'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
-
         ##################################################################################
         # L: depth
         # 'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
@@ -728,64 +722,19 @@ def main(args):
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
         # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
         ##################################################################################
+        # temperature
         'MemPAE-ws-pos_query+token-d64-lr0.001', # t=1
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.5', # 
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05', # done
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # (working on)
 
-
-
-        # 'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query-L6-d64-lr0.001-t0.1'
-        # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
-        # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
-        # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
-        # 'MemPAE-ws-pos_query+token-np-top1-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top1-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-top5-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top5-L3-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top5-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top5-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top3-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-top1-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-l2-d64-lr0.001',
-        # 'MemPAE-ws-pos_query+token-np-l2-top5-L5-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-np-l2-top3-L5-d64-lr0.001-t0.1',
-        # 'PVQVAE-ws-d32-lr0.001-beta1.0',
-        # 'PVQVAE-ws-d64-lr0.001-beta0.25',
-        # 'PVQVAE-ws-d64-lr0.001-beta1.0',
-        # 'PVQVAE-ws-d64-lr0.001-beta1-vq',
-        # 'MemPAE-ws-pos_query+token-np-l2-top5-L5-d64-lr0.001-t0.1',
+        ##################################################################################
         # 'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-use_ent_score-ent10-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-use_ent_score-ent3-d64-lr0.001-t0.1',
+        ##################################################################################
+        # 'MemPAE-ws-l2-d64-lr0.001',
+        ##################################################################################
 
-
-        # 'MemPAE-ws-use_ent_score-ent0.001-L4-d64-lr0.001',
-        ##################################################################################        
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-L3-d64-lr0.001', # possible
-        # 'MemPAE-ws-cross_attn-rin-L4-d64-lr0.001',
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-L2-d64-lr0.001', # possible 
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-large_mem-L2-d64-lr0.001',
-        
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-L3-d64-lr0.001', # possible
-        # 'MemPAE-ws-cross_attn-rin-pos_query+token-L4-d64-lr0.001', # possible
-
-        ##################################################################################        
-        # 'MemPAE-ws-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # Final architecture for MemPAE
-        # 'MemPAE-pos_query+token-large_mem-L4-d64-lr0.001-t0.1', # need to check
-        # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-large_mem-L4-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-        # 'MemPAE-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-large_mem-L4-d64-lr0.001-t0.1', # 0.1
-        ##################################################################################        
 
     ]
 
