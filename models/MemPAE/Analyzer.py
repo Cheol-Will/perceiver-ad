@@ -91,7 +91,7 @@ class Analyzer(Trainer):
         plt.tight_layout()
         
         base_path = self.train_config['base_path']
-        file_name = "pos_encoding+token.png" if use_mask else pos_encoding.png
+        file_name = f"pos_encoding+token_{self.train_config['dataset_name']}.png" if use_mask else f"pos_encoding_{self.train_config['dataset_name']}.png"
         out_path = os.path.join(base_path, file_name)
 
         plt.savefig(out_path, bbox_inches='tight', dpi=200)
@@ -100,73 +100,6 @@ class Analyzer(Trainer):
         print(f"pos_encoding saved into '{out_path}'.")
         
         return
-
-    @torch.no_grad()
-    def decode_each_memory(
-        self,
-    ):
-        self.model.eval()
-        # (num_memory, D) -> consider as (batch_size, hidden_dim)
-        # decode each memory
-        memory_latents = self.model.memory.memories
-        num_memories = memory_latents.shape[0]  
-        memory_latents = memory_latents.unsqueeze(1)
-        decoder_query = self.model.decoder_query.expand(num_memories, self.model.num_features, -1)
-        decoder_query = decoder_query + self.model.pos_encoding
-
-        output = self.model.decoder(decoder_query, memory_latents, memory_latents)
-        x_hat = self.model.proj(output)  # (M, F) => need to visualize on TSNE
-
-        return x_hat
-
-
-    @torch.no_grad()
-    def get_latent(
-        self,
-    ):
-        self.model.eval()
-        all_labels = []
-        all_latents = []
-        all_latents_hat = []
-        for (X, y) in self.test_loader:
-            X_input = X.to(self.device)
-            _, latents, latents_hat = self.model(X_input, return_latents=True)
-            latents = F.normalize(latents, dim=-1)
-            latents_hat = F.normalize(latents_hat, dim=-1)
-            B, N, D = latents.shape
-            all_labels.append(y.cpu())
-            all_latents.append(latents.cpu())
-            all_latents_hat.append(latents_hat.cpu())
-
-        latents = torch.cat(all_latents, dim=0) # (N_train, N, D) 
-        latents_hat = torch.cat(all_latents_hat, dim=0) # (N_train, N, D)
-        labels = torch.cat(all_labels, dim=0) # (N_train, )
-        return latents, latents_hat, labels # 
-
-    @torch.no_grad()
-    def _accumulate_recon(self):
-        self.model.eval()
-        test_input, test_recon, test_recon_mem, test_labels = self._collect_recon(self.test_loader)
-
-        normal_mask = (test_labels == 0)
-        normal_input     = test_input[normal_mask]
-        normal_recon     = test_recon[normal_mask]
-        normal_recon_mem = test_recon_mem[normal_mask]
-
-        abnormal_mask = (test_labels == 1)
-        abnormal_input     = test_input[abnormal_mask]
-        abnormal_recon     = test_recon[abnormal_mask]
-        abnormal_recon_mem = test_recon_mem[abnormal_mask]
-
-        output = {
-            'normal_input': normal_input,
-            'normal_recon': normal_recon,
-            'normal_recon_mem': normal_recon_mem,
-            'abnormal_input': abnormal_input,
-            'abnormal_recon': abnormal_recon,
-            'abnormal_recon_mem': abnormal_recon_mem,
-        }
-        return output
 
 
     @torch.no_grad()
@@ -282,23 +215,6 @@ class Analyzer(Trainer):
         result = running / total_samples  # (H, F, F)
         labels = torch.cat(all_labels, dim=0) 
         return result, labels
-
-
-    @torch.no_grad()
-    def plot_latent_diff(
-        self,
-    ):
-        _, memory_weights_dict = self._accumulate_latent_diff()
-        
-        train_normal_latent_losses = memory_weights_dict['train_normal_latent_losses']
-        test_normal_latent_losses = memory_weights_dict['test_normal_latent_losses']
-        test_abnormal_latent_losses = memory_weights_dict['test_abnormal_latent_losses']
-
-        base_path = self.train_config['base_path']
-        save_dir = os.path.join(base_path, 'memory_usage_analysis') 
-        os.makedirs(save_dir, exist_ok=True)
-
-        return
 
 
     @torch.no_grad()
@@ -440,73 +356,10 @@ class Analyzer(Trainer):
         return scores, memory_weights
 
     @torch.no_grad()
-    def _accumulate_attn(
-        self,
-        attns,                 # List[Tensor], self-attn blocks +  cross-attn
-        input_col_idx,         # List[int]
-        target_col_idx,        # List[int]
-        self_attention_map,    # (F,F) Tensor on device
-        self_count_map,        # (F,F) Tensor on device
-        cross_attention_map,   # (F,F) Tensor on device
-        cross_count_map,       # (F,F) Tensor on device
-    ):
-        device = self.device
-        in_idx  = torch.as_tensor(input_col_idx,  device=device, dtype=torch.long)
-        tgt_idx = torch.as_tensor(target_col_idx, device=device, dtype=torch.long)
-
-        if len(attns) > 1:
-            self_blocks = attns[:-1]
-            self_mean = torch.zeros((in_idx.numel(), in_idx.numel()), device=device)
-            for a in self_blocks:
-                self_mean = self_mean + a.mean(dim=(0, 1))  # (S,S)
-            self_mean = self_mean / len(self_blocks)
-
-            idx_row = in_idx.unsqueeze(1)  # (S,1)
-            idx_col = in_idx.unsqueeze(0)  # (1,S)
-            self_attention_map.index_put_((idx_row, idx_col), self_mean, accumulate=True)
-            self_count_map.index_put_((idx_row, idx_col), torch.ones_like(self_mean), accumulate=True)
-
-        cross = attns[-1]                # (B,H,T,S)
-        cross_mean = cross.mean(dim=(0, 1))  # (T,S)
-
-        idx_row = tgt_idx.unsqueeze(1)   # (T,1)
-        idx_col = in_idx.unsqueeze(0)    # (1,S)
-        cross_attention_map.index_put_((idx_row, idx_col), cross_mean, accumulate=True)
-        cross_count_map.index_put_((idx_row, idx_col), torch.ones_like(cross_mean), accumulate=True)
-
-    @torch.no_grad()
-    def _finalize_and_save_attention_maps(
-        self,
-        self_attention_map: torch.Tensor,   # (F,F)
-        self_count_map: torch.Tensor,       # (F,F)
-        cross_attention_map: torch.Tensor,  # (F,F)
-        cross_count_map: torch.Tensor,      # (F,F)
-    ):
-        self_avg = torch.where(self_count_map > 0, self_attention_map / self_count_map, torch.zeros_like(self_attention_map))
-        cross_avg = torch.where(cross_count_map > 0, cross_attention_map / cross_count_map, torch.zeros_like(cross_attention_map))
-
-        self_avg_np  = self_avg.detach().float().cpu().numpy()
-        cross_avg_np = cross_avg.detach().float().cpu().numpy()
-
-        base_path = self.model_config['base_path']
-        os.makedirs(base_path, exist_ok=True)
-
-        def _save_heatmap(arr: np.ndarray, title: str, out_path: str):
-            plt.figure(figsize=(6, 5), dpi=200)
-            im = plt.imshow(arr, aspect='auto')
-            plt.title(title)
-            plt.xlabel('Input feature index')
-            plt.ylabel('Output/Query feature index')
-            plt.colorbar(im, fraction=0.046, pad=0.04)
-            plt.tight_layout()
-            plt.savefig(out_path)
-            plt.close()
-
-        _save_heatmap(self_avg_np,  'Self-Attention (avg)',  os.path.join(base_path, 'self_attention_map.png'))
-        _save_heatmap(cross_avg_np, 'Cross-Attention (avg)', os.path.join(base_path, 'cross_attention_map.png'))
-
-    @torch.no_grad()
     def plot_reconstruction(self):
+        """
+        This method is for image dataset.
+        """
         self.model.eval()
 
         def _gather_class_samples(loader, need_per_class=4):
@@ -799,345 +652,6 @@ class Analyzer(Trainer):
         
         return
 
-    # def plot_attn_single_self_sum(self):
-    #     self.model.eval()
-
-    #     for (X, y) in self.test_loader:
-    #         X = X.to(self.device)
-    #         loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = self.model(X, return_attn_weight=True)
-    #         break
-        
-    #     single_attn_weight_enc = attn_weight_enc[0, :, :, :] # (H, F, N)
-    #     single_attn_weight_dec = attn_weight_dec[0, :, :, :] # (H, F, N)
-
-    #     fig, axes = plt.subplots(1, 3, figsize=(12, 4))
-
-    #     enc_head_avg = single_attn_weight_enc.mean(dim=0).detach().cpu().numpy() # (F, N)
-    #     im1 = axes[0].imshow(enc_head_avg, cmap='viridis', aspect='auto')
-    #     axes[0].set_title('Encoder Attention')
-    #     axes[0].set_xlabel('Column')
-    #     axes[0].set_ylabel('Latent')
-    #     plt.colorbar(im1, ax=axes[0])
-
-    #     all_self_attn = []
-    #     for self_attn in attn_weight_self_list:
-    #         single_self_attn = self_attn[0] # 1st
-    #         layer_avg = single_self_attn.mean(0) # 
-    #         all_self_attn.append(layer_avg)
-        
-    #     self_attn_avg = torch.stack(all_self_attn).mean(dim=0).detach().cpu().numpy() # (F, N)
-    #     im2 = axes[1].imshow(self_attn_avg, cmap='viridis', aspect='auto')
-    #     axes[1].set_title('Self Attention (All Layers Avg)')
-    #     axes[1].set_xlabel('Latent')
-    #     axes[1].set_ylabel('Latent')
-    #     plt.colorbar(im2, ax=axes[1])
-
-    #     dec_head_avg = single_attn_weight_dec.mean(dim=0).detach().cpu().numpy() # (F, N)
-    #     im3 = axes[2].imshow(dec_head_avg, cmap='viridis', aspect='auto')
-    #     axes[2].set_title('Decoder Attention')
-    #     axes[2].set_xlabel('Latent')
-    #     axes[2].set_ylabel('Column')
-    #     plt.colorbar(im3, ax=axes[2])
-
-    #     plt.tight_layout()
-        
-    #     filename = 'single_sample_enc_self_dec'
-    #     base_path = self.train_config['base_path']
-    #     out_path = os.path.join(base_path, f'{filename}.png')
-    #     plt.savefig(out_path, bbox_inches='tight', dpi=200)
-    #     plt.close()
-        
-    #     print(f"Attention analysis (1x3 plot) saved to '{out_path}'")
-
-    @torch.no_grad()
-    def plot_hist_diff_memory_addressing(self):
-        """
-        Plot histogram of L2 distances between latents before and after memory addressing.
-        Shows the difference for normal vs abnormal samples from test_loader.
-        """
-        self.model.eval()
-        
-        normal_distances = []
-        abnormal_distances = []
-        
-        for (X, y) in self.test_loader:
-            X_input = X.to(self.device)
-            _, latents, latents_hat = self.model(X_input, return_latents=True)
-            
-            # Calculate L2 distance between latents and latents_hat
-            # latents: (B, N, D), latents_hat: (B, N, D)
-            l2_distances = torch.norm(latents - latents_hat, dim=[1,2])  # (B, N)
-            # l2_distances = l2_distances.mean(dim=-1)  # Average over latent dimension -> (B,)
-            
-            # Separate normal and abnormal
-            normal_mask = (y == 0)
-            abnormal_mask = (y == 1)
-            
-            if normal_mask.any():
-                normal_distances.append(l2_distances[normal_mask].cpu().numpy())
-            if abnormal_mask.any():
-                abnormal_distances.append(l2_distances[abnormal_mask].cpu().numpy())
-        
-        # Concatenate all distances
-        if normal_distances:
-            normal_distances = np.concatenate(normal_distances, axis=0)
-        else:
-            normal_distances = np.array([])
-            
-        if abnormal_distances:
-            abnormal_distances = np.concatenate(abnormal_distances, axis=0)
-        else:
-            abnormal_distances = np.array([])
-        
-        # Check if we have data
-        if normal_distances.size == 0 and abnormal_distances.size == 0:
-            print("No data found for histogram plotting.")
-            return
-        
-        # Determine global range for consistent binning
-        all_distances = []
-        if normal_distances.size > 0:
-            all_distances.append(normal_distances)
-        if abnormal_distances.size > 0:
-            all_distances.append(abnormal_distances)
-        
-        if len(all_distances) > 0:
-            all_distances = np.concatenate(all_distances)
-            global_min = all_distances.min()
-            global_max = all_distances.max()
-            
-            # Handle edge case where all distances are the same
-            if global_min == global_max:
-                eps = 1e-6 if global_min == 0 else abs(global_min) * 1e-3
-                global_min -= eps
-                global_max += eps
-            
-            bins = np.linspace(global_min, global_max, 50)
-        else:
-            bins = 50
-        
-        # Create single plot
-        plt.figure(figsize=(10, 6), dpi=200)
-        
-        if normal_distances.size > 0:
-            plt.hist(normal_distances, bins=bins, alpha=0.6, density=True, 
-                    label=f'Normal (n={len(normal_distances)})', color='#1f77b4')
-        if abnormal_distances.size > 0:
-            plt.hist(abnormal_distances, bins=bins, alpha=0.6, density=True, 
-                    label=f'Abnormal (n={len(abnormal_distances)})', color='#d62728')
-        
-        plt.xlabel('L2 Distance (latents vs latents_hat)')
-        plt.ylabel('Density')
-        plt.title(f'Memory Addressing L2 Distance • {self.train_config["dataset_name"].upper()}')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-        
-        plt.tight_layout()
-        
-        # Save the plot
-        base_path = self.train_config['base_path']
-        out_path = os.path.join(base_path, 'hist_memory_addressing_l2_distance.png')
-        plt.savefig(out_path, bbox_inches='tight', dpi=200)
-        plt.close()
-        
-        # Print statistics
-        if normal_distances.size > 0:
-            print(f"Normal samples L2 distance - Mean: {normal_distances.mean():.4f}, Std: {normal_distances.std():.4f}")
-        if abnormal_distances.size > 0:
-            print(f"Abnormal samples L2 distance - Mean: {abnormal_distances.mean():.4f}, Std: {abnormal_distances.std():.4f}")
-        
-        print(f"Memory addressing L2 distance histogram saved to '{out_path}'.")
-
-    @torch.no_grad()
-    def get_single_samples(self, num_samples: int = 1):
-        """Normal과 Abnormal 샘플 각각 하나씩 logger로 출력"""
-        self.model.eval()
-        
-        collected_data = {
-            'normal': {
-                'x': [], 'x_hat': [], 'latents': [], 'latents_hat': [], 'memory_weights': [], 'losses': []
-            },
-            'abnormal': {
-                'x': [], 'x_hat': [], 'latents': [], 'latents_hat': [], 'memory_weights': [], 'losses': []
-            }
-        }
-        
-        normal_count = 0
-        abnormal_count = 0
-        
-        for (X, y) in self.test_loader:
-            if normal_count >= num_samples and abnormal_count >= num_samples:
-                break
-                
-            X_input = X.to(self.device)
-            
-            loss, latents, latents_hat = self.model(X_input, return_latents=True)
-            _, memory_weight = self.model(X_input, return_memory_weight=True)
-            _, x_orig, x_hat = self.model(X_input, return_pred=True)
-            
-            normal_mask = (y == 0)
-            if normal_mask.any() and normal_count < num_samples:
-                needed = min(num_samples - normal_count, normal_mask.sum().item())
-                normal_indices = torch.where(normal_mask)[0][:needed]
-                
-                collected_data['normal']['x'].append(x_orig[normal_indices].cpu().numpy())
-                collected_data['normal']['x_hat'].append(x_hat[normal_indices].cpu().numpy())
-                collected_data['normal']['latents'].append(latents[normal_indices].cpu().numpy())
-                collected_data['normal']['latents_hat'].append(latents_hat[normal_indices].cpu().numpy())
-                collected_data['normal']['memory_weights'].append(memory_weight[normal_indices].cpu().numpy())
-                collected_data['normal']['losses'].append(loss[normal_indices].cpu().numpy())
-                
-                normal_count += needed
-            
-            abnormal_mask = (y == 1)
-            if abnormal_mask.any() and abnormal_count < num_samples:
-                needed = min(num_samples - abnormal_count, abnormal_mask.sum().item())
-                abnormal_indices = torch.where(abnormal_mask)[0][:needed]
-                
-                collected_data['abnormal']['x'].append(x_orig[abnormal_indices].cpu().numpy())
-                collected_data['abnormal']['x_hat'].append(x_hat[abnormal_indices].cpu().numpy())
-                collected_data['abnormal']['latents'].append(latents[abnormal_indices].cpu().numpy())
-                collected_data['abnormal']['latents_hat'].append(latents_hat[abnormal_indices].cpu().numpy())
-                collected_data['abnormal']['memory_weights'].append(memory_weight[abnormal_indices].cpu().numpy())
-                collected_data['abnormal']['losses'].append(loss[abnormal_indices].cpu().numpy())
-                
-                abnormal_count += needed
-        
-        final_data = {}
-        for data_type in ['normal', 'abnormal']:
-            if collected_data[data_type]['x']:  
-                final_data[data_type] = {}
-                for key in collected_data[data_type]:
-                    final_data[data_type][key] = np.concatenate(collected_data[data_type][key], axis=0)[:num_samples]
-        
-        # Logger로 단일 샘플 출력
-        self.log_single_sample_analysis(final_data, num_samples)
-        
-        return final_data
-
-    def log_single_sample_analysis(self, data, num_samples):
-        """Logger를 통해 각 샘플의 상세 정보 출력"""
-        
-        self.logger.info("=" * 60)
-        self.logger.info(f"SINGLE SAMPLE ANALYSIS (n={num_samples} each)")
-        self.logger.info("=" * 60)
-        
-        # Memory vectors 출력
-        memory_vectors = self.model.memory.memories.detach().cpu().numpy()
-        self.logger.info(f"\nMemory vectors shape: {memory_vectors.shape}")
-        self.logger.info(f"Memory vectors:\n{memory_vectors}")
-        
-        for data_type in ['normal', 'abnormal']:
-            if data_type not in data:
-                continue
-                
-            self.logger.info(f"\n--- {data_type.upper()} SAMPLES ---")
-            
-            for i in range(min(num_samples, len(data[data_type]['x']))):
-                self.logger.info(f"\n[{data_type.upper()} Sample {i+1}]")
-                
-                # 1. 기본 정보
-                x = data[data_type]['x'][i]
-                x_hat = data[data_type]['x_hat'][i]
-                loss = data[data_type]['losses'][i]
-                
-                self.logger.info(f"Original data (x): {x}")
-                self.logger.info(f"Reconstructed (x_hat): {x_hat}")
-                self.logger.info(f"Loss: {loss:.6f}")
-                self.logger.info(f"Feature-wise MSE: {(x - x_hat)**2}")
-                
-                # 2. Latent 분석
-                latents = data[data_type]['latents'][i]  # (N, D)
-                latents_hat = data[data_type]['latents_hat'][i]  # (N, D)
-                
-                self.logger.info(f"Latents (z) shape: {latents.shape}")
-                self.logger.info(f"Latents (z):\n{latents}")
-                self.logger.info(f"Latents_hat (ẑ):\n{latents_hat}")
-                
-                # L2 norm 비교
-                latents_norm = np.linalg.norm(latents, axis=-1)  # (N,)
-                latents_hat_norm = np.linalg.norm(latents_hat, axis=-1)  # (N,)
-                
-                self.logger.info(f"Latent L2 norms (z): {latents_norm}")
-                self.logger.info(f"Latent L2 norms (ẑ): {latents_hat_norm}")
-                
-                # 정규화 후 코사인 유사도
-                latents_unit = latents / (np.linalg.norm(latents, axis=-1, keepdims=True) + 1e-8)
-                latents_hat_unit = latents_hat / (np.linalg.norm(latents_hat, axis=-1, keepdims=True) + 1e-8)
-                cosine_sim = np.sum(latents_unit * latents_hat_unit, axis=-1)  # (N,)
-                
-                self.logger.info(f"Cosine similarity (z, ẑ): {cosine_sim}")
-                
-                # 3. Memory weight 분석
-                memory_weights = data[data_type]['memory_weights'][i]  # (N, M)
-                
-                self.logger.info(f"Memory weights shape: {memory_weights.shape}")
-                self.logger.info(f"Memory weights:\n{memory_weights}")
-                
-                # 각 latent별 top-3 memory 사용
-                for latent_idx in range(memory_weights.shape[0]):
-                    top_memories = np.argsort(memory_weights[latent_idx])[-3:][::-1]
-                    top_weights = memory_weights[latent_idx][top_memories]
-                    self.logger.info(f"Latent {latent_idx} top-3 memories: slots {top_memories} with weights {top_weights}")
-                
-                # Memory usage entropy
-                entropy = -np.sum(memory_weights * np.log(memory_weights + 1e-8), axis=-1)
-                self.logger.info(f"Memory entropy per latent: {entropy}")
-                
-                # Memory addressing을 통한 변화량
-                latent_diff = np.linalg.norm(latents - latents_hat, axis=-1)
-                self.logger.info(f"L2 distance (z - ẑ) per latent: {latent_diff}")
-                
-                self.logger.info("-" * 40)
-        
-        # 4. 전체 비교 (둘 다 있는 경우)
-        if 'normal' in data and 'abnormal' in data and len(data['normal']['losses']) > 0 and len(data['abnormal']['losses']) > 0:
-            self.logger.info(f"\nNORMAL vs ABNORMAL COMPARISON")
-            
-            # Loss 비교
-            normal_losses = data['normal']['losses']
-            abnormal_losses = data['abnormal']['losses']
-            self.logger.info(f"Average Loss - Normal: {np.mean(normal_losses):.6f}, Abnormal: {np.mean(abnormal_losses):.6f}")
-            
-            # Memory entropy 비교
-            normal_entropy = []
-            abnormal_entropy = []
-            
-            for i in range(len(data['normal']['memory_weights'])):
-                weights = data['normal']['memory_weights'][i]
-                entropy = -np.sum(weights * np.log(weights + 1e-8), axis=-1)
-                normal_entropy.extend(entropy)
-                
-            for i in range(len(data['abnormal']['memory_weights'])):
-                weights = data['abnormal']['memory_weights'][i]
-                entropy = -np.sum(weights * np.log(weights + 1e-8), axis=-1)
-                abnormal_entropy.extend(entropy)
-                
-            self.logger.info(f"Average Memory Entropy - Normal: {np.mean(normal_entropy):.4f}, Abnormal: {np.mean(abnormal_entropy):.4f}")
-            
-            # Cosine similarity 비교
-            normal_cosine = []
-            abnormal_cosine = []
-            
-            for i in range(len(data['normal']['latents'])):
-                latents = data['normal']['latents'][i]
-                latents_hat = data['normal']['latents_hat'][i]
-                latents_unit = latents / (np.linalg.norm(latents, axis=-1, keepdims=True) + 1e-8)
-                latents_hat_unit = latents_hat / (np.linalg.norm(latents_hat, axis=-1, keepdims=True) + 1e-8)
-                cosine_sim = np.sum(latents_unit * latents_hat_unit, axis=-1)
-                normal_cosine.extend(cosine_sim)
-            
-            for i in range(len(data['abnormal']['latents'])):
-                latents = data['abnormal']['latents'][i]
-                latents_hat = data['abnormal']['latents_hat'][i]
-                latents_unit = latents / (np.linalg.norm(latents, axis=-1, keepdims=True) + 1e-8)
-                latents_hat_unit = latents_hat / (np.linalg.norm(latents_hat, axis=-1, keepdims=True) + 1e-8)
-                cosine_sim = np.sum(latents_unit * latents_hat_unit, axis=-1)
-                abnormal_cosine.extend(cosine_sim)
-                
-            self.logger.info(f"Average Cosine Similarity - Normal: {np.mean(normal_cosine):.4f}, Abnormal: {np.mean(abnormal_cosine):.4f}")
-        
-        self.logger.info("=" * 60)
 
     def plot_attention_flexible(
         self,
@@ -1376,253 +890,6 @@ class Analyzer(Trainer):
         )
 
     @torch.no_grad()
-    def plot_attn_dec_memory(self, sample_idx: int = 0):
-        """
-        Plot decoder attention maps for normal/abnormal samples using latents vs latents_hat
-        Creates a 2x2 plot showing:
-        - Top left: Normal sample with latents
-        - Top right: Normal sample with latents_hat
-        - Bottom left: Abnormal sample with latents
-        - Bottom right: Abnormal sample with latents_hat
-        
-        Args:
-            sample_idx: which sample to analyze for each type (default: 0)
-        """
-        self.model.eval()
-
-        def find_sample_by_label(loader, target_label, sample_idx=0):
-            """Find a specific sample with target_label from loader"""
-            samples_found = 0
-            for (X, y) in loader:
-                mask = (y == target_label)
-                if mask.any():
-                    target_samples = X[mask]
-                    target_labels = y[mask]
-                    if samples_found + target_samples.shape[0] > sample_idx:
-                        relative_idx = sample_idx - samples_found
-                        return target_samples[relative_idx:relative_idx+1], target_labels[relative_idx:relative_idx+1]
-                    samples_found += target_samples.shape[0]
-            return None, None
-
-        def get_decoder_attention(X_batch, use_latents_hat=False):
-            """Get decoder attention map for a sample"""
-            X_batch = X_batch.to(self.device)
-            
-            # Get latents and latents_hat
-            _, latents, latents_hat = self.model(X_batch, return_latents=True)
-            
-            # Choose which latents to use
-            if use_latents_hat:
-                memory_input = latents_hat[0:1]  # (1, N, D)
-            else:
-                memory_input = latents[0:1]  # (1, N, D)
-            
-            # Get decoder query with positional encoding
-            decoder_query = self.model.decoder_query + self.model.pos_encoding  # (1, F, D)
-            
-            # Forward through decoder to get attention weights
-            # We need to manually call the decoder's attention mechanism
-            # This assumes the decoder has an attention mechanism that returns weights
-            
-            # If the decoder uses multi-head attention, we'll need to access it directly
-            # For now, let's assume we can get attention from the model's forward pass
-            with torch.no_grad():
-                # Get attention weights from decoder
-                loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
-                    self.model(X_batch, return_attn_weight=True)
-                
-                # Decoder attention: (B, H, F, N) - from features to latents
-                dec_attn = attn_weight_dec[0, :, :, :].mean(dim=0)  # Average over heads: (F, N)
-                
-            return dec_attn.detach().cpu().numpy()
-
-        # Find normal and abnormal samples
-        X_normal, y_normal = find_sample_by_label(self.test_loader, target_label=0, sample_idx=sample_idx)
-        X_abnormal, y_abnormal = find_sample_by_label(self.test_loader, target_label=1, sample_idx=sample_idx)
-        
-        if X_normal is None or X_abnormal is None:
-            print(f"Warning: Could not find required samples at index {sample_idx}")
-            return None
-        
-        # Get all 4 attention maps
-        normal_latents_attn = get_decoder_attention(X_normal, use_latents_hat=False)
-        normal_latents_hat_attn = get_decoder_attention(X_normal, use_latents_hat=True)
-        abnormal_latents_attn = get_decoder_attention(X_abnormal, use_latents_hat=False)
-        abnormal_latents_hat_attn = get_decoder_attention(X_abnormal, use_latents_hat=True)
-        
-        # Create 2x2 subplot
-        fig, axes = plt.subplots(2, 2, figsize=(12, 10), dpi=200)
-        
-        # Plot configurations
-        plots = [
-            (normal_latents_attn, f'Normal (latents)\nLabel: {y_normal[0].item()}', axes[0, 0]),
-            (normal_latents_hat_attn, f'Normal (latents_hat)\nLabel: {y_normal[0].item()}', axes[0, 1]),
-            (abnormal_latents_attn, f'Abnormal (latents)\nLabel: {y_abnormal[0].item()}', axes[1, 0]),
-            (abnormal_latents_hat_attn, f'Abnormal (latents_hat)\nLabel: {y_abnormal[0].item()}', axes[1, 1])
-        ]
-        
-        # Find global min/max for consistent color scaling
-        all_attns = [normal_latents_attn, normal_latents_hat_attn, 
-                    abnormal_latents_attn, abnormal_latents_hat_attn]
-        vmin = min(attn.min() for attn in all_attns)
-        vmax = max(attn.max() for attn in all_attns)
-        
-        # Plot each attention map
-        for attn_data, title, ax in plots:
-            im = ax.imshow(attn_data, cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
-            ax.set_title(title, fontsize=12)
-            ax.set_xlabel('Latent Index')
-            ax.set_ylabel('Feature Index')
-            plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-        
-        # Overall title
-        fig.suptitle(f'Decoder Attention Maps: Latents vs Latents_hat • {self.train_config["dataset_name"].upper()}', 
-                    fontsize=14, y=0.98)
-        
-        plt.tight_layout()
-        
-        # Save the plot
-        base_path = self.train_config['base_path']
-        out_path = os.path.join(base_path, f'decoder_attention_memory_comparison_idx{sample_idx}.png')
-        plt.savefig(out_path, bbox_inches='tight', dpi=200)
-        plt.close()
-        
-        print(f"Decoder attention memory comparison saved to '{out_path}'")
-        print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
-        
-        return out_path
-
-
-    @torch.no_grad()
-    def plot_attn_pair(self, sample_idx: int = 0, abnormal_idx: int = None):
-        """
-        Create a 2x3 plot showing attention maps for normal and abnormal samples
-        Row 0: Normal sample (encoder, self, decoder)
-        Row 1: Abnormal sample (encoder, self, decoder)
-        """
-        self.model.eval()
-
-        if abnormal_idx is None:
-            abnormal_idx = sample_idx
-
-        def find_sample_by_label(loader, target_label, sample_idx=0):
-            """Find a specific sample with target_label from loader"""
-            samples_found = 0
-            for (X, y) in loader:
-                mask = (y == target_label)
-                if mask.any():
-                    target_samples = X[mask]
-                    target_labels = y[mask]
-                    if samples_found + target_samples.shape[0] > sample_idx:
-                        relative_idx = sample_idx - samples_found
-                        return target_samples[relative_idx:relative_idx+1], target_labels[relative_idx:relative_idx+1]
-                    samples_found += target_samples.shape[0]
-            return None, None
-
-        def get_attention_maps(X_batch):
-            """Get averaged attention maps for a sample"""
-            X_batch = X_batch.to(self.device)
-            loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
-                self.model(X_batch, return_attn_weight=True)
-            
-            # Average over heads and select first sample
-            enc_attn = attn_weight_enc[0].mean(dim=0).detach().cpu().numpy()  # (F, N)
-            dec_attn = attn_weight_dec[0].mean(dim=0).detach().cpu().numpy()  # (F, N)
-            
-            # Average self attention over both layers and heads
-            if attn_weight_self_list:
-                all_self_attn = torch.stack([self_attn[0] for self_attn in attn_weight_self_list], dim=0)  # (Depth, H, N, N)
-                self_attn = all_self_attn.mean(dim=(0, 1)).detach().cpu().numpy()  # (N, N)
-            else:
-                # Fallback to identity if no self attention
-                N = enc_attn.shape[1]
-                self_attn = np.eye(N)
-            
-            return enc_attn, self_attn, dec_attn
-
-        # Find normal and abnormal samples
-        X_normal, y_normal = find_sample_by_label(self.test_loader, target_label=0, sample_idx=sample_idx)
-        X_abnormal, y_abnormal = find_sample_by_label(self.test_loader, target_label=1, sample_idx=abnormal_idx)
-        
-        if X_normal is None or X_abnormal is None:
-            print(f"Warning: Could not find required samples at index {sample_idx}")
-            return None
-        
-        # Get attention maps for both samples
-        normal_enc, normal_self, normal_dec = get_attention_maps(X_normal)
-        abnormal_enc, abnormal_self, abnormal_dec = get_attention_maps(X_abnormal)
-        
-        # Create 2x3 subplot
-        fig, axes = plt.subplots(2, 3, figsize=(15, 8), dpi=200)
-        
-        # Plot configurations: (data, title, colormap)
-        plots = [
-            # Row 0: Normal sample
-            (normal_enc, f'Normal Encoder\n(Label: {y_normal[0].item()})', 'viridis'),
-            (normal_self, 'Normal Self-Attention', 'viridis'),
-            (normal_dec, 'Normal Decoder', 'viridis'),
-            # Row 1: Abnormal sample  
-            (abnormal_enc, f'Abnormal Encoder\n(Label: {y_abnormal[0].item()})', 'viridis'),
-            (abnormal_self, 'Abnormal Self-Attention', 'viridis'),
-            (abnormal_dec, 'Abnormal Decoder', 'viridis')
-        ]
-        
-        # Find global min/max for consistent color scaling within each attention type
-        enc_vmin, enc_vmax = min(normal_enc.min(), abnormal_enc.min()), max(normal_enc.max(), abnormal_enc.max())
-        self_vmin, self_vmax = min(normal_self.min(), abnormal_self.min()), max(normal_self.max(), abnormal_self.max())
-        dec_vmin, dec_vmax = min(normal_dec.min(), abnormal_dec.min()), max(normal_dec.max(), abnormal_dec.max())
-        
-        # Color scale ranges for each column
-        v_ranges = [
-            (enc_vmin, enc_vmax),   # Encoder column
-            (self_vmin, self_vmax), # Self-attention column
-            (dec_vmin, dec_vmax)    # Decoder column
-        ]
-        
-        # Plot each attention map
-        for idx, (attn_data, title, cmap) in enumerate(plots):
-            row, col = idx // 3, idx % 3
-            vmin, vmax = v_ranges[col]
-            
-            im = axes[row, col].imshow(attn_data, cmap=cmap, aspect='auto', vmin=vmin, vmax=vmax)
-            axes[row, col].set_title(title, fontsize=12)
-            
-            # Set appropriate axis labels based on attention type
-            if col == 0:  # Encoder
-                axes[row, col].set_xlabel('Latent Index')
-                axes[row, col].set_ylabel('Feature Index')
-            elif col == 1:  # Self-attention
-                axes[row, col].set_xlabel('Latent Index')
-                axes[row, col].set_ylabel('Latent Index')
-            else:  # Decoder
-                axes[row, col].set_xlabel('Latent Index')
-                axes[row, col].set_ylabel('Feature Index')
-            axes[row, col].set_xticks([])
-            axes[row, col].set_yticks([])
-            
-            # Add colorbar to each subplot
-            plt.colorbar(im, ax=axes[row, col], fraction=0.046, pad=0.04)
-        
-        # Overall title
-        fig.suptitle(f'Attention Maps Comparison (Sample {sample_idx}) • {self.train_config["dataset_name"].upper()}', 
-                    fontsize=16, y=0.98)
-        
-        plt.tight_layout()
-        
-        # Save the plot
-        base_path = self.train_config['base_path']
-        out_path = os.path.join(base_path, f'attention_pair_comparison_idx{sample_idx}_{abnormal_idx}.png')
-        out_path = os.path.join(base_path, f'attention_pair_comparison_idx{sample_idx}_{abnormal_idx}.pdf')
-        plt.savefig(out_path, bbox_inches='tight', dpi=200)
-        plt.close()
-        
-        print(f"Attention pair comparison saved to '{out_path}'")
-        print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
-        
-        return out_path 
-
-
-    @torch.no_grad()
     def plot_feature_reconstruction_distribution(
         self, 
         feature_idx: int = 0,
@@ -1816,6 +1083,187 @@ class Analyzer(Trainer):
         
         return out_path
 
+    def plot_2x3(self, sample_idx=0):
+        """
+        Create attention plot with normal average row and individual sample rows
+        
+        Args:
+            sample_idx: int or list of ints for individual samples to analyze
+        """
+        self.model.eval()
+
+        def find_sample_by_label(loader, target_label, sample_idx=0):
+            samples_found = 0
+            for (X, y) in loader:
+                mask = (y == target_label)
+                if mask.any():
+                    target_samples = X[mask]
+                    target_labels = y[mask]
+                    if samples_found + target_samples.shape[0] > sample_idx:
+                        relative_idx = sample_idx - samples_found
+                        return target_samples[relative_idx:relative_idx+1], target_labels[relative_idx:relative_idx+1]
+                    samples_found += target_samples.shape[0]
+            return None, None
+
+        def collect_all_normal_samples(loader):
+            normal_samples = []
+            normal_labels = []
+            for (X, y) in loader:
+                mask = (y == 0)
+                if mask.any():
+                    normal_samples.append(X[mask])
+                    normal_labels.append(y[mask])
+            
+            if normal_samples:
+                return torch.cat(normal_samples, dim=0), torch.cat(normal_labels, dim=0)
+            return None, None
+
+        def get_attention_maps(X_batch):
+            X_batch = X_batch.to(self.device)
+            loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
+                self.model(X_batch, return_attn_weight=True)
+            
+            enc_attn = attn_weight_enc.mean(dim=(0, 1)).detach().cpu().numpy()
+            dec_attn = attn_weight_dec.mean(dim=(0, 1)).detach().cpu().numpy()
+            
+            if attn_weight_self_list:
+                all_self_attn = torch.stack([self_attn for self_attn in attn_weight_self_list], dim=0)
+                self_attn = all_self_attn.mean(dim=(0, 1, 2)).detach().cpu().numpy()
+            else:
+                N = enc_attn.shape[1]
+                self_attn = np.eye(N)
+            
+            return enc_attn, self_attn, dec_attn
+
+        def get_single_sample_attention_maps(X_batch):
+            X_batch = X_batch.to(self.device)
+            loss, attn_weight_enc, attn_weight_self_list, attn_weight_dec = \
+                self.model(X_batch, return_attn_weight=True)
+            
+            enc_attn = attn_weight_enc[0].mean(dim=0).detach().cpu().numpy()
+            dec_attn = attn_weight_dec[0].mean(dim=0).detach().cpu().numpy()
+            
+            if attn_weight_self_list:
+                all_self_attn = torch.stack([self_attn[0] for self_attn in attn_weight_self_list], dim=0)
+                self_attn = all_self_attn.mean(dim=(0, 1)).detach().cpu().numpy()
+            else:
+                N = enc_attn.shape[1]
+                self_attn = np.eye(N)
+            
+            return enc_attn, self_attn, dec_attn
+
+        # Convert sample_idx to list
+        if isinstance(sample_idx, int):
+            sample_indices = [sample_idx]
+        else:
+            sample_indices = sample_idx
+
+        # Collect normal samples for averaging
+        X_normal_all, y_normal_all = collect_all_normal_samples(self.test_loader)
+        if X_normal_all is None or len(X_normal_all) == 0:
+            X_normal_all, y_normal_all = collect_all_normal_samples(self.train_loader)
+        
+        if X_normal_all is None:
+            raise RuntimeError("Could not find normal samples for averaging")
+
+        # Get normal average attention maps
+        normal_avg_enc, normal_avg_self, normal_avg_dec = get_attention_maps(X_normal_all)
+
+        # Collect individual samples
+        individual_data = []
+        for idx in sample_indices:
+            X_single, y_single = find_sample_by_label(self.test_loader, target_label=0, sample_idx=idx)
+            if X_single is None:
+                X_single, y_single = find_sample_by_label(self.train_loader, target_label=0, sample_idx=idx)
+            
+            if X_single is None:
+                raise RuntimeError(f"Could not find sample at index {idx}")
+            
+            single_enc, single_self, single_dec = get_single_sample_attention_maps(X_single)
+            individual_data.append({
+                'enc': single_enc,
+                'self': single_self, 
+                'dec': single_dec,
+                'label': y_single[0].item(),
+                'idx': idx
+            })
+
+        # Setup plot dimensions
+        num_rows = 1 + len(sample_indices)
+        fig, axes = plt.subplots(num_rows, 3, figsize=(15, 5 * num_rows), dpi=200)
+        
+        if num_rows == 1:
+            axes = axes.reshape(1, -1)
+
+        # Calculate global color ranges
+        all_cross_data = [normal_avg_enc, normal_avg_dec]
+        all_self_data = [normal_avg_self]
+        
+        for data in individual_data:
+            all_cross_data.extend([data['enc'], data['dec']])
+            all_self_data.append(data['self'])
+        
+        cross_vmin, cross_vmax = min(d.min() for d in all_cross_data), max(d.max() for d in all_cross_data)
+        self_vmin, self_vmax = min(d.min() for d in all_self_data), max(d.max() for d in all_self_data)
+
+        # Plot normal average (row 0)
+        normal_data = [normal_avg_enc, normal_avg_self, normal_avg_dec]
+        normal_titles = ['Encoder Cross', 'Self', 'Decoder Cross']
+        normal_xlabels = ['Latent', 'Latent', 'Latent']
+        normal_ylabels = ['Feature', 'Latent', 'Feature']
+
+        for col in range(3):
+            if col == 1:  # Self attention
+                vmin, vmax = self_vmin, self_vmax
+            else:  # Cross attention
+                vmin, vmax = cross_vmin, cross_vmax
+            
+            im = axes[0, col].imshow(normal_data[col], cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
+            axes[0, col].set_xlabel(normal_xlabels[col])
+            axes[0, col].set_ylabel(normal_ylabels[col])
+            axes[0, col].set_xticks([])
+            axes[0, col].set_yticks([])
+            plt.colorbar(im, ax=axes[0, col], fraction=0.046, pad=0.04)
+
+        # Plot individual samples (remaining rows)
+        for row_idx, data in enumerate(individual_data, 1):
+            sample_data = [data['enc'], data['self'], data['dec']]
+            
+            for col in range(3):
+                if col == 1:  # Self attention
+                    vmin, vmax = self_vmin, self_vmax
+                else:  # Cross attention
+                    vmin, vmax = cross_vmin, cross_vmax
+                
+                im = axes[row_idx, col].imshow(sample_data[col], cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
+                axes[row_idx, col].set_xlabel(normal_xlabels[col])
+                axes[row_idx, col].set_ylabel(normal_ylabels[col])
+                axes[row_idx, col].set_xticks([])
+                axes[row_idx, col].set_yticks([])
+                plt.colorbar(im, ax=axes[row_idx, col], fraction=0.046, pad=0.04)
+
+        # Set title with more spacing
+        sample_str = str(sample_indices) if len(sample_indices) > 1 else str(sample_indices[0])
+        # fig.suptitle(f'Attention Maps: Normal Average vs Samples {sample_str} • {self.train_config["dataset_name"].upper()}', 
+        #             fontsize=16, y=0.98)
+
+        plt.tight_layout()
+
+        # Save plot
+        base_path = self.train_config['base_path']
+        sample_filename = "_".join(map(str, sample_indices)) if len(sample_indices) > 1 else str(sample_indices[0])
+        out_path = os.path.join(base_path, f'attention_{num_rows}x3_samples_{sample_filename}_{self.train_config["dataset_name"]}.pdf')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        out_path = os.path.join(base_path, f'attention_{num_rows}x3_samples_{sample_filename}_{self.train_config["dataset_name"]}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"{num_rows}x3 attention plot saved to '{out_path}'")
+        print(f"Normal samples averaged: {len(X_normal_all)}")
+        for data in individual_data:
+            print(f"Sample {data['idx']} label: {data['label']}")
+        
+        return out_path
 
     @torch.no_grad()
     def plot_2x4(self, abnormal_idx=0, abnormal_avg=False, plot_heads=False):
@@ -2086,3 +1534,4 @@ class Analyzer(Trainer):
                 print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
             
             return out_path
+        

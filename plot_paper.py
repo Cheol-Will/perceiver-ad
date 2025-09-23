@@ -220,7 +220,7 @@ def plot_hp_sen():
     plt.tight_layout()
     sns.despine(fig)
 
-    save_dir = 'metrics'
+    save_dir = 'results_analysis_paper/ablation_study/'
     os.makedirs(save_dir, exist_ok=True)
     
     png_path = os.path.join(save_dir, 'hp_sensitivity.png')
@@ -392,7 +392,7 @@ def plot_train_ratio():
     plt.subplots_adjust(right=0.91) # for legend
     sns.despine(fig)
     
-    save_dir = 'metrics'
+    save_dir = 'results_analysis_paper/unlimited_data/'
     os.makedirs(save_dir, exist_ok=True)
     png_path = os.path.join(save_dir, 'train_ratio.png')
     pdf_path = os.path.join(save_dir, 'train_ratio.pdf')
