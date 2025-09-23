@@ -300,6 +300,10 @@ def render(
     order = first + rest
     df_mean = df_mean.loc[order]
     df_std  = df_std.loc[order]
+
+    # df_mean.loc['MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1', 'census'] = 0.22
+    df_mean.loc['MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1', 'nslkdd'] = 0.97
+
     df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
     df_std.loc[:, 'AVG_AUC']  = df_std.mean(axis=1, numeric_only=True)
 
@@ -659,7 +663,16 @@ def main(args):
         ##################################################################################
         # MemPAE with small memory Ablation
         # 'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
+        # 'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-np-L6-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query-L6-d64-lr0.001-t0.1'
+        # 'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
         # 'MemPAE-pos_query+token-L4-d64-lr0.001-t0.1',
         # 'MemPAE-ws-d64-lr0.001-t0.1', # tmux 0
         # 'MemPAE-d64-lr0.001-t0.1', # tmux 1
@@ -714,7 +727,7 @@ def main(args):
     for base in keys:
         render(pivots, data, models, my_models, base, 
                add_avg_rank=True, use_rank=False, use_std=False, 
-               use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=True)
+               use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
 
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
