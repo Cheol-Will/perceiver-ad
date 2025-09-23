@@ -1,0 +1,113 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "num_latents": 2,
+        "num_memories": 32,
+        "depth": 4,
+        "hidden_dim": 64,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 1,
+        "sim_type": "cos",
+        "shrink_thred": 0,
+        "use_entropy_loss_as_score": false,
+        "top_k": null,
+        "is_weight_sharing": true,
+        "use_pos_enc_as_query": true,
+        "use_mask_token": true,
+        "mlp_mixer_decoder": false,
+        "latent_loss_weight": null,
+        "entropy_loss_weight": null,
+        "is_recurrent": false,
+        "num_features": 6
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "not_use_power_of_two": false,
+        "model_type": "MemPAE",
+        "dataset_name": "thyroid",
+        "train_ratio": 0.6,
+        "base_path": "results/MemPAE-ws-pos_query+token-d64-lr0.001/thyroid/0.6",
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9771061243571761,
+        "AUC-PR": 0.7550954135332517,
+        "f1": 0.6956989247311829
+    },
+    "total_time": 156.16570854187012,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9814282374941561,
+            "AUC-PR": 0.7551200844246952,
+            "f1": 0.6989247311827957
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9781673679289388,
+            "AUC-PR": 0.7062259318581307,
+            "f1": 0.6129032258064516
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9690977092099112,
+            "AUC-PR": 0.7309065496451355,
+            "f1": 0.6559139784946236
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9800257129499766,
+            "AUC-PR": 0.7938076853060683,
+            "f1": 0.7096774193548387
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9766596540439458,
+            "AUC-PR": 0.7528462322554411,
+            "f1": 0.6989247311827957
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.984513791491351,
+            "AUC-PR": 0.8210209087249253,
+            "f1": 0.7849462365591398
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9849579242636746,
+            "AUC-PR": 0.8167101881752243,
+            "f1": 0.7849462365591398
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9614422627395979,
+            "AUC-PR": 0.6596011721818368,
+            "f1": 0.6021505376344086
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.9872779336138383,
+            "AUC-PR": 0.8173569855550128,
+            "f1": 0.7634408602150538
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.967490649836372,
+            "AUC-PR": 0.6973583972060481,
+            "f1": 0.6451612903225806
+        }
+    ]
+}

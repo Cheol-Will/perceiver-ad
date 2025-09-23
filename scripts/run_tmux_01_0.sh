@@ -2,12 +2,21 @@
 set -euo pipefail
 
 # data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography) # from MCM
-data_list=(census) # from MCM
+data_list=(
+    thyroid
+    optdigits
+    "satimage-2"
+    satellite
+    campaign
+    nslkdd
+    fraud
+    census
+) 
 hidden_dim=64
 learning_rate=0.001
 # temperature=0.01
 model_type="MemPAE"
-train_ratio_list=(1.0)
+train_ratio_list=(0.2 0.4 0.6 0.8)
 for data in "${data_list[@]}"; do
     for train_ratio in "${train_ratio_list[@]}"; do
         exp_name="$model_type-ws-pos_query+token-d$hidden_dim-lr$learning_rate"
