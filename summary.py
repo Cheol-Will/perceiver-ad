@@ -719,7 +719,9 @@ def main(args):
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # (working on)
 
         ##################################################################################
-        # 'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-mlp_enc-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-mlp_dec_mixer-d64-lr0.001-t0.1',
         ##################################################################################
         # 'MemPAE-ws-l2-d64-lr0.001',
         ##################################################################################
