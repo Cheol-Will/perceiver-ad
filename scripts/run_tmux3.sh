@@ -6,7 +6,7 @@ hidden_dim=64
 learning_rate=0.001
 temperature=0.1
 model_type="MemPAE"
-depth=6
+train_ratio=0.2
 for data in "${data_list[@]}"; do
     echo "Running $model_type data=$data dim=$hidden_dim learning_rate=$learning_rate weight sharing"
     exp_name="$model_type-ws-pos_query+token-np-L$depth-d$hidden_dim-lr$learning_rate-t$temperature"

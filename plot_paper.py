@@ -89,9 +89,6 @@ def plot_hp_sen():
     _plot_hp_vs_aucpr(aucpr_vs_temperature, 'Temperature', color='C2')
     _plot_hp_vs_aucpr(aucpr_vs_depth, 'Depth', color='C3')
 
-
-
-
 def plot_contam():
     pima = {
         'MCM': [0.6250, 0.6200, 0.6143, 0.6084],
@@ -147,9 +144,7 @@ def plot_contam():
     plt.show()
 
     print(f"Plot saved into {png_path}")
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
+
 
 def plot_train_ratio():
     arrhythmia = { # from ratio 1, 0.8, 0.5, 0.3 
@@ -164,11 +159,30 @@ def plot_train_ratio():
         'DRL': [0.6322, 0.6340, 0.6440, 0.6622, 0.6843], # temp
         'Disent': [0.6759, 0.6726, 0.6694, 0.6574, 0.6531],
     }
+    breastw = {
+        'MCM': [0.9910, 0.9920, 0.9893, 0.9864, 0.9847],
+        'DRL': [0.9779, 0.9767, 0.9749, 0.9766, 0.9769],
+        'Disent': [0.9802, 0.9867, 0.9860, 0.9828, 0.9789],
+        'ours': [0.9844, 0.9844, 0.9821, 0.9819, 0.9824],
+    }
+    shuttle = {
+        'ours': [0.9889, 0.9856, 0.9843, 0.9786, 0.9745],
+        'MCM': [0.9798, 0.9740, 0.9740, 0.9695, 0.9573],
+        'DRL': [0.9893, 0.9840, 0.9907, 0.9843, 0.9826],
+        'Disent': [0.9703, 0.970, 0.9704, 0.9670, 0.9641],
+    }
 
+
+    nslkdd = {
+        'ours':   [0.9755, 0.9714, 0.9736, 0.9718, 0.9631],
+        'MCM':    [0.9792, 0.9778, 0.9764, 0.9739, 0.9673],
+        'DRL':    [0.9631, 0.9686, 0.9658, 0.9617, 0.9630],
+        'Disent': [0.8466, 0.8587, 0.8442, 0.8556, 0.7292],
+    }
     pendigits = { # from ratio 1, 0.8, 0.5 
         'ours': [0.8679, 0.8642, 0.8313, 0.8029, 0.7053], 
         'MCM': [0.8381, 0.8164, 0.8074, 0.7544, 0.6707], 
-        'DRL': [0.6094, 0.5, 0.5525, 0.5049, 0.4070], # temp
+        'DRL': [0.6094, 0.5, 0.5525, 0.5049, 0.4070], 
         'Disent': [0.7697, 0.7416, 0.6798, 0.6057, 0.4028],
     }
 
@@ -196,6 +210,17 @@ def plot_train_ratio():
         'DRL': [0.7423, 0.7095, 0.7095, 0.6619, 0.6097], # temp
         'Disent': [0.7566, 0.7461, 0.7533, 0.7169, 0.6842],
     }
+
+    optdigits = {
+        'ours': [0.2204, 0.2171, 0.2224, 0.2023, 0.2191],
+        'MCM': [0.3372, 0.3284, 0.3286, 0.3208, 0.2878],
+        'DRL': [0.2727, 0.2437, 0.2096, 0.2220, 0.1701],
+        'Disent': [0.1417, 0.1110, 0.0879, 0.0722, 0.0637],
+    }
+
+
+
+
     trainset_ratio = [1.0, 0.8, 0.6, 0.4, 0.2]
     # arrhythmia, 
     # pima, 
@@ -205,10 +230,14 @@ def plot_train_ratio():
     datasets = {
         'arrhythmia': arrhythmia, 
         'pendigits': pendigits, 
-        # 'cardiotocography': cardiotocography, 
-        # 'pima': pima, # DRL increasings
+        # 'cardiotocography': cardiotocography,
+        'breastw': breastw,
+        'shuttle': shuttle, 
+        'pima': pima, # DRL increasings
+        'nslkdd': nslkdd, # DRL increasings
         'satimage': satimage,
         'wbc': wbc,
+        'optdigits': optdigits,
     }
     styles = {
         'MCM': {'marker': 'o', 'linestyle': '-'},
