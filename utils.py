@@ -67,6 +67,7 @@ def get_parser():
     parser.add_argument('--top_k', type=int, default=None)    
     parser.add_argument('--mlp_mixer_encoder', action='store_true')    
     parser.add_argument('--mlp_mixer_decoder', action='store_true')    
+    parser.add_argument('--global_decoder_query', action='store_true')    
     parser.add_argument('--mlp_encoder', action='store_true')    
     parser.add_argument('--mlp_decoder', action='store_true')    
 
@@ -205,6 +206,7 @@ def replace_transformer_config(args, model_config):
 
 
         if args.model_type in['MemPAE', 'PAE']: 
+            model_config['global_decoder_query'] = args.global_decoder_query # None
             model_config['mlp_mixer_decoder'] = args.mlp_mixer_decoder # None
             model_config['mlp_mixer_encoder'] = args.mlp_mixer_encoder # None
             model_config['mlp_encoder'] = args.mlp_encoder # None

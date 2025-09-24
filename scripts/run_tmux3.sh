@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography "satimage-2" nslkdd fraud  shuttle census) # from MCM
+# data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography "satimage-2" nslkdd fraud  shuttle census) # from MCM
+
+data_list=(pima)
+data_list=(shuttle)
 
 hidden_dim=64
 learning_rate=0.001

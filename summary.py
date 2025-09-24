@@ -454,22 +454,22 @@ def render_train_ratio(pivots, print_summary = False):
     
     
     data = [
-        'arrhythmia', 
-        'breastw',
-        'cardio', 
-        'cardiotocography', 
-        'mammography', 
-        'glass',
-        'ionosphere',
-        'wbc',
-        'wine',
-        'pima', 
-        'pendigits', 
-        'thyroid',
-        'shuttle', # all good.
-        'satimage-2', 
-        'satellite',
-        'optdigits',
+        # 'arrhythmia', 
+        # 'breastw',
+        # 'cardio', 
+        # 'cardiotocography', 
+        # 'mammography', 
+        # 'glass',
+        # 'ionosphere',
+        # 'wbc',
+        # 'wine',
+        # 'pima', 
+        # 'pendigits', 
+        # 'thyroid',
+        # 'shuttle', # all good.
+        # 'satimage-2', 
+        # 'satellite',
+        # 'optdigits',
         'campaign', # too slow
         'nslkdd',
         'fraud',
@@ -546,26 +546,26 @@ def render_train_ratio(pivots, print_summary = False):
 
 def render_train_ratio_average(pivots):
     data = [
-        'arrhythmia', 
-        'breastw',
-        'cardio', 
-        'cardiotocography', 
+        # 'arrhythmia', 
+        # 'breastw',
+        # 'cardio', 
+        # 'cardiotocography', 
         # 'mammography', 
-        'glass',
-        'ionosphere',
-        'wbc',
-        'wine',
-        'pima', 
-        'pendigits', 
-        'thyroid',
+        # 'glass',
+        # 'ionosphere',
+        # 'wbc',
+        # 'wine',
+        # 'pima', 
+        # 'pendigits', 
+        # 'thyroid',
         # 'shuttle',
-        'satimage-2', 
-        'satellite',
-        'optdigits',
+        # 'satimage-2', 
+        # 'satellite',
+        # 'optdigits',
         'campaign',
         'nslkdd',
-        'fraud',
-        # 'census',
+        # 'fraud',
+        'census',
     ]
     models = [
         'MCM',
@@ -806,7 +806,14 @@ def main(args):
         'MemPAE-ws-pos_query+token-mlp_dec_mixer-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-mlp_enc_mixer-d64-lr0.001-t0.1',
         ##################################################################################
+        "MemPAE-ws-pos_query+token-d64-lr0.001-t0.1",
+        "MemPAE-ws-global_query-d64-lr0.001-t0.1",
+        "MemPAE-ws-d64-lr0.001-t0.1",
+        # "MemPAE-ws-global_token+d64-lr0.001-t0.1",
+        # "MemPAE-ws-local+d64-lr0.001-t0.1",
+        # "MemPAE-ws-pos_query-d64-lr0.001-t0.1",
         # 'MemPAE-ws-l2-d64-lr0.001',
+
         ##################################################################################
 
 
@@ -948,7 +955,7 @@ def main(args):
         render_ours_on_npt(pivots, )
     if args.train_ratio:
         render_train_ratio(pivots, False)
-        # render_train_ratio_average(pivots)
+        render_train_ratio_average(pivots)
         # render_memory_analysis(pivots)
 
         

@@ -1264,159 +1264,155 @@ class Analyzer(Trainer):
             print(f"Sample {data['idx']} label: {data['label']}")
         
         return out_path
+@torch.no_grad()
+def plot_2x4(self, abnormal_idx=0, abnormal_avg=False, plot_heads=False, plot_2x2=False):
+    """
+    Create a 2x4 plot showing:
+    Row 1: Normal Enc Map, Normal Self Map, Normal Z Dec Map, Normal Z_hat Dec Map
+    Row 2: Abnormal Enc Map, Abnormal Self Map, Abnormal Z Dec Map, Abnormal Z_hat Dec Map
+    
+    If plot_2x2=True, create a 2x2 plot showing only:
+    Row 1: Normal Z Dec Map, Normal Z_hat Dec Map
+    Row 2: Abnormal Z Dec Map, Abnormal Z_hat Dec Map
+    
+    Args:
+        abnormal_idx: which abnormal sample to analyze (ignored if abnormal_avg=True)
+        abnormal_avg: if True, average all abnormal samples; if False, use specific sample
+        plot_heads: if True, create separate plots for each head (assumes 4 heads)
+        plot_2x2: if True, create 2x2 decoder-only plot; if False, create 2x4 full plot
+    """
+    self.model.eval()
 
-    @torch.no_grad()
-    def plot_2x4(self, abnormal_idx=0, abnormal_avg=False, plot_heads=False):
-        """
-        Create a 2x4 plot showing:
-        Row 1: Normal Enc Map, Normal Self Map, Normal Z Dec Map, Normal Z_hat Dec Map
-        Row 2: Abnormal Enc Map, Abnormal Self Map, Abnormal Z Dec Map, Abnormal Z_hat Dec Map
+    def find_sample_by_label(loader, target_label, sample_idx=0):
+        """Find a specific sample with target_label from loader"""
+        samples_found = 0
+        for (X, y) in loader:
+            mask = (y == target_label)
+            if mask.any():
+                target_samples = X[mask]
+                target_labels = y[mask]
+                if samples_found + target_samples.shape[0] > sample_idx:
+                    relative_idx = sample_idx - samples_found
+                    return target_samples[relative_idx:relative_idx+1], target_labels[relative_idx:relative_idx+1]
+                samples_found += target_samples.shape[0]
+        return None, None
+
+    def collect_all_abnormal_samples(loader):
+        """Collect all abnormal samples from loader"""
+        abnormal_samples = []
+        abnormal_labels = []
+        for (X, y) in loader:
+            mask = (y != 0)
+            if mask.any():
+                abnormal_samples.append(X[mask])
+                abnormal_labels.append(y[mask])
         
-        Args:
-            abnormal_idx: which abnormal sample to analyze (ignored if abnormal_avg=True)
-            abnormal_avg: if True, average all abnormal samples; if False, use specific sample
-            plot_heads: if True, create separate plots for each head (assumes 4 heads)
-        """
-        self.model.eval()
+        if abnormal_samples:
+            return torch.cat(abnormal_samples, dim=0), torch.cat(abnormal_labels, dim=0)
+        return None, None
 
-        def find_sample_by_label(loader, target_label, sample_idx=0):
-            """Find a specific sample with target_label from loader"""
-            samples_found = 0
-            for (X, y) in loader:
-                mask = (y == target_label)
-                if mask.any():
-                    target_samples = X[mask]
-                    target_labels = y[mask]
-                    if samples_found + target_samples.shape[0] > sample_idx:
-                        relative_idx = sample_idx - samples_found
-                        return target_samples[relative_idx:relative_idx+1], target_labels[relative_idx:relative_idx+1]
-                    samples_found += target_samples.shape[0]
-            return None, None
-
-        def collect_all_abnormal_samples(loader):
-            """Collect all abnormal samples from loader"""
-            abnormal_samples = []
-            abnormal_labels = []
-            for (X, y) in loader:
-                mask = (y != 0)
-                if mask.any():
-                    abnormal_samples.append(X[mask])
-                    abnormal_labels.append(y[mask])
+    def get_attention_maps_and_decoder_variants(X_batch):
+        """Get encoder, self, and both decoder attention maps (z and z_hat versions)"""
+        X_batch = X_batch.to(self.device)
+        
+        # Get all analysis data including both decoder attentions
+        loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
+            self.model(X_batch, return_for_analysis=True)
+        
+        if plot_heads:
+            # Keep head dimension for head-wise plotting (assumes 4 heads)
+            # Encoder: (B, H, F, N) -> average over batch -> (H, F, N)
+            enc_attn = attn_weight_enc.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
+            # Decoder Z: (B, H, F, N) -> average over batch -> (H, F, N)
+            dec_attn_z = attn_weight_dec_z.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
+            # Decoder Z_hat: (B, H, F, N) -> average over batch -> (H, F, N)
+            dec_attn_z_hat = attn_weight_dec_z_hat.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
             
-            if abnormal_samples:
-                return torch.cat(abnormal_samples, dim=0), torch.cat(abnormal_labels, dim=0)
-            return None, None
-
-        def get_attention_maps_and_decoder_variants(X_batch):
-            """Get encoder, self, and both decoder attention maps (z and z_hat versions)"""
-            X_batch = X_batch.to(self.device)
-            
-            # Get all analysis data including both decoder attentions
-            loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
-                self.model(X_batch, return_for_analysis=True)
-            
-            if plot_heads:
-                # Keep head dimension for head-wise plotting (assumes 4 heads)
-                # Encoder: (B, H, F, N) -> average over batch -> (H, F, N)
-                enc_attn = attn_weight_enc.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
-                # Decoder Z: (B, H, F, N) -> average over batch -> (H, F, N)
-                dec_attn_z = attn_weight_dec_z.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
-                # Decoder Z_hat: (B, H, F, N) -> average over batch -> (H, F, N)
-                dec_attn_z_hat = attn_weight_dec_z_hat.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
-                
-                # Self attention: average over layers but keep heads
-                if attn_weight_self_list:
-                    all_self_attn = torch.stack([self_attn for self_attn in attn_weight_self_list], dim=0)  # (Depth, B, H, N, N)
-                    self_attn = all_self_attn.mean(dim=(0, 1)).detach().cpu().numpy()  # (H=4, N, N)
-                else:
-                    N = enc_attn.shape[2]  # Note: shape is now (H, F, N)
-                    self_attn = np.tile(np.eye(N)[None, :, :], (4, 1, 1))  # (H=4, N, N)
-                    
+            # Self attention: average over layers but keep heads
+            if attn_weight_self_list:
+                all_self_attn = torch.stack([self_attn for self_attn in attn_weight_self_list], dim=0)  # (Depth, B, H, N, N)
+                self_attn = all_self_attn.mean(dim=(0, 1)).detach().cpu().numpy()  # (H=4, N, N)
             else:
-                # Average over heads and samples (original behavior)
-                enc_attn = attn_weight_enc.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
-                dec_attn_z = attn_weight_dec_z.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
-                dec_attn_z_hat = attn_weight_dec_z_hat.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
+                N = enc_attn.shape[2]  # Note: shape is now (H, F, N)
+                self_attn = np.tile(np.eye(N)[None, :, :], (4, 1, 1))  # (H=4, N, N)
                 
-                # Average self attention over layers and heads
-                if attn_weight_self_list:
-                    all_self_attn = torch.stack([self_attn for self_attn in attn_weight_self_list], dim=0)  # (Depth, B, H, N, N)
-                    self_attn = all_self_attn.mean(dim=(0, 1, 2)).detach().cpu().numpy()  # (N, N)
-                else:
-                    N = enc_attn.shape[1]
-                    self_attn = np.eye(N)
-            
-            return enc_attn, self_attn, dec_attn_z, dec_attn_z_hat
-
-        # Find normal sample (always use first normal sample for consistency)
-        X_normal, y_normal = find_sample_by_label(self.test_loader, target_label=0, sample_idx=0)
-        
-        if X_normal is None:
-            print("Warning: Could not find normal sample")
-            return None
-        
-        # Get abnormal samples
-        if abnormal_avg:
-            X_abnormal, y_abnormal = collect_all_abnormal_samples(self.test_loader)
-            if X_abnormal is None or len(X_abnormal) == 0:
-                print("Warning: Could not find abnormal samples")
-                return None
-            abnormal_label_text = f"Abnormal (avg of {len(X_abnormal)} samples)"
         else:
-            X_abnormal, y_abnormal = find_sample_by_label(self.test_loader, target_label=1, sample_idx=abnormal_idx)
-            if X_abnormal is None:
-                print(f"Warning: Could not find abnormal sample at index {abnormal_idx}")
-                return None
-            abnormal_label_text = f"Abnormal (sample {abnormal_idx}, label: {y_abnormal[0].item()})"
+            # Average over heads and samples (original behavior)
+            enc_attn = attn_weight_enc.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
+            dec_attn_z = attn_weight_dec_z.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
+            dec_attn_z_hat = attn_weight_dec_z_hat.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
+            
+            # Average self attention over layers and heads
+            if attn_weight_self_list:
+                all_self_attn = torch.stack([self_attn for self_attn in attn_weight_self_list], dim=0)  # (Depth, B, H, N, N)
+                self_attn = all_self_attn.mean(dim=(0, 1, 2)).detach().cpu().numpy()  # (N, N)
+            else:
+                N = enc_attn.shape[1]
+                self_attn = np.eye(N)
         
-        # Get attention maps for both normal and abnormal
-        normal_enc, normal_self, normal_dec_z, normal_dec_z_hat = get_attention_maps_and_decoder_variants(X_normal)
-        abnormal_enc, abnormal_self, abnormal_dec_z, abnormal_dec_z_hat = get_attention_maps_and_decoder_variants(X_abnormal)
-        
+        return enc_attn, self_attn, dec_attn_z, dec_attn_z_hat
+
+    # Find normal sample (always use first normal sample for consistency)
+    X_normal, y_normal = find_sample_by_label(self.test_loader, target_label=0, sample_idx=0)
+    
+    if X_normal is None:
+        print("Warning: Could not find normal sample")
+        return None
+    
+    # Get abnormal samples
+    if abnormal_avg:
+        X_abnormal, y_abnormal = collect_all_abnormal_samples(self.test_loader)
+        if X_abnormal is None or len(X_abnormal) == 0:
+            print("Warning: Could not find abnormal samples")
+            return None
+        abnormal_label_text = f"Abnormal (avg of {len(X_abnormal)} samples)"
+    else:
+        X_abnormal, y_abnormal = find_sample_by_label(self.test_loader, target_label=1, sample_idx=abnormal_idx)
+        if X_abnormal is None:
+            print(f"Warning: Could not find abnormal sample at index {abnormal_idx}")
+            return None
+        abnormal_label_text = f"Abnormal (sample {abnormal_idx}, label: {y_abnormal[0].item()})"
+    
+    # Get attention maps for both normal and abnormal
+    normal_enc, normal_self, normal_dec_z, normal_dec_z_hat = get_attention_maps_and_decoder_variants(X_normal)
+    abnormal_enc, abnormal_self, abnormal_dec_z, abnormal_dec_z_hat = get_attention_maps_and_decoder_variants(X_abnormal)
+    
+    if plot_2x2:
+        # 2x2 plot: only decoder attention maps
         if plot_heads:
             # Create separate plots for each head
             saved_paths = []
             
             for head_idx in range(4):  # Assuming 4 heads
-                # Create 2x4 subplot for this head
-                fig, axes = plt.subplots(2, 4, figsize=(20, 8), dpi=200)
+                # Create 2x2 subplot for this head
+                fig, axes = plt.subplots(2, 2, figsize=(10, 8), dpi=200)
                 
-                # Extract data for current head
+                # Extract data for current head - only decoder maps
                 plots_config = [
                     # Row 0: Normal samples
-                    (normal_enc[head_idx], f'Normal Encoder H{head_idx}\n(Label: {y_normal[0].item()})', 'Latent Index', 'Feature Index'),
-                    (normal_self[head_idx], f'Normal Self-Attention H{head_idx}', 'Latent Index', 'Latent Index'),
-                    (normal_dec_z[head_idx], f'Normal Decoder H{head_idx} (Z)', 'Latent Index', 'Feature Index'),
+                    (normal_dec_z[head_idx], f'Normal Decoder H{head_idx} (Z)\n(Label: {y_normal[0].item()})', 'Latent Index', 'Feature Index'),
                     (normal_dec_z_hat[head_idx], f'Normal Decoder H{head_idx} (Z_hat)', 'Latent Index', 'Feature Index'),
                     
                     # Row 1: Abnormal samples
-                    (abnormal_enc[head_idx], f'Abnormal Encoder H{head_idx}\n({abnormal_label_text.split("(")[1][:-1]})', 'Latent Index', 'Feature Index'),
-                    (abnormal_self[head_idx], f'Abnormal Self-Attention H{head_idx}', 'Latent Index', 'Latent Index'),
-                    (abnormal_dec_z[head_idx], f'Abnormal Decoder H{head_idx} (Z)', 'Latent Index', 'Feature Index'),
+                    (abnormal_dec_z[head_idx], f'Abnormal Decoder H{head_idx} (Z)\n({abnormal_label_text.split("(")[1][:-1]})', 'Latent Index', 'Feature Index'),
                     (abnormal_dec_z_hat[head_idx], f'Abnormal Decoder H{head_idx} (Z_hat)', 'Latent Index', 'Feature Index')
                 ]
                 
-                # Find global min/max for each attention type for this head
-                enc_data = [normal_enc[head_idx], abnormal_enc[head_idx]]
-                self_data = [normal_self[head_idx], abnormal_self[head_idx]]
+                # Find global min/max for each decoder type for this head
                 dec_z_data = [normal_dec_z[head_idx], abnormal_dec_z[head_idx]]
                 dec_z_hat_data = [normal_dec_z_hat[head_idx], abnormal_dec_z_hat[head_idx]]
                 
-                enc_vmin, enc_vmax = min(d.min() for d in enc_data), max(d.max() for d in enc_data)
-                self_vmin, self_vmax = min(d.min() for d in self_data), max(d.max() for d in self_data)
                 dec_z_vmin, dec_z_vmax = min(d.min() for d in dec_z_data), max(d.max() for d in dec_z_data)
                 dec_z_hat_vmin, dec_z_hat_vmax = min(d.min() for d in dec_z_hat_data), max(d.max() for d in dec_z_hat_data)
                 
                 v_ranges = [
-                    (enc_vmin, enc_vmax),           # Column 0: Encoder
-                    (self_vmin, self_vmax),         # Column 1: Self-attention  
-                    (dec_z_vmin, dec_z_vmax),       # Column 2: Decoder Z
-                    (dec_z_hat_vmin, dec_z_hat_vmax) # Column 3: Decoder Z_hat
+                    (dec_z_vmin, dec_z_vmax),       # Column 0: Decoder Z
+                    (dec_z_hat_vmin, dec_z_hat_vmax) # Column 1: Decoder Z_hat
                 ]
                 
                 # Plot each attention map
                 for idx, (attn_data, title, xlabel, ylabel) in enumerate(plots_config):
-                    row, col = idx // 4, idx % 4
+                    row, col = idx // 2, idx % 2
                     vmin, vmax = v_ranges[col]
                     
                     im = axes[row, col].imshow(attn_data, cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
@@ -1433,7 +1429,7 @@ class Analyzer(Trainer):
                 
                 # Overall title for this head
                 title_suffix = " (Abnormal Averaged)" if abnormal_avg else f" (Abnormal Sample {abnormal_idx})"
-                fig.suptitle(f'Head {head_idx} Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
+                fig.suptitle(f'Head {head_idx} Decoder Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
                             fontsize=16, y=0.98)
                 
                 plt.tight_layout()
@@ -1441,45 +1437,108 @@ class Analyzer(Trainer):
                 # Save the plot for this head
                 base_path = self.train_config['base_path']
                 filename_suffix = "_avg" if abnormal_avg else f"_idx{abnormal_idx}"
-                out_path = os.path.join(base_path, f'attention_2x4_comparison_head{head_idx}{filename_suffix}.png')
+                out_path = os.path.join(base_path, f'attention_2x2_decoder_head{head_idx}{filename_suffix}.png')
                 plt.savefig(out_path, bbox_inches='tight', dpi=200)
                 plt.close()
                 
                 saved_paths.append(out_path)
-                print(f"Head {head_idx} attention comparison saved to '{out_path}'")
+                print(f"Head {head_idx} decoder attention comparison saved to '{out_path}'")
             
-            print(f"All {len(saved_paths)} head-wise plots saved successfully")
-            if abnormal_avg:
-                print(f"Normal sample label: {y_normal[0].item()}, Abnormal samples: averaged over {len(X_abnormal)} samples")
-            else:
-                print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
-            
+            print(f"All {len(saved_paths)} head-wise 2x2 plots saved successfully")
             return saved_paths
             
         else:
-            # Original behavior: single plot with averaged heads
-            fig, axes = plt.subplots(2, 4, figsize=(20, 8), dpi=200)
+            # Single 2x2 plot with averaged heads
+            fig, axes = plt.subplots(2, 2, figsize=(10, 8), dpi=200)
             
-            # Plot configurations: (data, title, xlabel, ylabel)
+            # Plot configurations: (data, title, xlabel, ylabel) - only decoder maps
             plots_config = [
                 # Row 0: Normal samples
-                (normal_enc, f'Normal Encoder\n(Label: {y_normal[0].item()})', 'Latent Index', 'Feature Index'),
-                (normal_self, 'Normal Self-Attention', 'Latent Index', 'Latent Index'),
-                (normal_dec_z, 'Normal Decoder (Z)', 'Latent Index', 'Feature Index'),
+                (normal_dec_z, f'Normal Decoder (Z)\n(Label: {y_normal[0].item()})', 'Latent Index', 'Feature Index'),
                 (normal_dec_z_hat, 'Normal Decoder (Z_hat)', 'Latent Index', 'Feature Index'),
                 
                 # Row 1: Abnormal samples
-                (abnormal_enc, f'Abnormal Encoder\n({abnormal_label_text.split("(")[1][:-1]})', 'Latent Index', 'Feature Index'),
-                (abnormal_self, 'Abnormal Self-Attention', 'Latent Index', 'Latent Index'),
-                (abnormal_dec_z, 'Abnormal Decoder (Z)', 'Latent Index', 'Feature Index'),
+                (abnormal_dec_z, f'Abnormal Decoder (Z)\n({abnormal_label_text.split("(")[1][:-1]})', 'Latent Index', 'Feature Index'),
                 (abnormal_dec_z_hat, 'Abnormal Decoder (Z_hat)', 'Latent Index', 'Feature Index')
             ]
             
-            # Find global min/max for each attention type for consistent color scaling
-            enc_data = [normal_enc, abnormal_enc]
-            self_data = [normal_self, abnormal_self]
+            # Find global min/max for each decoder type for consistent color scaling
             dec_z_data = [normal_dec_z, abnormal_dec_z]
             dec_z_hat_data = [normal_dec_z_hat, abnormal_dec_z_hat]
+            
+            dec_z_vmin, dec_z_vmax = min(d.min() for d in dec_z_data), max(d.max() for d in dec_z_data)
+            dec_z_hat_vmin, dec_z_hat_vmax = min(d.min() for d in dec_z_hat_data), max(d.max() for d in dec_z_hat_data)
+            
+            v_ranges = [
+                (dec_z_vmin, dec_z_vmax),       # Column 0: Decoder Z
+                (dec_z_hat_vmin, dec_z_hat_vmax) # Column 1: Decoder Z_hat
+            ]
+            
+            # Plot each attention map
+            for idx, (attn_data, title, xlabel, ylabel) in enumerate(plots_config):
+                row, col = idx // 2, idx % 2
+                vmin, vmax = v_ranges[col]
+                
+                im = axes[row, col].imshow(attn_data, cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
+                axes[row, col].set_title(title, fontsize=12)
+                axes[row, col].set_xlabel(xlabel)
+                axes[row, col].set_ylabel(ylabel)
+                
+                # Remove tick labels for cleaner appearance
+                axes[row, col].set_xticks([])
+                axes[row, col].set_yticks([])
+                
+                # Add colorbar to each subplot
+                plt.colorbar(im, ax=axes[row, col], fraction=0.046, pad=0.04)
+            
+            # Overall title
+            title_suffix = " (Abnormal Averaged)" if abnormal_avg else f" (Abnormal Sample {abnormal_idx})"
+            fig.suptitle(f'Decoder Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
+                        fontsize=16, y=0.98)
+            
+            plt.tight_layout()
+            
+            # Save the plot
+            base_path = self.train_config['base_path']
+            filename_suffix = "_avg" if abnormal_avg else f"_idx{abnormal_idx}"
+            out_path = os.path.join(base_path, f'attention_2x2_decoder{filename_suffix}_{self.train_config["dataset_name"]}.pdf')
+            plt.savefig(out_path, bbox_inches='tight', dpi=200)
+            out_path = os.path.join(base_path, f'attention_2x2_decoder{filename_suffix}_{self.train_config["dataset_name"]}.png')
+            plt.savefig(out_path, bbox_inches='tight', dpi=200)
+            plt.close()
+            print(f"2x2 decoder attention comparison saved to '{out_path}'")
+            
+            return out_path
+    
+    # Original 2x4 plot code continues here...
+    if plot_heads:
+        # Create separate plots for each head
+        saved_paths = []
+        
+        for head_idx in range(4):  # Assuming 4 heads
+            # Create 2x4 subplot for this head
+            fig, axes = plt.subplots(2, 4, figsize=(20, 8), dpi=200)
+            
+            # Extract data for current head
+            plots_config = [
+                # Row 0: Normal samples
+                (normal_enc[head_idx], f'Normal Encoder H{head_idx}\n(Label: {y_normal[0].item()})', 'Latent Index', 'Feature Index'),
+                (normal_self[head_idx], f'Normal Self-Attention H{head_idx}', 'Latent Index', 'Latent Index'),
+                (normal_dec_z[head_idx], f'Normal Decoder H{head_idx} (Z)', 'Latent Index', 'Feature Index'),
+                (normal_dec_z_hat[head_idx], f'Normal Decoder H{head_idx} (Z_hat)', 'Latent Index', 'Feature Index'),
+                
+                # Row 1: Abnormal samples
+                (abnormal_enc[head_idx], f'Abnormal Encoder H{head_idx}\n({abnormal_label_text.split("(")[1][:-1]})', 'Latent Index', 'Feature Index'),
+                (abnormal_self[head_idx], f'Abnormal Self-Attention H{head_idx}', 'Latent Index', 'Latent Index'),
+                (abnormal_dec_z[head_idx], f'Abnormal Decoder H{head_idx} (Z)', 'Latent Index', 'Feature Index'),
+                (abnormal_dec_z_hat[head_idx], f'Abnormal Decoder H{head_idx} (Z_hat)', 'Latent Index', 'Feature Index')
+            ]
+            
+            # Find global min/max for each attention type for this head
+            enc_data = [normal_enc[head_idx], abnormal_enc[head_idx]]
+            self_data = [normal_self[head_idx], abnormal_self[head_idx]]
+            dec_z_data = [normal_dec_z[head_idx], abnormal_dec_z[head_idx]]
+            dec_z_hat_data = [normal_dec_z_hat[head_idx], abnormal_dec_z_hat[head_idx]]
             
             enc_vmin, enc_vmax = min(d.min() for d in enc_data), max(d.max() for d in enc_data)
             self_vmin, self_vmax = min(d.min() for d in self_data), max(d.max() for d in self_data)
@@ -1510,28 +1569,105 @@ class Analyzer(Trainer):
                 # Add colorbar to each subplot
                 plt.colorbar(im, ax=axes[row, col], fraction=0.046, pad=0.04)
             
-            # Overall title
+            # Overall title for this head
             title_suffix = " (Abnormal Averaged)" if abnormal_avg else f" (Abnormal Sample {abnormal_idx})"
-            fig.suptitle(f'Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
+            fig.suptitle(f'Head {head_idx} Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
                         fontsize=16, y=0.98)
             
             plt.tight_layout()
             
-            # Save the plot
+            # Save the plot for this head
             base_path = self.train_config['base_path']
             filename_suffix = "_avg" if abnormal_avg else f"_idx{abnormal_idx}"
-            out_path = os.path.join(base_path, f'attention_2x4_comparison{filename_suffix}_{self.train_config["dataset_name"]}.pdf')
-            plt.savefig(out_path, bbox_inches='tight', dpi=200)
-            out_path = os.path.join(base_path, f'attention_2x4_comparison{filename_suffix}_{self.train_config["dataset_name"]}.png')
+            out_path = os.path.join(base_path, f'attention_2x4_comparison_head{head_idx}{filename_suffix}.png')
             plt.savefig(out_path, bbox_inches='tight', dpi=200)
             plt.close()
-            print(f"2x4 attention comparison saved to '{out_path}'")
-
-
-            if abnormal_avg:
-                print(f"Normal sample label: {y_normal[0].item()}, Abnormal samples: averaged over {len(X_abnormal)} samples")
-            else:
-                print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
             
-            return out_path
+            saved_paths.append(out_path)
+            print(f"Head {head_idx} attention comparison saved to '{out_path}'")
         
+        print(f"All {len(saved_paths)} head-wise plots saved successfully")
+        if abnormal_avg:
+            print(f"Normal sample label: {y_normal[0].item()}, Abnormal samples: averaged over {len(X_abnormal)} samples")
+        else:
+            print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
+        
+        return saved_paths
+        
+    else:
+        # Original behavior: single plot with averaged heads
+        fig, axes = plt.subplots(2, 4, figsize=(20, 8), dpi=200)
+        
+        # Plot configurations: (data, title, xlabel, ylabel)
+        plots_config = [
+            # Row 0: Normal samples
+            (normal_enc, f'Normal Encoder\n(Label: {y_normal[0].item()})', 'Latent Index', 'Feature Index'),
+            (normal_self, 'Normal Self-Attention', 'Latent Index', 'Latent Index'),
+            (normal_dec_z, 'Normal Decoder (Z)', 'Latent Index', 'Feature Index'),
+            (normal_dec_z_hat, 'Normal Decoder (Z_hat)', 'Latent Index', 'Feature Index'),
+            
+            # Row 1: Abnormal samples
+            (abnormal_enc, f'Abnormal Encoder\n({abnormal_label_text.split("(")[1][:-1]})', 'Latent Index', 'Feature Index'),
+            (abnormal_self, 'Abnormal Self-Attention', 'Latent Index', 'Latent Index'),
+            (abnormal_dec_z, 'Abnormal Decoder (Z)', 'Latent Index', 'Feature Index'),
+            (abnormal_dec_z_hat, 'Abnormal Decoder (Z_hat)', 'Latent Index', 'Feature Index')
+        ]
+        
+        # Find global min/max for each attention type for consistent color scaling
+        enc_data = [normal_enc, abnormal_enc]
+        self_data = [normal_self, abnormal_self]
+        dec_z_data = [normal_dec_z, abnormal_dec_z]
+        dec_z_hat_data = [normal_dec_z_hat, abnormal_dec_z_hat]
+        
+        enc_vmin, enc_vmax = min(d.min() for d in enc_data), max(d.max() for d in enc_data)
+        self_vmin, self_vmax = min(d.min() for d in self_data), max(d.max() for d in self_data)
+        dec_z_vmin, dec_z_vmax = min(d.min() for d in dec_z_data), max(d.max() for d in dec_z_data)
+        dec_z_hat_vmin, dec_z_hat_vmax = min(d.min() for d in dec_z_hat_data), max(d.max() for d in dec_z_hat_data)
+        
+        v_ranges = [
+            (enc_vmin, enc_vmax),           # Column 0: Encoder
+            (self_vmin, self_vmax),         # Column 1: Self-attention  
+            (dec_z_vmin, dec_z_vmax),       # Column 2: Decoder Z
+            (dec_z_hat_vmin, dec_z_hat_vmax) # Column 3: Decoder Z_hat
+        ]
+        
+        # Plot each attention map
+        for idx, (attn_data, title, xlabel, ylabel) in enumerate(plots_config):
+            row, col = idx // 4, idx % 4
+            vmin, vmax = v_ranges[col]
+            
+            im = axes[row, col].imshow(attn_data, cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
+            axes[row, col].set_title(title, fontsize=12)
+            axes[row, col].set_xlabel(xlabel)
+            axes[row, col].set_ylabel(ylabel)
+            
+            # Remove tick labels for cleaner appearance
+            axes[row, col].set_xticks([])
+            axes[row, col].set_yticks([])
+            
+            # Add colorbar to each subplot
+            plt.colorbar(im, ax=axes[row, col], fraction=0.046, pad=0.04)
+        
+        # Overall title
+        title_suffix = " (Abnormal Averaged)" if abnormal_avg else f" (Abnormal Sample {abnormal_idx})"
+        fig.suptitle(f'Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
+                    fontsize=16, y=0.98)
+        
+        plt.tight_layout()
+        
+        # Save the plot
+        base_path = self.train_config['base_path']
+        filename_suffix = "_avg" if abnormal_avg else f"_idx{abnormal_idx}"
+        out_path = os.path.join(base_path, f'attention_2x4_comparison{filename_suffix}_{self.train_config["dataset_name"]}.pdf')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        out_path = os.path.join(base_path, f'attention_2x4_comparison{filename_suffix}_{self.train_config["dataset_name"]}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        print(f"2x4 attention comparison saved to '{out_path}'")
+
+        if abnormal_avg:
+            print(f"Normal sample label: {y_normal[0].item()}, Abnormal samples: averaged over {len(X_abnormal)} samples")
+        else:
+            print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
+        
+        return out_path

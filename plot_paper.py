@@ -63,7 +63,7 @@ def plot_hp_sen():
         ax1.set_xticks(x1_positions) 
         ax1.set_xticklabels(x1)      
         ax1.tick_params(axis='x', length=0)
-        ax1.set_ylabel('AUCPR', fontsize=11)
+        ax1.set_ylabel('AUC-PR', fontsize=11)
         ax1.set_xlabel(f'{xlabel}', fontsize=11)
         ax1.grid(True, axis='y', linestyle='--', linewidth=0.5) # 
 
@@ -217,9 +217,6 @@ def plot_train_ratio():
         'DRL': [0.2727, 0.2437, 0.2096, 0.2220, 0.1701],
         'Disent': [0.1417, 0.1110, 0.0879, 0.0722, 0.0637],
     }
-
-
-
 
     trainset_ratio = [1.0, 0.8, 0.6, 0.4, 0.2]
     # arrhythmia, 
