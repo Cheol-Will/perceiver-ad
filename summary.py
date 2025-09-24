@@ -455,14 +455,13 @@ def render_train_ratio(pivots, print_summary = False):
         'pendigits', 
         'thyroid',
         'shuttle', # all good.
-        
-        
         'satimage-2', 
         'satellite',
         'optdigits',
+        'campaign', # too slow
+        # 'optdigits',
         # 'nslkdd',
         # 'fraud',
-        # 'campaign', # too slow
         # 'census',
     ]
     models = [
@@ -493,36 +492,24 @@ def render_train_ratio(pivots, print_summary = False):
                 use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
         dict_df[base] = df # consists of row=model, column=data
 
-    # Get all models from the first dataframe
     all_models = dict_df[keys[0]].index.tolist()
-    
-    # Create a dictionary to store results for each dataset
     dataset_results = {}
     
-    # For each dataset, create a model vs ratio table
     for dataset in data:
-        # Create a new dataframe for this dataset: rows=models, columns=ratios
         ratio_labels = [key.replace('ratio_', '').replace('_AUCPR', '') for key in keys]
-        
-        # Initialize the dataframe
         model_vs_ratio_df = pd.DataFrame(index=all_models, columns=ratio_labels)
-        
-        # Fill the dataframe with values from each ratio
         for i, base_key in enumerate(keys):
             ratio_label = ratio_labels[i]
             if dataset in dict_df[base_key].columns:
                 model_vs_ratio_df[ratio_label] = dict_df[base_key][dataset]
         
-        # Store the result
         dataset_results[dataset] = model_vs_ratio_df
         
-        # Print the result for this dataset
         print(f"\nDataset: {dataset.upper()}")
         print("="*60)
         print("Model vs Training Ratio (AUCPR)")
         print(model_vs_ratio_df.round(4))
         
-        # Save to CSV
         os.makedirs('metrics/train_ratio', exist_ok=True)
         model_vs_ratio_df.to_csv(f'metrics/train_ratio/{dataset}_model_vs_ratio.csv')
     
@@ -875,7 +862,7 @@ def main(args):
     if args.npt:
         render_ours_on_npt(pivots, )
     if args.train_ratio:
-        render_train_ratio(pivots)
+        render_train_ratio(pivots, True)
         # render_memory_analysis(pivots)
 
         
