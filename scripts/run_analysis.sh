@@ -1,19 +1,39 @@
 #!/bin/bash
+data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography) # from MCM
 
 data_list=(
-    arrhythmia
-    cardiotocography
-    optdigits 
-    pendigits 
-    satellite 
-    campaign 
+    # breastw # best SHAP vs Attn
+    # glass
+    # wine
+    # wbc
+    # "satimage-2"
+    thyroid 
+    ionosphere
+    pendigits
+    cardio
     mammography
-    fraud
-    nslkdd
-    census
+    pima
+    cardiotocography
+
+
+    # fraud
+    # mammography
+    # pendigits
+    # census
+    # nslkdd
+
+    # fraud
+    # nslkdd
+    # census
+    ###
+    # arrhythmia
+    # cardiotocography
+    # optdigits 
+    # pendigits 
+    # satellite 
+    # campaign 
     # wine
     # pima
-    # breastw 
     # cardio 
     # glass 
     # ionosphere
@@ -23,6 +43,7 @@ data_list=(
     # cardio
     # wbc
     # thyroid
+    ###
 )
 model_type='MemPAE'
 hidden_dim=64
@@ -41,5 +62,6 @@ for data in "${data_list[@]}"; do
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
         --exp_name "$exp_name" \
-        --plot_2x4
+        --compare_shap_vs_encoder_attention_per_sample
+        # --visualize_attention_vs_shap
 done

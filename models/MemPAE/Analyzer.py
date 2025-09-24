@@ -7,11 +7,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import StandardScaler
-from sklearn.manifold import TSNE
-import umap.umap_ as umap
 from scipy.stats import spearmanr
+import xgboost as xgb
+import shap
+from sklearn.metrics import classification_report, roc_auc_score
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import spearmanr, pearsonr
 from models.MemPAE.Trainer import Trainer
+
+
 
 class Analyzer(Trainer):
     def __init__(self, model_config: dict, train_config: dict, analysis_config: dict):
@@ -1777,4 +1784,553 @@ class Analyzer(Trainer):
             'best_abnormal_idx': best_idx,
             'attention_difference': best_diff,
             'plot_path': plot_path
+        }
+
+
+
+    @torch.no_grad()
+    def visualize_attention_vs_shap(self):
+        """
+        Simple visualization comparing encoder attention map with SHAP values
+        """
+        import xgboost as xgb
+        import shap
+        
+        print("Starting simple attention vs SHAP visualization...")
+        
+        # 1. Get test data for XGBoost
+        X_test, y_test = [], []
+        for X, y in self.test_loader:
+            X_test.append(X.cpu().numpy())
+            y_test.append(y.cpu().numpy())
+        
+        X_test = np.concatenate(X_test, axis=0)
+        y_test = np.concatenate(y_test, axis=0)
+        
+        print(f"Test data shape: {X_test.shape}")
+        print(f"Label distribution: Normal={np.sum(y_test==0)}, Abnormal={np.sum(y_test!=0)}")
+        
+        # 2. Train XGBoost and get SHAP values
+        print("Training XGBoost...")
+        xgb_model = xgb.XGBClassifier(n_estimators=100, max_depth=6, learning_rate=0.1, random_state=42)
+        xgb_model.fit(X_test, y_test)
+        
+        print("Calculating SHAP values...")
+        explainer = shap.TreeExplainer(xgb_model)
+        shap_values = explainer.shap_values(X_test)
+        
+        # Mean absolute SHAP values per feature
+        shap_importance = np.mean(np.abs(shap_values), axis=0)  # Shape: (F,)
+        print(f"SHAP importance shape: {shap_importance.shape}")
+        
+        # 3. Get encoder attention weights
+        print("Getting encoder attention weights...")
+        self.model.eval()
+        
+        all_enc_attn = []
+        for X, y in self.test_loader:
+            X = X.to(self.device)
+            loss, attn_enc, attn_self_list, attn_dec = self.model(X, return_attn_weight=True)
+            
+            # attn_enc shape: (B, H, N, F)
+            # Average over batch and heads: (N, F)
+            enc_attn_avg = attn_enc.mean(dim=(0, 1)).detach().cpu().numpy()
+            all_enc_attn.append(enc_attn_avg)
+            break  # Just use first batch for visualization
+        
+        enc_attention = all_enc_attn[0]  # Shape: (N, F)
+        print(f"Encoder attention shape: {enc_attention.shape}")
+        
+        N, F = enc_attention.shape
+        print(f"N (latent dimensions): {N}, F (features): {F}")
+        
+        # Check if dimensions match
+        if F != len(shap_importance):
+            print(f"WARNING: Feature dimension mismatch!")
+            print(f"SHAP features: {len(shap_importance)}, Attention features: {F}")
+            min_features = min(len(shap_importance), F)
+            shap_importance = shap_importance[:min_features]
+            enc_attention = enc_attention[:, :min_features]
+            print(f"Using first {min_features} features for comparison")
+            F = min_features
+        
+        # 4. Create visualizations
+        base_path = self.train_config['base_path']
+        
+        # Plot 1: SHAP importance bar plot
+        plt.figure(figsize=(15, 5), dpi=200)
+        feature_indices = np.arange(F)
+        plt.bar(feature_indices, shap_importance, alpha=0.7, color='red')
+        plt.title(f'SHAP Feature Importance • {self.train_config["dataset_name"].upper()}')
+        plt.xlabel('Feature Index')
+        plt.ylabel('Mean |SHAP Value|')
+        plt.grid(True, alpha=0.3)
+        
+        # Highlight top 10 features
+        top_10_indices = np.argsort(shap_importance)[-10:]
+        plt.bar(top_10_indices, shap_importance[top_10_indices], alpha=0.9, color='darkred')
+        
+        plt.tight_layout()
+        shap_path = os.path.join(base_path, 'shap_importance_bar.png')
+        plt.savefig(shap_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        print(f"SHAP importance plot saved to {shap_path}")
+        
+        # Plot 2: Encoder attention heatmap
+        plt.figure(figsize=(15, 8), dpi=200)
+        im = plt.imshow(enc_attention, cmap='viridis', aspect='auto')
+        plt.title(f'Encoder Attention Map • {self.train_config["dataset_name"].upper()}')
+        plt.xlabel('Feature Index')
+        plt.ylabel('Latent Index')
+        plt.colorbar(im, fraction=0.046, pad=0.04)
+        
+        # Add grid for better readability
+        if F <= 50:  # Only add grid if not too many features
+            plt.grid(True, alpha=0.3, linewidth=0.5)
+        
+        plt.tight_layout()
+        attn_path = os.path.join(base_path, 'encoder_attention_heatmap.png')
+        plt.savefig(attn_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        print(f"Encoder attention heatmap saved to {attn_path}")
+        
+        # Plot 3: Average attention per feature vs SHAP
+        avg_attention_per_feature = np.mean(np.abs(enc_attention), axis=0)  # Average over latent dimensions
+        
+        plt.figure(figsize=(12, 8), dpi=200)
+        
+        # Subplot 1: Bar comparison
+        plt.subplot(2, 1, 1)
+        x = np.arange(F)
+        width = 0.35
+        
+        # Normalize for fair comparison
+        shap_norm = shap_importance / np.max(shap_importance)
+        attn_norm = avg_attention_per_feature / np.max(avg_attention_per_feature)
+        
+        plt.bar(x - width/2, shap_norm, width, label='SHAP (normalized)', alpha=0.7, color='red')
+        plt.bar(x + width/2, attn_norm, width, label='Attention (normalized)', alpha=0.7, color='blue')
+        
+        plt.xlabel('Feature Index')
+        plt.ylabel('Normalized Importance')
+        plt.title(f'SHAP vs Attention Importance Comparison')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        
+        # Subplot 2: Scatter plot
+        plt.subplot(2, 1, 2)
+        plt.scatter(shap_norm, attn_norm, alpha=0.6, s=30)
+        plt.xlabel('SHAP Importance (normalized)')
+        plt.ylabel('Attention Importance (normalized)')
+        plt.title('SHAP vs Attention Scatter Plot')
+        
+        # Calculate correlation
+        from scipy.stats import pearsonr, spearmanr
+        pearson_r, pearson_p = pearsonr(shap_norm, attn_norm)
+        spearman_r, spearman_p = spearmanr(shap_norm, attn_norm)
+        
+        plt.text(0.05, 0.95, f'Pearson r = {pearson_r:.3f} (p={pearson_p:.3f})\nSpearman ρ = {spearman_r:.3f} (p={spearman_p:.3f})', 
+                transform=plt.gca().transAxes, verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Add diagonal line
+        plt.plot([0, 1], [0, 1], 'r--', alpha=0.5)
+        plt.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        comparison_path = os.path.join(base_path, 'shap_vs_attention_comparison.png')
+        plt.savefig(comparison_path, bbox_inches='tight', dpi=200)
+        plt.close()
+        print(f"Comparison plot saved to {comparison_path}")
+        
+        # Print summary statistics
+        print("\n" + "="*50)
+        print("COMPARISON SUMMARY")
+        print("="*50)
+        print(f"Pearson correlation: r = {pearson_r:.4f}, p = {pearson_p:.4f}")
+        print(f"Spearman correlation: ρ = {spearman_r:.4f}, p = {spearman_p:.4f}")
+        
+        # Top features analysis
+        top_k = 10
+        top_shap_indices = set(np.argsort(shap_importance)[-top_k:])
+        top_attn_indices = set(np.argsort(avg_attention_per_feature)[-top_k:])
+        overlap = top_shap_indices.intersection(top_attn_indices)
+        
+        print(f"\nTop {top_k} features:")
+        print(f"SHAP top features: {sorted(list(top_shap_indices))}")
+        print(f"Attention top features: {sorted(list(top_attn_indices))}")
+        print(f"Overlap: {len(overlap)}/{top_k} features: {sorted(list(overlap))}")
+        
+        return {
+            'shap_importance': shap_importance,
+            'attention_importance': avg_attention_per_feature,
+            'correlations': {
+                'pearson': pearson_r,
+                'pearson_p': pearson_p,
+                'spearman': spearman_r,
+                'spearman_p': spearman_p
+            },
+            'top_feature_overlap': overlap,
+            'plot_paths': {
+                'shap_bar': shap_path,
+                'attention_heatmap': attn_path,
+                'comparison': comparison_path
+            }
+        }
+
+    @torch.no_grad()
+    def compare_shap_vs_encoder_attention_per_sample(
+        self, 
+        similarity_threshold: float = 0.7,
+        top_k_samples: int = 10,
+        figsize: tuple = (12, 6),
+        plot_group_average: bool = True,
+        include_self_attention: bool = False
+    ):
+        """
+        Compare XGBoost SHAP values with MemPAE encoder attention maps for individual abnormal samples.
+        Saves 1x2 plots for samples where SHAP and attention patterns are similar.
+        
+        Args:
+            similarity_threshold: Minimum correlation to consider patterns "similar"
+            top_k_samples: Number of most similar samples to save plots for
+            figsize: Figure size for each 1x2 plot
+            plot_group_average: If True, also plot average SHAP vs attention for normal/abnormal groups
+            include_self_attention: If True, include self-attention in the attention computation (enc @ self_attn_1 @ ... @ self_attn_L)
+            
+        Returns:
+            dict: Results including correlations, saved plots info, and statistics
+        """
+        import xgboost as xgb
+        import shap
+        from scipy.stats import pearsonr, spearmanr
+        
+        print("Analysis for SHAP vs Encoder Attention comparison for individual abnormal samples")
+        print(f"Include self attention: {include_self_attention}")
+        print(f"Plot group average: {plot_group_average}")
+        self.model.eval()
+        
+        X_train, y_train = [], []
+        for X, y in self.train_loader:
+            X_train.append(X.cpu().numpy())
+            y_train.append(y.cpu().numpy())
+        
+        X_test, y_test = [], []
+        for X, y in self.test_loader:
+            X_test.append(X.cpu().numpy())
+            y_test.append(y.cpu().numpy())
+        
+        X_train = np.concatenate(X_train, axis=0)
+        y_train = np.concatenate(y_train, axis=0)
+        X_test = np.concatenate(X_test, axis=0)
+        y_test = np.concatenate(y_test, axis=0)
+        
+        # Combine train and test for supervised learning
+        X_all = np.concatenate([X_train, X_test], axis=0)
+        y_all = np.concatenate([y_train, y_test], axis=0)
+        
+        print(f"Total data shape: {X_all.shape}, Num normal={np.sum(y_all==0)}, Num Abnormal={np.sum(y_all!=0)}")
+        print("Training XGBoost")
+        xgb_model = xgb.XGBClassifier(
+            n_estimators=100, 
+            max_depth=6, 
+            learning_rate=0.1, 
+            random_state=42
+        )
+        xgb_model.fit(X_all, y_all)
+        print("Training Done")
+        
+        # get shap values for all samples
+        explainer = shap.TreeExplainer(xgb_model)
+        shap_values = explainer.shap_values(X_all)  # Shape: (N_samples, N_features)
+        
+        # get encoder attn map
+        print("Calculating encoder attention map")
+        all_encoder_attention = []
+        sample_indices = []
+        current_idx = 0
+        
+        def compute_attention_with_self(attn_enc, attn_self_list):
+            """
+            Compute attention including self-attention layers
+            attn_enc: (B, H, N, F)
+            attn_self_list: List of (B, H, N, N)
+            Returns: (B, F) - attention per feature
+            """
+            B, H, N, F = attn_enc.shape
+            
+            # Start with encoder attention: (B, H, N, F)
+            # Average over heads first: (B, N, F)
+            enc_mean = attn_enc.mean(dim=1)
+            
+            if attn_self_list and len(attn_self_list) > 0:
+                # Compute cumulative self-attention: enc @ self_1 @ self_2 @ ... @ self_L
+                # Each self attention: (B, H, N, N)
+                # Average over heads: (B, N, N)
+                cumulative_self = torch.eye(N, device=attn_enc.device).unsqueeze(0).expand(B, -1, -1)  # (B, N, N)
+                
+                for self_attn in attn_self_list:
+                    self_attn_mean = self_attn.mean(dim=1)  # (B, N, N)
+                    # Add residual connection (identity matrix) for self-attention
+                    self_attn_with_residual = self_attn_mean + torch.eye(N, device=attn_enc.device).unsqueeze(0).expand(B, -1, -1)
+                    # Multiply: cumulative_self @ self_attn_with_residual
+                    cumulative_self = torch.bmm(cumulative_self, self_attn_with_residual)  # (B, N, N)
+                
+                # Apply cumulative self-attention to encoder attention
+                # cumulative_self: (B, N, N), enc_mean: (B, N, F)
+                final_attn = torch.bmm(cumulative_self, enc_mean)  # (B, N, F)
+            else:
+                final_attn = enc_mean  # (B, N, F)
+            
+            # Average over latent dimensions to get per-feature attention: (B, F)
+            return final_attn.mean(dim=1).detach().cpu().numpy()
+        
+        # trainset
+        for X, y in self.train_loader:
+            X = X.to(self.device)
+            loss, attn_enc, attn_self_list, attn_dec = self.model(X, return_attn_weight=True)
+            
+            if include_self_attention:
+                enc_attn_per_feature = compute_attention_with_self(attn_enc, attn_self_list)
+            else:
+                # attn_enc shape: (B, H, N, F) -> (B, F)
+                enc_attn_per_feature = attn_enc.mean(dim=(1, 2)).detach().cpu().numpy()  # (B, F)
+            
+            all_encoder_attention.append(enc_attn_per_feature)
+            
+            batch_size = X.shape[0]
+            sample_indices.extend(list(range(current_idx, current_idx + batch_size)))
+            current_idx += batch_size
+        
+        # testset
+        for X, y in self.test_loader:
+            X = X.to(self.device)
+            loss, attn_enc, attn_self_list, attn_dec = self.model(X, return_attn_weight=True)
+            
+            if include_self_attention:
+                enc_attn_per_feature = compute_attention_with_self(attn_enc, attn_self_list)
+            else:
+                enc_attn_per_feature = attn_enc.mean(dim=(1, 2)).detach().cpu().numpy()
+            
+            all_encoder_attention.append(enc_attn_per_feature)
+            
+            batch_size = X.shape[0]
+            sample_indices.extend(list(range(current_idx, current_idx + batch_size)))
+            current_idx += batch_size
+        
+        all_encoder_attention = np.concatenate(all_encoder_attention, axis=0) # (N_total, F)
+        
+        print(f"Encoder attention shape: {all_encoder_attention.shape}")
+        print(f"SHAP values shape: {shap_values.shape}")
+        
+        abnormal_mask = y_all != 0
+        abnormal_indices = np.where(abnormal_mask)[0]
+        
+        if len(abnormal_indices) == 0:
+            print("No abnormal samples found")
+            return None
+        
+        print(f"Found {len(abnormal_indices)} abnormal samples")
+        
+        # Consider abnormal samples
+        shap_abnormal = np.abs(shap_values[abnormal_mask])  # absolute SHAP
+        attention_abnormal = np.abs(all_encoder_attention[abnormal_mask])  # Use absolute attention, not required.
+        X_abnormal = X_all[abnormal_mask]
+        
+        # Option 1: Plot group averages (normal vs abnormal)
+        if plot_group_average:
+            print("Creating group average plots...")
+            normal_mask = y_all == 0
+            normal_indices = np.where(normal_mask)[0]
+            
+            if len(normal_indices) > 0:
+                # Normal group averages
+                shap_normal_mean = np.abs(shap_values[normal_mask]).mean(axis=0)
+                attention_normal_mean = np.abs(all_encoder_attention[normal_mask]).mean(axis=0)
+                
+                # Abnormal group averages
+                shap_abnormal_mean = shap_abnormal.mean(axis=0)
+                attention_abnormal_mean = attention_abnormal.mean(axis=0)
+                
+                # Normalize for visualization
+                shap_normal_norm = shap_normal_mean / (np.max(shap_normal_mean) + 1e-8)
+                attention_normal_norm = attention_normal_mean / (np.max(attention_normal_mean) + 1e-8)
+                shap_abnormal_norm = shap_abnormal_mean / (np.max(shap_abnormal_mean) + 1e-8)
+                attention_abnormal_norm = attention_abnormal_mean / (np.max(attention_abnormal_mean) + 1e-8)
+                
+                feature_indices = np.arange(len(shap_normal_mean))
+                
+                # Normal group plot
+                fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
+                axes[0].bar(feature_indices, shap_normal_norm, alpha=0.7, color='red', width=0.8)
+                axes[0].set_title('SHAP Values', fontsize=14)
+                axes[0].set_xlabel('Feature Index', fontsize=14)
+                axes[0].set_ylabel('Normalized SHAP value', fontsize=14)
+                axes[0].grid(True, alpha=0.3)
+                
+                axes[1].bar(feature_indices, attention_normal_norm, alpha=0.7, color='blue', width=0.8)
+                axes[1].set_title('Encoder Attention', fontsize=14)
+                axes[1].set_xlabel('Feature Index', fontsize=14)
+                axes[1].set_ylabel('Normalized Attention Weight', fontsize=14)
+                axes[1].grid(True, alpha=0.3)
+                
+                plt.tight_layout()
+                
+                base_path = self.train_config['base_path']
+                attention_type = "with_self" if include_self_attention else "enc_only"
+                normal_plot_path = os.path.join(base_path, f'shap_vs_attention_normal_average_{attention_type}.png')
+                plt.savefig(normal_plot_path, bbox_inches='tight', dpi=200)
+                plt.close()
+                print(f"Saved normal group average plot to {normal_plot_path}")
+                
+                # Abnormal group plot
+                fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
+                axes[0].bar(feature_indices, shap_abnormal_norm, alpha=0.7, color='red', width=0.8)
+                axes[0].set_title('SHAP Values', fontsize=14)
+                axes[0].set_xlabel('Feature Index', fontsize=14)
+                axes[0].set_ylabel('Normalized SHAP value', fontsize=14)
+                axes[0].grid(True, alpha=0.3)
+                
+                axes[1].bar(feature_indices, attention_abnormal_norm, alpha=0.7, color='blue', width=0.8)
+                axes[1].set_title('Encoder Attention', fontsize=14)
+                axes[1].set_xlabel('Feature Index', fontsize=14)
+                axes[1].set_ylabel('Normalized Attention Weight', fontsize=14)
+                axes[1].grid(True, alpha=0.3)
+                
+                plt.tight_layout()
+                
+                abnormal_plot_path = os.path.join(base_path, f'shap_vs_attention_abnormal_average_{attention_type}.png')
+                plt.savefig(abnormal_plot_path, bbox_inches='tight', dpi=200)
+                plt.close()
+                print(f"Saved abnormal group average plot to {abnormal_plot_path}")
+                
+                # Calculate correlations for group averages
+                normal_pearson_r, _ = pearsonr(shap_normal_mean, attention_normal_mean)
+                normal_spearman_r, _ = spearmanr(shap_normal_mean, attention_normal_mean)
+                abnormal_pearson_r, _ = pearsonr(shap_abnormal_mean, attention_abnormal_mean)
+                abnormal_spearman_r, _ = spearmanr(shap_abnormal_mean, attention_abnormal_mean)
+                
+                print(f"Normal group correlations - Pearson: {normal_pearson_r:.4f}, Spearman: {normal_spearman_r:.4f}")
+                print(f"Abnormal group correlations - Pearson: {abnormal_pearson_r:.4f}, Spearman: {abnormal_spearman_r:.4f}")
+            else:
+                print("No normal samples found for group average plotting")
+
+        # calculate pearson and spearman for each sample between SHAP and Attn
+        correlations = []
+        for i in range(len(abnormal_indices)):
+            shap_sample = shap_abnormal[i]
+            attention_sample = attention_abnormal[i]
+
+            pearson_r, pearson_p = pearsonr(shap_sample, attention_sample)
+            spearman_r, spearman_p = spearmanr(shap_sample, attention_sample)
+            
+            correlations.append({
+                'abnormal_idx': i,
+                'global_idx': abnormal_indices[i],
+                'pearson_r': pearson_r,
+                'pearson_p': pearson_p,
+                'spearman_r': spearman_r,
+                'spearman_p': spearman_p,
+                'max_correlation': max(abs(pearson_r), abs(spearman_r))
+            })
+
+        # sort and save nice ones        
+        correlations.sort(key=lambda x: x['max_correlation'], reverse=True)
+        similar_samples = [c for c in correlations if c['max_correlation'] >= similarity_threshold]
+        similar_samples += [c for c in correlations if c['max_correlation'] <= -similarity_threshold]
+        print(f"Found {len(similar_samples)} samples with correlation >= {similarity_threshold} or correlation <= {-similarity_threshold}")
+        
+        if len(similar_samples) == 0:
+            print(f"No samples found with correlation >= {similarity_threshold}")
+            # save top-k but not high correlation between SHAP and Attn
+            similar_samples = correlations[:min(top_k_samples, len(correlations))]
+            similar_samples += correlations[-min(top_k_samples, len(correlations)):]
+            print(f"Saving top {len(similar_samples)} samples instead")
+        
+        # Save plots for top samples
+        base_path = self.train_config['base_path']
+        saved_plots = []
+        
+        samples_to_plot = similar_samples[:min(top_k_samples, len(similar_samples))] # top-k
+        samples_to_plot += similar_samples[-min(top_k_samples, len(similar_samples)):] # bottom-k
+        
+        for sample_info in samples_to_plot:
+            abnormal_idx = sample_info['abnormal_idx']
+            global_idx = sample_info['global_idx']
+            pearson_r = sample_info['pearson_r']
+            spearman_r = sample_info['spearman_r']
+            
+            # Get SHAP and Attn for current sample and normalize 
+            shap_sample = shap_abnormal[abnormal_idx]
+            attention_sample = attention_abnormal[abnormal_idx]
+            
+            shap_norm = shap_sample / (np.max(shap_sample) + 1e-8)
+            attention_norm = attention_sample / (np.max(attention_sample) + 1e-8)
+            
+            fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
+            feature_indices = np.arange(len(shap_sample))
+            
+            # SHAP values
+            axes[0].bar(feature_indices, shap_norm, alpha=0.7, color='red', width=0.8)
+            axes[0].set_title(f'SHAP Values', fontsize=14)
+            axes[0].set_xlabel('Feature Index', fontsize=14)
+            axes[0].set_ylabel('Normalized SHAP value', fontsize=14)
+            axes[0].grid(True, alpha=0.3)
+            
+            # Encoder attention
+            axes[1].bar(feature_indices, attention_norm, alpha=0.7, color='blue', width=0.8)
+            axes[1].set_title(f'Encoder Attention', fontsize=14)
+            axes[1].set_xlabel('Feature Index', fontsize=14)
+            axes[1].set_ylabel('Normalized Attention Weight', fontsize=14)
+            axes[1].grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            
+            # Save plot
+            attention_type = "with_self" if include_self_attention else "enc_only"
+            plot_path = os.path.join(base_path, f'shap_vs_attention_sample_{global_idx}_corr_{sample_info["max_correlation"]:.3f}_{attention_type}.png')
+            plt.savefig(plot_path, bbox_inches='tight', dpi=200)
+            plt.close()
+            
+            saved_plots.append({
+                'sample_idx': global_idx,
+                'abnormal_idx': abnormal_idx,
+                'plot_path': plot_path,
+                'correlations': sample_info
+            })
+            
+            print(f"Saved plot for sample {global_idx} (correlation: {sample_info['max_correlation']:.3f}) to {plot_path}")
+        
+        # Create summary statistics
+        all_correlations = [c['max_correlation'] for c in correlations]
+        
+        summary_stats = {
+            'total_abnormal_samples': len(abnormal_indices),
+            'samples_above_threshold': len([c for c in correlations if c['max_correlation'] >= similarity_threshold]),
+            'mean_correlation': np.mean(all_correlations),
+            'median_correlation': np.median(all_correlations),
+            'max_correlation': np.max(all_correlations),
+            'min_correlation': np.min(all_correlations),
+            'std_correlation': np.std(all_correlations)
+        }
+        
+        print("\n" + "="*60)
+        print("SHAP vs Encoder Attention Comparison Summary")
+        print("="*60)
+        print(f"Total abnormal samples: {summary_stats['total_abnormal_samples']}")
+        print(f"Samples above threshold ({similarity_threshold}): {summary_stats['samples_above_threshold']}")
+        print(f"Mean correlation: {summary_stats['mean_correlation']:.4f}")
+        print(f"Median correlation: {summary_stats['median_correlation']:.4f}")
+        print(f"Max correlation: {summary_stats['max_correlation']:.4f}")
+        print(f"Min correlation: {summary_stats['min_correlation']:.4f}")
+        print(f"Std correlation: {summary_stats['std_correlation']:.4f}")
+        print(f"Saved {len(saved_plots)} plots")
+        
+        return {
+            'correlations': correlations,
+            'saved_plots': saved_plots,
+            'summary_stats': summary_stats,
+            'similarity_threshold': similarity_threshold,
+            'shap_values_abnormal': shap_abnormal,
+            'attention_values_abnormal': attention_abnormal
         }

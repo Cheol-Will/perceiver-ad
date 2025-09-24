@@ -90,7 +90,14 @@ def train_test(args, model_config, train_config, analysis_config, run):
     if args.plot_grad_z_x:
         analyzer.plot_grad_z_x()
         
+    if args.visualize_attention_vs_shap:
+        # analyzer.visualize_attention_vs_shap(save_plots=True)
+        analyzer.visualize_attention_vs_shap()
+    if args.compare_shap_vs_encoder_attention_per_sample:
+        analyzer.compare_shap_vs_encoder_attention_per_sample(plot_group_average=True, include_self_attention=True)
+        analyzer.compare_shap_vs_encoder_attention_per_sample(plot_group_average=True, include_self_attention=False)
 
+    
 
     return 
 
@@ -179,6 +186,8 @@ if __name__ == "__main__":
     parser.add_argument('--plot_2x4', action='store_true')
     parser.add_argument('--plot_2x3', action='store_true')
     parser.add_argument('--plot_grad_z_x', action='store_true')
+    parser.add_argument('--visualize_attention_vs_shap', action='store_true')
+    parser.add_argument('--compare_shap_vs_encoder_attention_per_sample', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:

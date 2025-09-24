@@ -95,7 +95,17 @@ def plot_hp_sen():
         def _plot(ax, metrics, xlabel, ylabel, color):
             x, y = zip(*metrics)
             x_positions = range(len(x))
-            ax.plot(x_positions, y, marker='o', linestyle='-', color=color, label='Average AUC-PR')
+            ax.plot(
+                x_positions, 
+                y, 
+                marker='o', 
+                linestyle='-', 
+                color=color, 
+                label='Average AUC-PR',
+                linewidth=2.5,
+                markersize=8,
+                markeredgewidth=1.5,    
+            )
             ax.set_xticks(x_positions)
             ax.set_xticklabels(x, fontsize=14)
             ax.tick_params(axis='x', length=0, labelsize=14)
