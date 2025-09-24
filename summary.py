@@ -456,11 +456,11 @@ def render_train_ratio(pivots, print_summary = False):
         'thyroid',
         'shuttle', # all good.
         'satimage-2', 
-        'satellite',
+        # 'satellite',
         'optdigits',
         'campaign', # too slow
-        # 'optdigits',
-        # 'nslkdd',
+        'optdigits',
+        'nslkdd',
         # 'fraud',
         # 'census',
     ]
