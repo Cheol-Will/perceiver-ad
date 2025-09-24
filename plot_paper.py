@@ -107,8 +107,8 @@ def plot_hp_sen():
 
         _plot(axes[0], aucpr_vs_latent, 'Latent Number Scale Factor', 'AUC-PR', 'C0')
         _plot(axes[1], aucpr_vs_memory, 'Memory Number Scale Factor', '', 'C1')
-        _plot(axes[2], aucpr_vs_temperature, 'Temperature', '', 'C2')
-        _plot(axes[3], aucpr_vs_depth, 'Depth', '', 'C3')
+        _plot(axes[2], aucpr_vs_depth, 'Depth', '', 'C3')
+        _plot(axes[3], aucpr_vs_temperature, 'Temperature', '', 'C2')
 
         plt.tight_layout()
         sns.despine(fig)
