@@ -459,9 +459,8 @@ def render_train_ratio(pivots, print_summary = False):
         # 'satellite',
         'optdigits',
         'campaign', # too slow
-        'optdigits',
         'nslkdd',
-        # 'fraud',
+        'fraud',
         # 'census',
     ]
     models = [
@@ -719,7 +718,9 @@ def main(args):
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # (working on)
 
         ##################################################################################
-        # 'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-mlp_enc-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-mlp_dec_mixer-d64-lr0.001-t0.1',
         ##################################################################################
         # 'MemPAE-ws-l2-d64-lr0.001',
         ##################################################################################
@@ -862,7 +863,7 @@ def main(args):
     if args.npt:
         render_ours_on_npt(pivots, )
     if args.train_ratio:
-        render_train_ratio(pivots, True)
+        render_train_ratio(pivots, False)
         # render_memory_analysis(pivots)
 
         
