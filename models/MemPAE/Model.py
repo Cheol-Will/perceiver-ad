@@ -290,6 +290,33 @@ class FeatureTokenizer(nn.Module):
         x_embedded = x.unsqueeze(-1) * self.embedding_matrix  # (batch_size, num_features, hidden_dim)
         return x_embedded
 
+
+class MLPMixerEncoder(nn.Module):
+    def __init__(
+        self, 
+        hidden_dim,
+        num_latents,
+        dropout_prob,
+    ):
+        super().__init__()
+        self.lin1 = nn.Linear(hidden_dim, hidden_dim)
+        self.act1 = nn.GELU()
+        self.drop1 = nn.Dropout(dropout_prob)
+        self.lin2 = nn.Linear(num_latents, num_latents)
+        self.act2 = nn.ReLU()
+        self.drop2 = nn.Dropout(dropout_prob)
+        
+    def forward(self, x):
+        assert x.ndim == 3 # (B, N, D)
+        x = self.drop1(self.act1(self.lin1(x))) # B, N, D
+        x = x.permute(0, 2, 1) # B, D, N
+        x = self.drop2(self.act2(self.lin2(x))) # B, D, N
+        x = x.permute(0, 2, 1) # B, N, D
+
+        return x
+
+
+
 class MLPMixerDecoder(nn.Module):
     def __init__(
         self, 
@@ -417,6 +444,7 @@ class MemPAE(nn.Module):
         top_k: int = None,
         is_recurrent: bool = False,
         mlp_encoder: bool = False, # make one token
+        mlp_mixer_encoder: bool = False, # make one token
         mlp_decoder: bool = False, # flatten latent_hat and apply mlp
         mlp_mixer_decoder: bool = False, # 
     ):
@@ -449,6 +477,9 @@ class MemPAE(nn.Module):
         if mlp_encoder:
             print("Init MLPEncoder.")
             self.encoder = MLPEncoder(hidden_dim, num_features, dropout_prob)
+        elif mlp_mixer_encoder: 
+            print("Init MLPMixerEncoder.")
+            self.encoder = MLPMixerEncoder(hidden_dim, num_features, dropout_prob)
         else:
             self.encoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
         
@@ -497,6 +528,7 @@ class MemPAE(nn.Module):
         self.is_recurrent = is_recurrent
         self.mlp_encoder = mlp_encoder
         self.mlp_decoder = mlp_decoder
+        self.mlp_mixer_encoder = mlp_mixer_encoder
         self.mlp_mixer_decoder = mlp_mixer_decoder
         self.reset_parameters()
 
@@ -522,27 +554,32 @@ class MemPAE(nn.Module):
 
         if self.mlp_encoder:
             latents = self.encoder(x) # (B, F) -> (B, 1, D)
+
         else:
             # feature tokenizer
             feature_embedding = self.feature_tokenizer(x) # (B, F, D)
             feature_embedding = feature_embedding + self.pos_encoding
 
-            # encoder 
-            latents_query = self.latents_query.expand(batch_size, -1, -1) # (B, N, D)
-            latents, attn_weight_enc = self.encoder(latents_query, feature_embedding, feature_embedding, return_weight=True) 
+            if self.mlp_mixer_encoder:
+                latents = self.encoder(feature_embedding)
 
-            # self attention
-            attn_weight_self_list = []
-            if self.is_weight_sharing:
-                for _ in range(self.depth):
-                    latents, attn_weight_self = self.block(latents, return_weight=True)
-                    attn_weight_self_list.append(attn_weight_self)
-                    if self.is_recurrent:
-                        latents, _ = self.memory(latents)
             else:
-                for block in self.block:
-                    latents ,attn_weight_self = block(latents, return_weight=True)
-                    attn_weight_self_list.append(attn_weight_self)
+                # encoder 
+                latents_query = self.latents_query.expand(batch_size, -1, -1) # (B, N, D)
+                latents, attn_weight_enc = self.encoder(latents_query, feature_embedding, feature_embedding, return_weight=True) 
+
+                # self attention
+                attn_weight_self_list = []
+                if self.is_weight_sharing:
+                    for _ in range(self.depth):
+                        latents, attn_weight_self = self.block(latents, return_weight=True)
+                        attn_weight_self_list.append(attn_weight_self)
+                        if self.is_recurrent:
+                            latents, _ = self.memory(latents)
+                else:
+                    for block in self.block:
+                        latents ,attn_weight_self = block(latents, return_weight=True)
+                        attn_weight_self_list.append(attn_weight_self)
 
         if self.is_recurrent:
             latents_hat = latents # addressing is already performed
