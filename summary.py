@@ -812,6 +812,13 @@ def main(args):
         # "MemPAE-ws-global_token+d64-lr0.001-t0.1",
         # "MemPAE-ws-local+d64-lr0.001-t0.1",
         # "MemPAE-ws-pos_query-d64-lr0.001-t0.1",
+        # queyr token
+        "MemPAE-ws-pos_query+token-d64-lr0.001-t0.1",
+        "MemPAE-ws-pos_query-d64-lr0.001-t0.1",
+        "MemPAE-ws-d64-lr0.001-t0.1",
+        
+        
+        
         # 'MemPAE-ws-l2-d64-lr0.001',
 
         ##################################################################################
