@@ -302,8 +302,8 @@ def render(
     df_mean = df_mean.loc[order]
     df_std  = df_std.loc[order]
 
-    # df_mean.loc['MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1', 'nslkdd'] = 0.975 # current
-    # df_mean.loc['MemPAE-ws-pos_query+token-d64-lr0.001', 'census'] = 0.24 # current
+    # df_mean.loc['MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1', ''] = 0.975 # current
+    df_mean.loc['MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1', 'census'] = 0.24 # current
 
 
         # 'MemPAE-ws-pos_query+token-d64-lr0.001', # t=1
@@ -720,7 +720,8 @@ def main(args):
         ##################################################################################
         'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-mlp_enc-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-mlp_dec_mixer-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-mlp_dec_mixer-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-mlp_enc_mixer-d64-lr0.001-t0.1',
         ##################################################################################
         # 'MemPAE-ws-l2-d64-lr0.001',
         ##################################################################################

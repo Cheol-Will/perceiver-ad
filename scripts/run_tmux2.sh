@@ -4,6 +4,7 @@ set -euo pipefail
 
 # data_list=("satimage-2" mammography campaign shuttle nslkdd fraud census)   
 data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits shuttle satellite mammography "satimage-2" campaign census fraud nslkdd ) # from MCM
+data_list=(campaign census fraud nslkdd ) # from MCM
 
 hidden_dim=64
 learning_rate=0.001
