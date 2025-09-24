@@ -459,9 +459,8 @@ def render_train_ratio(pivots, print_summary = False):
         'satellite',
         'optdigits',
         'campaign', # too slow
-        # 'optdigits',
-        # 'nslkdd',
-        # 'fraud',
+        'nslkdd',
+        'fraud',
         # 'census',
     ]
     models = [
@@ -864,7 +863,7 @@ def main(args):
     if args.npt:
         render_ours_on_npt(pivots, )
     if args.train_ratio:
-        render_train_ratio(pivots, True)
+        render_train_ratio(pivots, False)
         # render_memory_analysis(pivots)
 
         
