@@ -1390,12 +1390,11 @@ class Analyzer(Trainer):
                     # Extract data for current head - only decoder maps
                     plots_config = [
                         # Row 0: Normal samples
-                        (normal_dec_z[head_idx], f'Normal Decoder H{head_idx} (Z)\n(Label: {y_normal[0].item()})', 'Latent Index', 'Feature Index'),
-                        (normal_dec_z_hat[head_idx], f'Normal Decoder H{head_idx} (Z_hat)', 'Latent Index', 'Feature Index'),
+                        (normal_dec_z[head_idx], f'Before Addressing', 'Latent Index', 'Feature Index'),
+                        (normal_dec_z_hat[head_idx], f'After Addressing', 'Latent Index', 'Feature Index'),
                         
-                        # Row 1: Abnormal samples
-                        (abnormal_dec_z[head_idx], f'Abnormal Decoder H{head_idx} (Z)\n({abnormal_label_text.split("(")[1][:-1]})', 'Latent Index', 'Feature Index'),
-                        (abnormal_dec_z_hat[head_idx], f'Abnormal Decoder H{head_idx} (Z_hat)', 'Latent Index', 'Feature Index')
+                        (abnormal_dec_z[head_idx], f' ', 'Latent Index', 'Feature Index'),
+                        (abnormal_dec_z_hat[head_idx], f' ', 'Latent Index', 'Feature Index')
                     ]
                     
                     # Find global min/max for each decoder type for this head
@@ -1417,8 +1416,6 @@ class Analyzer(Trainer):
                         
                         im = axes[row, col].imshow(attn_data, cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
                         axes[row, col].set_title(title, fontsize=12)
-                        axes[row, col].set_xlabel(xlabel)
-                        axes[row, col].set_ylabel(ylabel)
                         
                         # Remove tick labels for cleaner appearance
                         axes[row, col].set_xticks([])
@@ -1427,6 +1424,11 @@ class Analyzer(Trainer):
                         # Add colorbar to each subplot
                         plt.colorbar(im, ax=axes[row, col], fraction=0.046, pad=0.04)
                     
+                    axes[0, 0].set_ylabel('Latent Index')
+                    axes[1, 0].set_ylabel('Latent Index')
+                    axes[1, 0].set_xlabel('Column Index')
+                    axes[1, 1].set_xlabel('Column Index')
+
                     # Overall title for this head
                     title_suffix = " (Abnormal Averaged)" if abnormal_avg else f" (Abnormal Sample {abnormal_idx})"
                     fig.suptitle(f'Head {head_idx} Decoder Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
@@ -1454,8 +1456,8 @@ class Analyzer(Trainer):
                 # Plot configurations: (data, title, xlabel, ylabel) - only decoder maps
                 plots_config = [
                     # Row 0: Normal samples
-                    (normal_dec_z, f'Normal Decoder (Z)\n(Label: {y_normal[0].item()})', 'Latent Index', 'Feature Index'),
-                    (normal_dec_z_hat, 'Normal Decoder (Z_hat)', 'Latent Index', 'Feature Index'),
+                    (normal_dec_z, f'Before Addressing', 'Latent Index', 'Feature Index'),
+                    (normal_dec_z_hat, 'After Addresing', 'Before Addressing', 'Feature Index'),
                     
                     # Row 1: Abnormal samples
                     (abnormal_dec_z, f'Abnormal Decoder (Z)\n({abnormal_label_text.split("(")[1][:-1]})', 'Latent Index', 'Feature Index'),
@@ -1480,21 +1482,28 @@ class Analyzer(Trainer):
                     vmin, vmax = v_ranges[col]
                     
                     im = axes[row, col].imshow(attn_data, cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
-                    axes[row, col].set_title(title, fontsize=12)
-                    axes[row, col].set_xlabel(xlabel)
-                    axes[row, col].set_ylabel(ylabel)
-                    
-                    # Remove tick labels for cleaner appearance
+                    # axes[row, col].set_title(title, fontsize=12)
                     axes[row, col].set_xticks([])
                     axes[row, col].set_yticks([])
                     
-                    # Add colorbar to each subplot
-                    plt.colorbar(im, ax=axes[row, col], fraction=0.046, pad=0.04)
                 
+                # title
+                axes[0, 0].set_title('Before Addressing', fontsize=24, pad=20)
+                axes[0, 1].set_title('After Addressing', fontsize=24, pad=20)
+                axes[1, 0].set_title(' ', fontsize=24, pad=20)
+                axes[1, 1].set_title(' ', fontsize=24, pad=20)
+                
+                # axis name
+                axes[0, 0].set_ylabel('Column', fontsize=16, labelpad=15)
+                axes[1, 0].set_ylabel('Column', fontsize=16, labelpad=15)
+                axes[1, 0].set_xlabel('Latent', fontsize=16, labelpad=15)
+                axes[1, 1].set_xlabel('Latent', fontsize=16, labelpad=15)
+
+
                 # Overall title
-                title_suffix = " (Abnormal Averaged)" if abnormal_avg else f" (Abnormal Sample {abnormal_idx})"
-                fig.suptitle(f'Decoder Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
-                            fontsize=16, y=0.98)
+                # title_suffix = " (Abnormal Averaged)" if abnormal_avg else f" (Abnormal Sample {abnormal_idx})"
+                # fig.suptitle(f'Decoder Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
+                #             fontsize=16, y=0.98)
                 
                 plt.tight_layout()
                 
@@ -1646,7 +1655,13 @@ class Analyzer(Trainer):
                 axes[row, col].set_yticks([])
                 
                 # Add colorbar to each subplot
-                plt.colorbar(im, ax=axes[row, col], fraction=0.046, pad=0.04)
+                # plt.colorbar(im, ax=axes[row, col], fraction=0.046, pad=0.04)
+            
+            axes[0, 0].set_ylabel('Latent Index')
+            axes[1, 0].set_ylabel('Latent Index')
+            axes[1, 0].set_xlabel('Column Index')
+            axes[1, 1].set_xlabel('Column Index')
+
             
             # Overall title
             title_suffix = " (Abnormal Averaged)" if abnormal_avg else f" (Abnormal Sample {abnormal_idx})"

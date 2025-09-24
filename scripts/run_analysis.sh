@@ -1,7 +1,14 @@
 #!/bin/bash
 
 data_list=(
-    pendigits
+    # "satimage-2"
+    # satellite
+    # shuttle
+    # cardio
+    # wbc
+    # thyroid
+    wine
+    pima
 )
 model_type='MemPAE'
 hidden_dim=64
