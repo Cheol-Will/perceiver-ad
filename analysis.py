@@ -75,10 +75,11 @@ def train_test(args, model_config, train_config, analysis_config, run):
                 feature_idx=i
             )
     if args.plot_2x4:
+        analyzer.analyze_best_abnormal_sample()
         #to show that memory adderessing makes anormaly's decoding attention map similar to that of normal samples.
-        analyzer.plot_2x4(abnormal_avg=True, plot_heads=False, plot_2x2=True)
-        analyzer.plot_2x4(5, plot_heads=False, plot_2x2=True) # wine
-        analyzer.plot_2x4(1, plot_heads=False, plot_2x2=True) # pima
+        # analyzer.plot_2x4(abnormal_avg=True, plot_heads=False, plot_2x2=True)
+        # analyzer.plot_2x4(5, plot_heads=False, plot_2x2=True) # wine
+        # analyzer.plot_2x4(1, plot_heads=False, plot_2x2=True) # pima
         
         # for i in range(100):
         #     analyzer.plot_2x4(i, plot_heads=False, plot_2x2=True) 
@@ -88,6 +89,8 @@ def train_test(args, model_config, train_config, analysis_config, run):
         # analyzer.plot_2x3([])
     if args.plot_grad_z_x:
         analyzer.plot_grad_z_x()
+        
+
 
     return 
 

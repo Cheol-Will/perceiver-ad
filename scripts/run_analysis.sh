@@ -1,14 +1,18 @@
 #!/bin/bash
 
 data_list=(
-    # "satimage-2"
-    # satellite
-    # shuttle
-    # cardio
-    # wbc
-    # thyroid
     wine
     pima
+    breastw 
+    cardio 
+    glass 
+    ionosphere
+    "satimage-2"
+    satellite
+    shuttle
+    cardio
+    wbc
+    thyroid
 )
 model_type='MemPAE'
 hidden_dim=64

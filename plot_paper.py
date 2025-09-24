@@ -83,11 +83,48 @@ def plot_hp_sen():
 
         print(f"Plot saved into {png_path}")
 
-
     _plot_hp_vs_aucpr(aucpr_vs_latent, 'Latent Number Scale Factor', color='C0')
     _plot_hp_vs_aucpr(aucpr_vs_memory, 'Memory Number Scale Factor', color='C1')
     _plot_hp_vs_aucpr(aucpr_vs_temperature, 'Temperature', color='C2')
     _plot_hp_vs_aucpr(aucpr_vs_depth, 'Depth', color='C3')
+
+
+    def plot_hp_sen_1x4():
+        fig, axes = plt.subplots(1, 4, figsize=(16, 3))
+
+        def _plot(ax, metrics, xlabel, color):
+            x, y = zip(*metrics)
+            x_positions = range(len(x))
+            ax.plot(x_positions, y, marker='o', linestyle='-', color=color, label='Average AUC-PR')
+            ax.set_xticks(x_positions)
+            ax.set_xticklabels(x)
+            ax.tick_params(axis='x', length=0)
+            ax.set_xlabel(xlabel, fontsize=24)
+            ax.set_ylabel('AUC-PR', fontsize=24)
+            ax.grid(True, axis='y', linestyle='--', linewidth=0.5)
+            ax.legend()
+
+        _plot(axes[0], aucpr_vs_latent, 'Latent Number Scale Factor', 'C0')
+        _plot(axes[1], aucpr_vs_memory, 'Memory Number Scale Factor', 'C1')
+        _plot(axes[2], aucpr_vs_temperature, 'Temperature', 'C2')
+        _plot(axes[3], aucpr_vs_depth, 'Depth', 'C3')
+
+        plt.tight_layout()
+        sns.despine(fig)
+
+        save_dir = 'results_analysis_paper/ablation_study/'
+        
+        png_path = os.path.join(save_dir, f'hp_sensitivity_1x4.png')
+        pdf_path = os.path.join(save_dir, f'hp_sensitivity_1x4.pdf')
+
+        plt.savefig(png_path, dpi=300, bbox_inches='tight')
+        plt.savefig(pdf_path, bbox_inches='tight')
+        plt.show()
+
+        print(f"Plot saved into {png_path}")
+        plt.show()
+
+    plot_hp_sen_1x4()
 
 def plot_contam():
     pima = {

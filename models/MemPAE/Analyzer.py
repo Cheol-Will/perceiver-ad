@@ -1686,3 +1686,95 @@ class Analyzer(Trainer):
                 print(f"Normal sample label: {y_normal[0].item()}, Abnormal sample label: {y_abnormal[0].item()}")
             
             return out_path
+
+
+
+    @torch.no_grad()
+    def find_most_different_abnormal_sample(self):
+        """
+        Find abnormal sample with maximum difference between decoder attention maps
+        before and after memory addressing.
+        
+        Returns:
+            best_idx: index of the abnormal sample with maximum attention difference
+            best_difference: the maximum difference value found
+        """
+        self.model.eval()
+        
+        def compute_attention_difference(X_batch):
+            """Compute difference between pre and post addressing decoder attention maps"""
+            X_batch = X_batch.to(self.device)
+            
+            # Get decoder attention maps before and after addressing
+            loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
+                self.model(X_batch, return_for_analysis=True)
+            
+            # Average over heads: (B, H, F, N) -> (B, F, N)
+            dec_z = attn_weight_dec_z.mean(dim=1).detach().cpu().numpy()
+            dec_z_hat = attn_weight_dec_z_hat.mean(dim=1).detach().cpu().numpy()
+            
+            # Compute L2 difference for each sample in batch
+            differences = []
+            for i in range(dec_z.shape[0]):
+                diff = np.linalg.norm(dec_z_hat[i] - dec_z[i])
+                differences.append(diff)
+            
+            return np.array(differences)
+        
+        # Find abnormal samples and compute differences
+        best_idx = -1
+        best_difference = -1.0
+        current_abnormal_idx = 0
+        
+        print("Searching for abnormal sample with maximum attention difference...")
+        
+        for batch_idx, (X, y) in enumerate(self.test_loader):
+            # Find abnormal samples in this batch
+            abnormal_mask = (y != 0)
+            
+            if not abnormal_mask.any():
+                continue
+                
+            abnormal_X = X[abnormal_mask]
+            abnormal_y = y[abnormal_mask]
+            
+            # Compute attention differences for abnormal samples
+            differences = compute_attention_difference(abnormal_X)
+            
+            # Check each abnormal sample in this batch
+            for i, diff in enumerate(differences):
+                if diff > best_difference:
+                    best_difference = diff
+                    best_idx = current_abnormal_idx + i
+                    print(f"New best abnormal sample found: idx={best_idx}, difference={diff:.4f}")
+            
+            current_abnormal_idx += len(differences)
+        
+        if best_idx == -1:
+            print("Warning: No abnormal samples found!")
+            return None, None
+        
+        print(f"\nBest abnormal sample: index={best_idx}, attention_difference={best_difference:.4f}")
+        return best_idx, best_difference
+
+    def analyze_best_abnormal_sample(self):
+        """
+        Find the abnormal sample with maximum attention difference and create 2x2 plot
+        """
+        # Find the best abnormal sample
+        best_idx, best_diff = self.find_most_different_abnormal_sample()
+        
+        if best_idx is None:
+            print("Cannot proceed: No abnormal samples found")
+            return None
+        
+        print(f"\nCreating 2x2 plot for abnormal sample {best_idx} (difference: {best_diff:.4f})")
+        
+        # Create 2x2 plot with the best sample
+        plot_path = self.plot_2x2(abnormal_idx=best_idx, abnormal_avg=False, plot_2x2=True)
+        
+        return {
+            'best_abnormal_idx': best_idx,
+            'attention_difference': best_diff,
+            'plot_path': plot_path
+        }
