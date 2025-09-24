@@ -447,6 +447,7 @@ class MemPAE(nn.Module):
         mlp_mixer_encoder: bool = False, # make one token
         mlp_decoder: bool = False, # flatten latent_hat and apply mlp
         mlp_mixer_decoder: bool = False, # 
+        global_decoder_query: bool = False,
     ):
         super(MemPAE, self).__init__()
         assert num_latents is not None
@@ -507,16 +508,21 @@ class MemPAE(nn.Module):
         self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
         self.latents_query = nn.Parameter(torch.empty(1, num_latents, hidden_dim))
 
-        if use_pos_enc_as_query:
-            if use_mask_token:
-                print(f"Init decoder query of shape {(1, 1, hidden_dim)} and use decoder query + pos_encoding as query token.")
-                self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
-            else:
-                print(f"Do not init decoder query but use positional encoding as decoder query")
-                self.decoder_query = None # 
+
+        if global_decoder_query:
+            print(f"Init decoder query of shape {(1, 1, hidden_dim)} and use expanded decoder query as query token.")
+            self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
         else:
-            print(f"Init decoder query of shape {(1, num_features, hidden_dim)}")
-            self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d
+            if use_pos_enc_as_query:
+                if use_mask_token:
+                    print(f"Init decoder query of shape {(1, 1, hidden_dim)} and use decoder query + pos_encoding as query token.")
+                    self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
+                else:
+                    print(f"Do not init decoder query but use positional encoding as decoder query")
+                    self.decoder_query = None # 
+            else:
+                print(f"Init decoder query of shape {(1, num_features, hidden_dim)}")
+                self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d
 
         self.entropy_loss_fn = EntropyLoss()
 
@@ -534,6 +540,7 @@ class MemPAE(nn.Module):
         self.mlp_decoder = mlp_decoder
         self.mlp_mixer_encoder = mlp_mixer_encoder
         self.mlp_mixer_decoder = mlp_mixer_decoder
+        self.global_decoder_query = global_decoder_query
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -592,14 +599,17 @@ class MemPAE(nn.Module):
             latents_hat, memory_weight = self.memory(latents) # (B, N, D), (B, N, M) 
 
         # decoder
-        if self.use_pos_enc_as_query:
-            if self.use_mask_token:
-                decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (1, 1, D) -> (B, F, D)
-                decoder_query = decoder_query + self.pos_encoding
-            else:
-                decoder_query = self.pos_encoding.expand(batch_size, -1, -1)
+        if self.global_decoder_query:
+            decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (1, 1, D) -> (B, F, D)
         else:
-            decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
+            if self.use_pos_enc_as_query:
+                if self.use_mask_token:
+                    decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (1, 1, D) -> (B, F, D)
+                    decoder_query = decoder_query + self.pos_encoding
+                else:
+                    decoder_query = self.pos_encoding.expand(batch_size, -1, -1)
+            else:
+                decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
 
 
         if self.mlp_decoder:

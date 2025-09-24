@@ -441,23 +441,35 @@ def render_hp(pivots):
             use_baseline_pr=True, is_temp_tune=False, is_sort=False, is_plot=True)
 
 def render_train_ratio(pivots, print_summary = False):
+    # '23_mammography', # 11k: 5 numeric and 1 binary -------------
+    #     '30_satellite', # 6k: image 
+    #     '31_satimage-2', # 5k: image 
+    #     '26_optdigits', # 5k: image
+    #     '38_thyroid', # 3k: medical: 1 catgorical and 5 numeric -------------
+    #     '7_cardiotocography', # -------------
+    #     '18_ionosphere', # 0.3k: frequency and purse data
+    #     '6_cardio', # 1.8k -------------
+    #     '29_pima', # 0.7k
+    #     '4_breastw', # 0.6k
+    
+    
     data = [
-        'arrhythmia', 
-        'breastw',
-        'cardio', 
-        'cardiotocography', 
-        'mammography', 
-        'glass',
-        'ionosphere',
-        'wbc',
-        'wine',
-        'pima', 
-        'pendigits', 
-        'thyroid',
-        'shuttle', # all good.
-        'satimage-2', 
-        'satellite',
-        'optdigits',
+        # 'arrhythmia', 
+        # 'breastw',
+        # 'cardio', 
+        # 'cardiotocography', 
+        # 'mammography', 
+        # 'glass',
+        # 'ionosphere',
+        # 'wbc',
+        # 'wine',
+        # 'pima', 
+        # 'pendigits', 
+        # 'thyroid',
+        # 'shuttle', # all good.
+        # 'satimage-2', 
+        # 'satellite',
+        # 'optdigits',
         'campaign', # too slow
         'nslkdd',
         'fraud',
@@ -531,6 +543,77 @@ def render_train_ratio(pivots, print_summary = False):
                     print(f"  Ratio {ratio}: {best_model} ({best_score:.4f})")
         
     return dataset_results
+
+def render_train_ratio_average(pivots):
+    data = [
+        # 'arrhythmia', 
+        # 'breastw',
+        # 'cardio', 
+        # 'cardiotocography', 
+        # 'mammography', 
+        # 'glass',
+        # 'ionosphere',
+        # 'wbc',
+        # 'wine',
+        # 'pima', 
+        # 'pendigits', 
+        # 'thyroid',
+        # 'shuttle',
+        # 'satimage-2', 
+        # 'satellite',
+        # 'optdigits',
+        'campaign',
+        'nslkdd',
+        # 'fraud',
+        'census',
+    ]
+    models = [
+        'MCM',
+        'DRL',
+        'Disent',
+    ]
+    my_models = [
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
+    ]
+    keys = [
+        'ratio_0.2_AUCPR',
+        'ratio_0.4_AUCPR',
+        'ratio_0.6_AUCPR',
+        'ratio_0.8_AUCPR',
+        'ratio_1.0_AUCPR',
+    ]    
+
+    # 각 ratio별로 데이터프레임 수집
+    dict_df = {}
+    for base in keys:
+        df = render(pivots, data, models, my_models, base, 
+                add_avg_rank=False, use_rank=False, use_std=False, 
+                use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
+        dict_df[base] = df
+
+    all_models = dict_df[keys[0]].index.tolist()
+    ratio_labels = [key.replace('ratio_', '').replace('_AUCPR', '') for key in keys]
+    
+    # 전체 평균 계산을 위한 데이터프레임 생성
+    average_df = pd.DataFrame(index=all_models, columns=ratio_labels)
+    
+    for i, base_key in enumerate(keys):
+        ratio_label = ratio_labels[i]
+        # 각 ratio에서 모든 데이터셋에 대한 평균 계산
+        average_df[ratio_label] = dict_df[base_key].mean(axis=1)
+    
+    print("="*60)
+    print("OVERALL AVERAGE - Model vs Training Ratio (AUCPR)")
+    print("="*60)
+    print(average_df.round(4))
+    
+    # 저장
+    os.makedirs('metrics/train_ratio', exist_ok=True)
+    average_df.to_csv('metrics/train_ratio/overall_average_model_vs_ratio.csv')
+    
+    print(f"\nOverall average results saved to: metrics/train_ratio/overall_average_model_vs_ratio.csv")
+    
+    return average_df
 
 
 def render_ours_on_npt(pivots):
@@ -723,6 +806,12 @@ def main(args):
         'MemPAE-ws-pos_query+token-mlp_dec_mixer-d64-lr0.001-t0.1',
         'MemPAE-ws-pos_query+token-mlp_enc_mixer-d64-lr0.001-t0.1',
         ##################################################################################
+        "MemPAE-ws-pos_query+token-d64-lr0.001-t0.1",
+        "MemPAE-ws-global_query-d64-lr0.001-t0.1",
+        "MemPAE-ws-d64-lr0.001-t0.1",
+        # "MemPAE-ws-global_token+d64-lr0.001-t0.1",
+        # "MemPAE-ws-local+d64-lr0.001-t0.1",
+        # "MemPAE-ws-pos_query-d64-lr0.001-t0.1",
         # queyr token
         "MemPAE-ws-pos_query+token-d64-lr0.001-t0.1",
         "MemPAE-ws-pos_query-d64-lr0.001-t0.1",
@@ -731,6 +820,7 @@ def main(args):
         
         
         # 'MemPAE-ws-l2-d64-lr0.001',
+
         ##################################################################################
 
 
@@ -872,6 +962,7 @@ def main(args):
         render_ours_on_npt(pivots, )
     if args.train_ratio:
         render_train_ratio(pivots, False)
+        render_train_ratio_average(pivots)
         # render_memory_analysis(pivots)
 
         

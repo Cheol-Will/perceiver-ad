@@ -4,31 +4,15 @@ set -euo pipefail
 # data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite) # from MCM
 # data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography ) # from MCM
 data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite campaign mammography ) # from MCM
-
-# data_list=("satimage-2" nslkdd fraud)
-# data_list=(shuttle census)
-
-
-# data_list=(
-#     global_anomalies_45_wine_42
-#     global_anomalies_14_glass_42
-#     global_anomalies_42_WBC_42
-#     global_anomalies_18_Ionosphere_42
-#     global_anomalies_4_breastw_42
-#     global_anomalies_29_Pima_42
-#     global_anomalies_6_cardio_42
-#     global_anomalies_7_Cardiotocography_42
-#     global_anomalies_38_thyroid_42
-#     global_anomalies_26_optdigits_42
-#     global_anomalies_31_satimage-2_42
-#     global_anomalies_30_satellite_42
-#     global_anomalies_23_mammography_42
-#     global_anomalies_5_campaign_42
-#     global_anomalies_32_shuttle_42
-# )      
-   
-# data_list=(arrhythmia  cardio cardiotocography pima  optdigits pendigits satellite) # from MCM
-# data_list=(breastw glass ionosphere  wbc wine thyroid ) 
+data_list=(
+    cardio
+    cardiotocography
+    mammography
+    pendigits
+    pima
+    wbc
+    wine
+)
 
 hidden_dim=64
 learning_rate=0.001

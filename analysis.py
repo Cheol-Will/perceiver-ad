@@ -76,9 +76,9 @@ def train_test(args, model_config, train_config, analysis_config, run):
             )
     if args.plot_2x4:
         #to show that memory adderessing makes anormaly's decoding attention map similar to that of normal samples.
-        for i in range(30):
-            analyzer.plot_2x4(i, plot_heads=False) 
-        analyzer.plot_2x4(abnormal_avg=True, plot_heads=False)
+        for i in range(10):
+            analyzer.plot_2x4(i, plot_heads=False, plot_2x2=True) 
+        analyzer.plot_2x4(abnormal_avg=True, plot_heads=False, plot_2x2=True)
     if args.plot_2x3:
         # to show that transformer are handling input-depedent information.
         analyzer.plot_2x3([0, 1]) 
