@@ -38,55 +38,58 @@ def plot_hp_sen():
         [4.0, 0.7071],
         [8.0, 0.7061],
     ]
+    aucpr_vs_temperature = [
+        [1, 0.7004],
+        [0.5, 0.7042],
+        [0.1, 0.7124],
+        [0.05, 0.7048],
+        [0.01, 0.6842],
+    ]
+    aucpr_vs_depth = [
+        [0, 0.7004],
+        [2, 0.7042],
+        [4, 0.7124],
+        [6, 0.7070],
+    ]
 
-    fig, axes = plt.subplots(1, 2, figsize=(8, 3))
 
-    ax1 = axes[0]
-    x1, y1 = zip(*aucpr_vs_latent)
-    x1_positions = range(len(x1)) 
+    def _plot_hp_vs_aucpr(metrics, xlabel, color):
+        fig, ax = plt.subplots(1, 1, figsize=(4, 3))
 
-    ax1.plot(x1_positions, y1, marker='o', linestyle='-', label='Average AUC-PR')
+        ax1 = ax
+        x1, y1 = zip(*metrics)
+        x1_positions = range(len(x1)) 
+        ax1.plot(x1_positions, y1, marker='o', linestyle='-', color=color, label='Average AUC-PR')
+        ax1.set_xticks(x1_positions) 
+        ax1.set_xticklabels(x1)      
+        ax1.tick_params(axis='x', length=0)
+        ax1.set_ylabel('AUCPR', fontsize=11)
+        ax1.set_xlabel(f'{xlabel}', fontsize=11)
+        ax1.grid(True, axis='y', linestyle='--', linewidth=0.5) # 
 
-    ax1.set_xticks(x1_positions) 
-    ax1.set_xticklabels(x1)      
-    ax1.tick_params(axis='x', length=0)
+        plt.tight_layout()
+        sns.despine(fig)
 
-    # ax1.set_title('Latent Number vs AUCPR', fontsize=12)
-    ax1.set_ylabel('AUCPR', fontsize=11)
-    ax1.set_xlabel('Latent Number Scale Factor', fontsize=11)
-    # ax1.legend()
-    ax1.grid(True, axis='y', linestyle='--', linewidth=0.5) # 
+        save_dir = 'results_analysis_paper/ablation_study/'
+        os.makedirs(save_dir, exist_ok=True)
 
-    ax2 = axes[1]
-    x2, y2 = zip(*aucpr_vs_memory)
-    x2_positions = range(len(x2))
+        xlabel = xlabel.replace(' ', '_')        
+        png_path = os.path.join(save_dir, f'hp_sensitivity_{xlabel}.png')
+        pdf_path = os.path.join(save_dir, f'hp_sensitivity_{xlabel}.pdf')
 
-    ax2.plot(x2_positions, y2, marker='s', linestyle='-', color='C1', label='Average AUC-PR')
+        plt.savefig(png_path, dpi=300, bbox_inches='tight')
+        plt.savefig(pdf_path, bbox_inches='tight')
+        plt.show()
 
-    ax2.set_xticks(x2_positions)
-    ax2.set_xticklabels(x2)
+        print(f"Plot saved into {png_path}")
 
-    ax2.tick_params(axis='x', length=0)
 
-    # ax2.set_title('Memory Number vs AUCPR', fontsize=12)
-    ax2.set_xlabel('Memory Number Scale Factor', fontsize=11)
-    # ax2.legend()
-    ax2.grid(True, axis='y', linestyle='--', linewidth=0.5)
+    _plot_hp_vs_aucpr(aucpr_vs_latent, 'Latent Number Scale Factor', color='C0')
+    _plot_hp_vs_aucpr(aucpr_vs_memory, 'Memory Number Scale Factor', color='C1')
+    _plot_hp_vs_aucpr(aucpr_vs_temperature, 'Temperature', color='C2')
+    _plot_hp_vs_aucpr(aucpr_vs_depth, 'Depth', color='C3')
 
-    plt.tight_layout()
-    sns.despine(fig)
 
-    save_dir = 'results_analysis_paper/ablation_study/'
-    os.makedirs(save_dir, exist_ok=True)
-    
-    png_path = os.path.join(save_dir, 'hp_sensitivity.png')
-    pdf_path = os.path.join(save_dir, 'hp_sensitivity.pdf')
-
-    plt.savefig(png_path, dpi=300, bbox_inches='tight')
-    plt.savefig(pdf_path, bbox_inches='tight')
-    plt.show()
-
-    print(f"Plot saved into {png_path}")
 
 
 def plot_contam():
@@ -346,4 +349,4 @@ if __name__ == '__main__':
     plot_contam()
     plot_train_ratio()
     render_npt()
-    render_main_table()
+    # render_main_table()
