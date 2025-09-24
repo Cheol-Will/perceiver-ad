@@ -303,7 +303,7 @@ def render(
     df_std  = df_std.loc[order]
 
     # df_mean.loc['MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1', ''] = 0.975 # current
-    df_mean.loc['MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1', 'census'] = 0.24 # current
+    # df_mean.loc['MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1', 'census'] = 0.24 # current
 
 
         # 'MemPAE-ws-pos_query+token-d64-lr0.001', # t=1
@@ -461,7 +461,7 @@ def render_train_ratio(pivots, print_summary = False):
         'campaign', # too slow
         'nslkdd',
         'fraud',
-        # 'census',
+        'census',
     ]
     models = [
         # 'KNN',
