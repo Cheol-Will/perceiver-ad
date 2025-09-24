@@ -1,7 +1,7 @@
 #!/bin/bash
 
 data_list=(
-    wine
+    pendigits
 )
 model_type='MemPAE'
 hidden_dim=64
