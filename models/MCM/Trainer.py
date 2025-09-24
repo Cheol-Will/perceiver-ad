@@ -26,6 +26,8 @@ class Trainer(object):
     def training(self):
         self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
         self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
+        print(f"shape of trainset: {self.train_loader.dataset.data.shape}")
+        print(f"shape of testset: {self.test_loader.dataset.data.shape}")
         optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
         self.model.train()
@@ -41,6 +43,7 @@ class Trainer(object):
                 optimizer.step()
             scheduler.step()
             info = 'Epoch:[{}]\t loss={:.4f}\t mse={:.4f}\t divloss={:.4f}\t'
+            self.logger.info(info.format(epoch,loss.cpu(),mse.cpu(),divloss.cpu()))
             # train_logger.info(info.format(epoch,loss.cpu(),mse.cpu(),divloss.cpu()))
             if loss < min_loss:
                 torch.save(self.model, self.path)

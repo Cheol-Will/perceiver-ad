@@ -461,7 +461,7 @@ def render_train_ratio(pivots, print_summary = False):
         'campaign', # too slow
         'nslkdd',
         'fraud',
-        # 'census',
+        'census',
     ]
     models = [
         # 'KNN',
