@@ -1771,7 +1771,7 @@ class Analyzer(Trainer):
         print(f"\nCreating 2x2 plot for abnormal sample {best_idx} (difference: {best_diff:.4f})")
         
         # Create 2x2 plot with the best sample
-        plot_path = self.plot_2x2(abnormal_idx=best_idx, abnormal_avg=False, plot_2x2=True)
+        plot_path = self.plot_2x4(abnormal_idx=best_idx, abnormal_avg=False, plot_2x2=True)
         
         return {
             'best_abnormal_idx': best_idx,

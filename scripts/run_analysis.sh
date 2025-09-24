@@ -1,18 +1,28 @@
 #!/bin/bash
 
 data_list=(
-    wine
-    pima
-    breastw 
-    cardio 
-    glass 
-    ionosphere
-    "satimage-2"
-    satellite
-    shuttle
-    cardio
-    wbc
-    thyroid
+    arrhythmia
+    cardiotocography
+    optdigits 
+    pendigits 
+    satellite 
+    campaign 
+    mammography
+    fraud
+    nslkdd
+    census
+    # wine
+    # pima
+    # breastw 
+    # cardio 
+    # glass 
+    # ionosphere
+    # "satimage-2"
+    # satellite
+    # shuttle
+    # cardio
+    # wbc
+    # thyroid
 )
 model_type='MemPAE'
 hidden_dim=64
