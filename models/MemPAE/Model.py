@@ -479,7 +479,11 @@ class MemPAE(nn.Module):
             self.encoder = MLPEncoder(hidden_dim, num_features, dropout_prob)
         elif mlp_mixer_encoder: 
             print("Init MLPMixerEncoder.")
-            self.encoder = MLPMixerEncoder(hidden_dim, num_features, dropout_prob)
+            self.encoder = nn.Sequential(*[
+                MLPMixerEncoder(hidden_dim, num_features, dropout_prob)
+                for _ in range(depth)
+            ])
+            
         else:
             self.encoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
         
