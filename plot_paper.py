@@ -90,24 +90,25 @@ def plot_hp_sen():
 
 
     def plot_hp_sen_1x4():
-        fig, axes = plt.subplots(1, 4, figsize=(16, 3))
+        fig, axes = plt.subplots(1, 4, figsize=(18, 4))
 
-        def _plot(ax, metrics, xlabel, color):
+        def _plot(ax, metrics, xlabel, ylabel, color):
             x, y = zip(*metrics)
             x_positions = range(len(x))
             ax.plot(x_positions, y, marker='o', linestyle='-', color=color, label='Average AUC-PR')
             ax.set_xticks(x_positions)
-            ax.set_xticklabels(x)
-            ax.tick_params(axis='x', length=0)
-            ax.set_xlabel(xlabel, fontsize=24)
-            ax.set_ylabel('AUC-PR', fontsize=24)
-            ax.grid(True, axis='y', linestyle='--', linewidth=0.5)
-            ax.legend()
+            ax.set_xticklabels(x, fontsize=14)
+            ax.tick_params(axis='x', length=0, labelsize=14)
+            ax.tick_params(axis='y', labelsize=14)
+            ax.set_xlabel(xlabel, fontsize=16)
+            ax.set_xlabel(xlabel, fontsize=16, labelpad=10)
+            if ylabel:
+                ax.set_ylabel(ylabel, fontsize=16, labelpad=10)
 
-        _plot(axes[0], aucpr_vs_latent, 'Latent Number Scale Factor', 'C0')
-        _plot(axes[1], aucpr_vs_memory, 'Memory Number Scale Factor', 'C1')
-        _plot(axes[2], aucpr_vs_temperature, 'Temperature', 'C2')
-        _plot(axes[3], aucpr_vs_depth, 'Depth', 'C3')
+        _plot(axes[0], aucpr_vs_latent, 'Latent Number Scale Factor', 'AUC-PR', 'C0')
+        _plot(axes[1], aucpr_vs_memory, 'Memory Number Scale Factor', '', 'C1')
+        _plot(axes[2], aucpr_vs_temperature, 'Temperature', '', 'C2')
+        _plot(axes[3], aucpr_vs_depth, 'Depth', '', 'C3')
 
         plt.tight_layout()
         sns.despine(fig)
