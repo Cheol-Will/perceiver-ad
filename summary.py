@@ -832,7 +832,7 @@ def main(args):
 
     for base in keys:
         render(pivots, data, models, my_models, base, 
-               add_avg_rank=True, use_rank=False, use_std=False, 
+               add_avg_rank=True, use_rank=False, use_std=True, 
                use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
 
     models = [
