@@ -118,6 +118,30 @@ data_list=(
 
 )
 
+
+data_list=(
+    # breastw # best SHAP vs Attn
+    # glass
+    # wine
+    # wbc
+    # "satimage-2"
+    # thyroid 
+    # ionosphere
+    # pendigits
+    # cardio
+    # mammography
+    # pima
+    # cardiotocography
+    ##
+    arrhythmia
+    optdigits 
+    satellite 
+    campaign 
+    shuttle
+    "satimage-2" 
+)
+
+
 model_type='MemPAE'
 hidden_dim=64
 learning_rate=0.001
@@ -135,7 +159,9 @@ for data in "${data_list[@]}"; do
         --learning_rate "$learning_rate" \
         --temperature "$temperature" \
         --exp_name "$exp_name" \
-        --plot_tsne_memory_addressing
+        --compare_shap_vs_anomaly_gradient_per_sample
+        # --plot_tsne_memory_addressing
+        
         # --compare_shap_vs_encoder_attention_per_sample
         # --visualize_attention_vs_shap
 done

@@ -2620,3 +2620,347 @@ class Analyzer(Trainer):
             }
         }
 
+    def compare_shap_vs_anomaly_gradient_per_sample(
+        self, 
+        similarity_threshold: float = 0.7,
+        top_k_samples: int = 10,
+        figsize: tuple = (12, 6),
+        plot_group_average: bool = True
+    ):
+        """
+        Compare XGBoost SHAP values with MemPAE anomaly score gradients for individual abnormal samples.
+        Uses gradient of anomaly loss w.r.t. input features as feature importance measure.
+        
+        Args:
+            similarity_threshold: Minimum correlation to consider patterns "similar"
+            top_k_samples: Number of most similar samples to save plots for
+            figsize: Figure size for each 1x2 plot
+            plot_group_average: If True, also plot average SHAP vs gradient for normal/abnormal groups
+            
+        Returns:
+            dict: Results including correlations, saved plots info, and statistics
+        """
+        import xgboost as xgb
+        import shap
+        from scipy.stats import pearsonr, spearmanr
+        
+        print("Analysis for SHAP vs Anomaly Gradient comparison for individual abnormal samples")
+        print(f"Plot group average: {plot_group_average}")
+        
+        # Collect data for XGBoost training
+        X_train, y_train = [], []
+        for X, y in self.train_loader:
+            X_train.append(X.cpu().numpy())
+            y_train.append(y.cpu().numpy())
+        
+        X_test, y_test = [], []
+        for X, y in self.test_loader:
+            X_test.append(X.cpu().numpy())
+            y_test.append(y.cpu().numpy())
+        
+        X_train = np.concatenate(X_train, axis=0)
+        y_train = np.concatenate(y_train, axis=0)
+        X_test = np.concatenate(X_test, axis=0)
+        y_test = np.concatenate(y_test, axis=0)
+        
+        # Combine train and test for supervised learning
+        X_all = np.concatenate([X_train, X_test], axis=0)
+        y_all = np.concatenate([y_train, y_test], axis=0)
+        
+        print(f"Total data shape: {X_all.shape}, Num normal={np.sum(y_all==0)}, Num Abnormal={np.sum(y_all!=0)}")
+        print("Training XGBoost...")
+        xgb_model = xgb.XGBClassifier(
+            n_estimators=100, 
+            max_depth=6, 
+            learning_rate=0.1, 
+            random_state=42
+        )
+        xgb_model.fit(X_all, y_all)
+        print("XGBoost training done")
+        
+        # Get SHAP values for all samples
+        print("Calculating SHAP values...")
+        explainer = shap.TreeExplainer(xgb_model)
+        shap_values = explainer.shap_values(X_all)  # Shape: (N_samples, N_features)
+        print("SHAP calculation done")
+        
+        # Calculate anomaly score gradients for all samples
+        print("Calculating anomaly score gradients...")
+        self.model.eval()
+        all_gradients = []
+        sample_indices = []
+        current_idx = 0
+        
+        def compute_anomaly_gradient(X_batch):
+            """
+            Compute gradient of anomaly score w.r.t. input features
+            Args:
+                X_batch: Input batch tensor with requires_grad=True
+            Returns:
+                gradients: (B, F) numpy array of gradients
+            """
+            X_batch.requires_grad_(True)
+            
+            # Forward pass to get anomaly scores
+            anomaly_scores = self.model(X_batch)  # (B,) or (B, 1)
+            
+            if anomaly_scores.dim() > 1:
+                anomaly_scores = anomaly_scores.squeeze(-1)  # Ensure (B,)
+            
+            # Compute gradients for each sample in batch
+            batch_gradients = []
+            for i in range(X_batch.shape[0]):
+                # Compute gradient of i-th sample's anomaly score w.r.t. input
+                grad_outputs = torch.zeros_like(anomaly_scores)
+                grad_outputs[i] = 1.0
+                
+                gradients = torch.autograd.grad(
+                    outputs=anomaly_scores,
+                    inputs=X_batch,
+                    grad_outputs=grad_outputs,
+                    retain_graph=True,
+                    create_graph=False
+                )[0]  # (B, F)
+                
+                # Take gradient for i-th sample
+                sample_gradient = gradients[i].detach().cpu().numpy()  # (F,)
+                batch_gradients.append(sample_gradient)
+            
+            return np.array(batch_gradients)  # (B, F)
+        
+        # Process train loader
+        for X, y in self.train_loader:
+            X = X.to(self.device)
+            gradients = compute_anomaly_gradient(X)  # (B, F)
+            all_gradients.append(gradients)
+            
+            batch_size = X.shape[0]
+            sample_indices.extend(list(range(current_idx, current_idx + batch_size)))
+            current_idx += batch_size
+        
+        # Process test loader
+        for X, y in self.test_loader:
+            X = X.to(self.device)
+            gradients = compute_anomaly_gradient(X)  # (B, F)
+            all_gradients.append(gradients)
+            
+            batch_size = X.shape[0]
+            sample_indices.extend(list(range(current_idx, current_idx + batch_size)))
+            current_idx += batch_size
+        
+        all_gradients = np.concatenate(all_gradients, axis=0)  # (N_total, F)
+        
+        print(f"Gradient calculation done")
+        print(f"Anomaly gradients shape: {all_gradients.shape}")
+        print(f"SHAP values shape: {shap_values.shape}")
+        
+        # Focus on abnormal samples
+        abnormal_mask = y_all != 0
+        abnormal_indices = np.where(abnormal_mask)[0]
+        
+        if len(abnormal_indices) == 0:
+            print("No abnormal samples found")
+            return None
+        
+        print(f"Found {len(abnormal_indices)} abnormal samples")
+        
+        # Extract abnormal samples data
+        shap_abnormal = np.abs(shap_values[abnormal_mask])  # Use absolute SHAP values
+        gradient_abnormal = np.abs(all_gradients[abnormal_mask])  # Use absolute gradients
+        X_abnormal = X_all[abnormal_mask]
+        
+        # Option 1: Plot group averages (normal vs abnormal)
+        if plot_group_average:
+            print("Creating group average plots...")
+            normal_mask = y_all == 0
+            normal_indices = np.where(normal_mask)[0]
+            
+            if len(normal_indices) > 0:
+                # Normal group averages
+                shap_normal_mean = np.abs(shap_values[normal_mask]).mean(axis=0)
+                gradient_normal_mean = np.abs(all_gradients[normal_mask]).mean(axis=0)
+                
+                # Abnormal group averages
+                shap_abnormal_mean = shap_abnormal.mean(axis=0)
+                gradient_abnormal_mean = gradient_abnormal.mean(axis=0)
+                
+                # Normalize for visualization
+                shap_normal_norm = shap_normal_mean / (np.max(shap_normal_mean) + 1e-8)
+                gradient_normal_norm = gradient_normal_mean / (np.max(gradient_normal_mean) + 1e-8)
+                shap_abnormal_norm = shap_abnormal_mean / (np.max(shap_abnormal_mean) + 1e-8)
+                gradient_abnormal_norm = gradient_abnormal_mean / (np.max(gradient_abnormal_mean) + 1e-8)
+                
+                feature_indices = np.arange(len(shap_normal_mean))
+                
+                # Normal group plot
+                fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
+                axes[0].bar(feature_indices, shap_normal_norm, alpha=0.7, color='red', width=0.8)
+                axes[0].set_title('SHAP Values', fontsize=14)
+                axes[0].set_xlabel('Feature Index', fontsize=14)
+                axes[0].set_ylabel('Normalized SHAP Value', fontsize=14)
+                axes[0].grid(True, alpha=0.3)
+                
+                axes[1].bar(feature_indices, gradient_normal_norm, alpha=0.7, color='blue', width=0.8)
+                axes[1].set_title('Anomaly Score Gradients', fontsize=14)
+                axes[1].set_xlabel('Feature Index', fontsize=14)
+                axes[1].set_ylabel('Normalized |Gradient|', fontsize=14)
+                axes[1].grid(True, alpha=0.3)
+                
+                plt.tight_layout()
+                
+                base_path = self.train_config['base_path']
+                normal_plot_path = os.path.join(base_path, 'shap_vs_gradient_normal_average.png')
+                plt.savefig(normal_plot_path, bbox_inches='tight', dpi=200)
+                plt.close()
+                print(f"Saved normal group average plot to {normal_plot_path}")
+                
+                # Abnormal group plot
+                fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
+                axes[0].bar(feature_indices, shap_abnormal_norm, alpha=0.7, color='red', width=0.8)
+                axes[0].set_title('SHAP Values', fontsize=14)
+                axes[0].set_xlabel('Feature Index', fontsize=14)
+                axes[0].set_ylabel('Normalized SHAP Value', fontsize=14)
+                axes[0].grid(True, alpha=0.3)
+                
+                axes[1].bar(feature_indices, gradient_abnormal_norm, alpha=0.7, color='blue', width=0.8)
+                axes[1].set_title('Anomaly Score Gradients', fontsize=14)
+                axes[1].set_xlabel('Feature Index', fontsize=14)
+                axes[1].set_ylabel('Normalized |Gradient|', fontsize=14)
+                axes[1].grid(True, alpha=0.3)
+                
+                plt.tight_layout()
+                
+                abnormal_plot_path = os.path.join(base_path, 'shap_vs_gradient_abnormal_average.png')
+                plt.savefig(abnormal_plot_path, bbox_inches='tight', dpi=200)
+                plt.close()
+                print(f"Saved abnormal group average plot to {abnormal_plot_path}")
+                
+                # Calculate correlations for group averages
+                normal_pearson_r, _ = pearsonr(shap_normal_mean, gradient_normal_mean)
+                normal_spearman_r, _ = spearmanr(shap_normal_mean, gradient_normal_mean)
+                abnormal_pearson_r, _ = pearsonr(shap_abnormal_mean, gradient_abnormal_mean)
+                abnormal_spearman_r, _ = spearmanr(shap_abnormal_mean, gradient_abnormal_mean)
+                
+                print(f"Normal group correlations - Pearson: {normal_pearson_r:.4f}, Spearman: {normal_spearman_r:.4f}")
+                print(f"Abnormal group correlations - Pearson: {abnormal_pearson_r:.4f}, Spearman: {abnormal_spearman_r:.4f}")
+            else:
+                print("No normal samples found for group average plotting")
+
+        # Calculate correlations for individual abnormal samples
+        correlations = []
+        for i in range(len(abnormal_indices)):
+            shap_sample = shap_abnormal[i]
+            gradient_sample = gradient_abnormal[i]
+
+            pearson_r, pearson_p = pearsonr(shap_sample, gradient_sample)
+            spearman_r, spearman_p = spearmanr(shap_sample, gradient_sample)
+            
+            correlations.append({
+                'abnormal_idx': i,
+                'global_idx': abnormal_indices[i],
+                'pearson_r': pearson_r,
+                'pearson_p': pearson_p,
+                'spearman_r': spearman_r,
+                'spearman_p': spearman_p,
+                'max_correlation': max(abs(pearson_r), abs(spearman_r))
+            })
+
+        # Sort by correlation and filter similar samples
+        correlations.sort(key=lambda x: x['max_correlation'], reverse=True)
+        similar_samples = [c for c in correlations if abs(c['max_correlation']) >= similarity_threshold]
+        
+        print(f"Found {len(similar_samples)} samples with |correlation| >= {similarity_threshold}")
+        
+        if len(similar_samples) == 0:
+            print(f"No samples found with |correlation| >= {similarity_threshold}")
+            # Save top-k samples instead
+            similar_samples = correlations[:min(top_k_samples, len(correlations))]
+            similar_samples += correlations[-min(top_k_samples, len(correlations)):]
+            print(f"Saving top {len(similar_samples)} samples instead")
+        
+        # Save plots for selected samples
+        base_path = self.train_config['base_path']
+        saved_plots = []
+        
+        samples_to_plot = similar_samples[:min(top_k_samples, len(similar_samples))] # top-k
+        samples_to_plot += similar_samples[-min(top_k_samples, len(similar_samples)):] # bottom-k
+        
+        for sample_info in samples_to_plot:
+            abnormal_idx = sample_info['abnormal_idx']
+            global_idx = sample_info['global_idx']
+            pearson_r = sample_info['pearson_r']
+            spearman_r = sample_info['spearman_r']
+            
+            # Get SHAP and gradient for current sample and normalize
+            shap_sample = shap_abnormal[abnormal_idx]
+            gradient_sample = gradient_abnormal[abnormal_idx]
+            
+            shap_norm = shap_sample / (np.max(shap_sample) + 1e-8)
+            gradient_norm = gradient_sample / (np.max(gradient_sample) + 1e-8)
+            
+            fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
+            feature_indices = np.arange(len(shap_sample))
+            
+            # SHAP values
+            axes[0].bar(feature_indices, shap_norm, alpha=0.7, color='red', width=0.8)
+            axes[0].set_title(f'SHAP Values', fontsize=14)
+            axes[0].set_xlabel('Feature Index', fontsize=14)
+            axes[0].set_ylabel('Normalized SHAP Value', fontsize=14)
+            axes[0].grid(True, alpha=0.3)
+            
+            # Anomaly score gradients
+            axes[1].bar(feature_indices, gradient_norm, alpha=0.7, color='blue', width=0.8)
+            axes[1].set_title(f'Anomaly Score Gradients', fontsize=14)
+            axes[1].set_xlabel('Feature Index', fontsize=14)
+            axes[1].set_ylabel('Normalized |Gradient|', fontsize=14)
+            axes[1].grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            
+            # Save plot
+            plot_path = os.path.join(base_path, f'shap_vs_gradient_sample_{global_idx}_corr_{sample_info["max_correlation"]:.3f}.png')
+            plt.savefig(plot_path, bbox_inches='tight', dpi=200)
+            plt.close()
+            
+            saved_plots.append({
+                'sample_idx': global_idx,
+                'abnormal_idx': abnormal_idx,
+                'plot_path': plot_path,
+                'correlations': sample_info
+            })
+            
+            print(f"Saved plot for sample {global_idx} (correlation: {sample_info['max_correlation']:.3f}) to {plot_path}")
+        
+        # Create summary statistics
+        all_correlations = [c['max_correlation'] for c in correlations]
+        
+        summary_stats = {
+            'total_abnormal_samples': len(abnormal_indices),
+            'samples_above_threshold': len([c for c in correlations if abs(c['max_correlation']) >= similarity_threshold]),
+            'mean_correlation': np.mean(all_correlations),
+            'median_correlation': np.median(all_correlations),
+            'max_correlation': np.max(all_correlations),
+            'min_correlation': np.min(all_correlations),
+            'std_correlation': np.std(all_correlations)
+        }
+        
+        print("\n" + "="*60)
+        print("SHAP vs Anomaly Gradient Comparison Summary")
+        print("="*60)
+        print(f"Total abnormal samples: {summary_stats['total_abnormal_samples']}")
+        print(f"Samples above threshold ({similarity_threshold}): {summary_stats['samples_above_threshold']}")
+        print(f"Mean correlation: {summary_stats['mean_correlation']:.4f}")
+        print(f"Median correlation: {summary_stats['median_correlation']:.4f}")
+        print(f"Max correlation: {summary_stats['max_correlation']:.4f}")
+        print(f"Min correlation: {summary_stats['min_correlation']:.4f}")
+        print(f"Std correlation: {summary_stats['std_correlation']:.4f}")
+        print(f"Saved {len(saved_plots)} plots")
+        
+        return {
+            'correlations': correlations,
+            'saved_plots': saved_plots,
+            'summary_stats': summary_stats,
+            'similarity_threshold': similarity_threshold,
+            'shap_values_abnormal': shap_abnormal,
+            'gradient_values_abnormal': gradient_abnormal
+        }
