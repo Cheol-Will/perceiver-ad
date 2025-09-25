@@ -102,6 +102,11 @@ def train_test(args, model_config, train_config, analysis_config, run):
     if args.compare_shap_vs_anomaly_gradient_per_sample:
         analyzer.compare_shap_vs_anomaly_gradient_per_sample()
 
+    if args.plot_tsne_input_vs_reconstruction:
+        analyzer.plot_tsne_input_vs_reconstruction()
+
+    if args.plot_tsne_4types:
+        analyzer.plot_tsne_4types()
     return 
 
 
@@ -194,6 +199,8 @@ if __name__ == "__main__":
     parser.add_argument('--compare_shap_vs_encoder_attention_per_sample', action='store_true')
     parser.add_argument('--plot_tsne_memory_addressing', action='store_true')
     parser.add_argument('--compare_shap_vs_anomaly_gradient_per_sample', action='store_true')
+    parser.add_argument('--plot_tsne_input_vs_reconstruction', action='store_true')
+    parser.add_argument('--plot_tsne_4types', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:

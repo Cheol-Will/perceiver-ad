@@ -2964,3 +2964,417 @@ class Analyzer(Trainer):
             'shap_values_abnormal': shap_abnormal,
             'gradient_values_abnormal': gradient_abnormal
         }
+
+    @torch.no_grad()
+    def plot_tsne_input_vs_reconstruction(
+        self,
+        perplexity: float = 30.0,
+        n_iter: int = 1000,
+        random_state: int = 42,
+        figsize: tuple = (10, 8),
+        point_size: int = 100,
+        max_samples_per_class: int = 1000
+    ):
+        """
+        Create T-SNE plot for input vs reconstruction data
+        Plots 4 types: normal input, normal reconstruction, abnormal input, abnormal reconstruction
+        
+        Args:
+            perplexity: T-SNE perplexity parameter
+            n_iter: Number of T-SNE iterations
+            random_state: Random seed for reproducibility
+            figsize: Figure size (width, height)
+            point_size: Size of scatter plot points
+            max_samples_per_class: Maximum samples per class to avoid memory issues
+            
+        Returns:
+            dict: Information about saved plots and statistics
+        """
+        from sklearn.manifold import TSNE
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        self.model.eval()
+        
+        def collect_input_and_reconstruction_data():
+            """Collect input data and reconstructions with labels"""
+            all_inputs = []
+            all_reconstructions = []
+            all_labels = []
+            
+            # Process test loader (primary source for evaluation)
+            for X, y in self.test_loader:
+                X = X.to(self.device)
+                
+                # Get reconstructions
+                _, x_input, x_reconstruction = self.model(X, return_pred=True)
+                
+                all_inputs.append(x_input.detach().cpu().numpy())
+                all_reconstructions.append(x_reconstruction.detach().cpu().numpy())
+                all_labels.append(y.detach().cpu().numpy())
+            
+            # If test data is insufficient, add some from train loader
+            if len(all_inputs) == 0:
+                for X, y in self.train_loader:
+                    X = X.to(self.device)
+                    _, x_input, x_reconstruction = self.model(X, return_pred=True)
+                    
+                    all_inputs.append(x_input.detach().cpu().numpy())
+                    all_reconstructions.append(x_reconstruction.detach().cpu().numpy())
+                    all_labels.append(y.detach().cpu().numpy())
+            
+            # Concatenate all data
+            inputs = np.concatenate(all_inputs, axis=0)  # (N, F)
+            reconstructions = np.concatenate(all_reconstructions, axis=0)  # (N, F)
+            labels = np.concatenate(all_labels, axis=0)  # (N,)
+            
+            return inputs, reconstructions, labels
+        
+        def subsample_balanced_data(inputs, reconstructions, labels, max_per_class):
+            """Subsample data to get balanced normal/abnormal samples"""
+            normal_mask = (labels == 0)
+            abnormal_mask = (labels != 0)
+            
+            normal_indices = np.where(normal_mask)[0]
+            abnormal_indices = np.where(abnormal_mask)[0]
+            
+            # Subsample if necessary
+            if len(normal_indices) > max_per_class:
+                normal_indices = np.random.choice(normal_indices, max_per_class, replace=False)
+            if len(abnormal_indices) > max_per_class:
+                abnormal_indices = np.random.choice(abnormal_indices, max_per_class, replace=False)
+            
+            # Combine selected indices
+            selected_indices = np.concatenate([normal_indices, abnormal_indices])
+            
+            return (inputs[selected_indices], 
+                    reconstructions[selected_indices], 
+                    labels[selected_indices],
+                    len(normal_indices), 
+                    len(abnormal_indices))
+        
+        print("Collecting input and reconstruction data...")
+        inputs, reconstructions, labels = collect_input_and_reconstruction_data()
+        
+        print(f"Original data shapes:")
+        print(f"  Inputs: {inputs.shape}")
+        print(f"  Reconstructions: {reconstructions.shape}")
+        print(f"  Labels: {labels.shape}")
+        
+        # Subsample if necessary
+        inputs, reconstructions, labels, n_normal, n_abnormal = subsample_balanced_data(
+            inputs, reconstructions, labels, max_samples_per_class)
+        
+        print(f"After subsampling: {n_normal} normal, {n_abnormal} abnormal samples")
+        
+        # Prepare data for T-SNE
+        # Combine all 4 types of data: normal_input, normal_recon, abnormal_input, abnormal_recon
+        normal_mask = (labels == 0)
+        abnormal_mask = (labels != 0)
+        
+        normal_inputs = inputs[normal_mask]
+        normal_reconstructions = reconstructions[normal_mask]
+        abnormal_inputs = inputs[abnormal_mask]  
+        abnormal_reconstructions = reconstructions[abnormal_mask]
+        
+        # Stack all data together
+        all_data = np.vstack([
+            normal_inputs,           # Type 0: Normal Input
+            normal_reconstructions,  # Type 1: Normal Reconstruction  
+            abnormal_inputs,         # Type 2: Abnormal Input
+            abnormal_reconstructions # Type 3: Abnormal Reconstruction
+        ])
+        
+        # Create corresponding labels for the 4 types
+        data_type_labels = np.concatenate([
+            np.full(len(normal_inputs), 0),           # Normal Input
+            np.full(len(normal_reconstructions), 1),  # Normal Reconstruction
+            np.full(len(abnormal_inputs), 2),         # Abnormal Input  
+            np.full(len(abnormal_reconstructions), 3) # Abnormal Reconstruction
+        ])
+        
+        print(f"Combined data shape for T-SNE: {all_data.shape}")
+        print(f"Data type distribution: {np.bincount(data_type_labels)}")
+        
+        # Run T-SNE
+        print("Running T-SNE...")
+        tsne = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, 
+                    random_state=random_state, verbose=1)
+        embedding = tsne.fit_transform(all_data)
+        
+        # Create the plot
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=200)
+        
+        # Define colors and alphas for each type
+        # Normal: color 0 (blue), Abnormal: color 1 (orange)  
+        colors = plt.cm.tab10.colors  # Default matplotlib colors
+        
+        plot_config = [
+            # (mask, color, alpha, marker, label)
+            (data_type_labels == 0, colors[0], 0.5, 'o', f'Normal Input'),
+            (data_type_labels == 1, colors[0], 1.0, '^', f'Normal Recon'),
+            (data_type_labels == 2, colors[1], 0.5, 'o', f'Abnormal Input'),
+            (data_type_labels == 3, colors[1], 1.0, '^', f'Abnormal Recon')
+        ]
+        
+        # Plot each type
+        for mask, color, alpha, marker, label in plot_config:
+            if np.any(mask):
+                ax.scatter(embedding[mask, 0], embedding[mask, 1], 
+                        c=[color], s=point_size, alpha=alpha, 
+                        marker=marker, label=label, edgecolors='black', linewidth=0.3)
+        
+        # Customize plot
+        ax.set_xlabel('T-SNE Dimension 1', fontsize=12)
+        ax.set_ylabel('T-SNE Dimension 2', fontsize=12)
+        ax.legend(loc='best', fontsize=10, framealpha=0.9)
+        ax.grid(True, alpha=0.3)
+        
+        # Simple title with only dataset name
+        # dataset_name = self.train_config['dataset_name'].upper()
+        # ax.set_title(f'{dataset_name}', fontsize=14, pad=20)
+        
+        plt.tight_layout()
+        
+        # Save plot
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, f'tsne_input_vs_reconstruction_{self.train_config["dataset_name"]}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        
+        # Also save as PDF
+        out_path_pdf = os.path.join(base_path, f'tsne_input_vs_reconstruction_{self.train_config["dataset_name"]}.pdf')
+        plt.savefig(out_path_pdf, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"T-SNE plots saved to:")
+        print(f"  PNG: {out_path}")
+        print(f"  PDF: {out_path_pdf}")
+        
+        # Calculate some basic statistics
+        def compute_centroid_distances(embedding, labels):
+            """Compute distances between centroids of different data types"""
+            centroids = {}
+            for data_type in range(4):
+                mask = (labels == data_type)
+                if np.any(mask):
+                    centroids[data_type] = np.mean(embedding[mask], axis=0)
+            
+            distances = {}
+            type_names = ['Normal Input', 'Normal Recon', 'Abnormal Input', 'Abnormal Recon']
+            
+            for i in range(4):
+                for j in range(i+1, 4):
+                    if i in centroids and j in centroids:
+                        dist = np.linalg.norm(centroids[i] - centroids[j])
+                        distances[f'{type_names[i]} - {type_names[j]}'] = dist
+            
+            return centroids, distances
+        
+        centroids, distances = compute_centroid_distances(embedding, data_type_labels)
+        
+        print("\n" + "="*60)
+        print("T-SNE Analysis: Input vs Reconstruction")
+        print("="*60)
+        print("Centroid Distances:")
+        for pair, dist in distances.items():
+            print(f"  {pair}: {dist:.4f}")
+        
+        return {
+            'plot_paths': {'png': out_path, 'pdf': out_path_pdf},
+            'statistics': {
+                'centroid_distances': distances,
+                'centroids': centroids,
+                'data_info': {
+                    'n_normal': n_normal,
+                    'n_abnormal': n_abnormal,
+                    'total_points': len(data_type_labels),
+                    'feature_dim': inputs.shape[1]
+                }
+            },
+            'embedding': embedding,
+            'data_type_labels': data_type_labels
+        }
+
+    @torch.no_grad()
+    def plot_tsne_4types(
+        self,
+        perplexity: float = 30.0,
+        n_iter: int = 1000,
+        random_state: int = 42,
+        figsize: tuple = (10, 8),
+        point_size: int = 80,
+        max_samples_per_class: int = 1000
+    ):
+        """
+        T-SNE visualization for 4 types:
+        1. Normal input
+        2. Abnormal input 
+        3. Abnormal reconstruction (before memory addressing)
+        4. Abnormal reconstruction (after memory addressing)
+        """
+        from sklearn.manifold import TSNE
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        self.model.eval()
+        
+        def collect_4type_data():
+            """Collect the 4 types of data"""
+            normal_inputs = []
+            abnormal_inputs = []
+            abnormal_recon_before = []
+            abnormal_recon_after = []
+            
+            # Process test loader
+            for X, y in self.test_loader:
+                X = X.to(self.device)
+                
+                # Get reconstructions and memory addressing results
+                loss, x_input, x_recon_final, latents_z, latents_z_hat, memory_weight, \
+                attn_enc, attn_self_list, attn_dec_z, attn_dec_z_hat = \
+                    self.model(X, return_for_analysis=True)
+                
+                # Get reconstruction before memory addressing (using original latents)
+                with torch.no_grad():
+                    if self.model.mlp_decoder:
+                        x_recon_before = self.model.decoder(latents_z)
+                    elif self.model.mlp_mixer_decoder:
+                        x_recon_before = self.model.decoder(latents_z)
+                    else:
+                        # Use decoder with original latents
+                        if self.model.global_decoder_query:
+                            decoder_query = self.model.decoder_query.expand(X.shape[0], self.model.num_features, -1)
+                        else:
+                            if self.model.use_pos_enc_as_query:
+                                if self.model.use_mask_token:
+                                    decoder_query = self.model.decoder_query.expand(X.shape[0], self.model.num_features, -1)
+                                    decoder_query = decoder_query + self.model.pos_encoding
+                                else:
+                                    decoder_query = self.model.pos_encoding.expand(X.shape[0], -1, -1)
+                            else:
+                                decoder_query = self.model.decoder_query.expand(X.shape[0], -1, -1)
+                        
+                        output, _ = self.model.decoder(decoder_query, latents_z, latents_z, return_weight=True)
+                        x_recon_before = self.model.proj(output)
+                
+                normal_mask = (y == 0)
+                abnormal_mask = (y != 0)
+                
+                if normal_mask.any():
+                    normal_inputs.append(x_input[normal_mask].detach().cpu().numpy())
+                
+                if abnormal_mask.any():
+                    abnormal_inputs.append(x_input[abnormal_mask].detach().cpu().numpy())
+                    abnormal_recon_before.append(x_recon_before[abnormal_mask].detach().cpu().numpy())
+                    abnormal_recon_after.append(x_recon_final[abnormal_mask].detach().cpu().numpy())
+            
+            # Add train loader if needed
+            if len(normal_inputs) == 0 or len(abnormal_inputs) == 0:
+                for X, y in self.train_loader:
+                    X = X.to(self.device)
+                    
+                    loss, x_input, x_recon_final, latents_z, latents_z_hat, memory_weight, \
+                    attn_enc, attn_self_list, attn_dec_z, attn_dec_z_hat = \
+                        self.model(X, return_for_analysis=True)
+                    
+                    with torch.no_grad():
+                        x_recon_before = self.model.decoder(latents_z)
+                    
+                    normal_mask = (y == 0)
+                    abnormal_mask = (y != 0)
+                    
+                    if normal_mask.any() and len(normal_inputs) == 0:
+                        normal_inputs.append(x_input[normal_mask].detach().cpu().numpy())
+                    
+                    if abnormal_mask.any() and len(abnormal_inputs) == 0:
+                        abnormal_inputs.append(x_input[abnormal_mask].detach().cpu().numpy())
+                        abnormal_recon_before.append(x_recon_before[abnormal_mask].detach().cpu().numpy())
+                        abnormal_recon_after.append(x_recon_final[abnormal_mask].detach().cpu().numpy())
+            
+            # Concatenate
+            normal_inputs = np.concatenate(normal_inputs, axis=0) if normal_inputs else np.array([]).reshape(0, X.shape[1])
+            abnormal_inputs = np.concatenate(abnormal_inputs, axis=0) if abnormal_inputs else np.array([]).reshape(0, X.shape[1])
+            abnormal_recon_before = np.concatenate(abnormal_recon_before, axis=0) if abnormal_recon_before else np.array([]).reshape(0, X.shape[1])
+            abnormal_recon_after = np.concatenate(abnormal_recon_after, axis=0) if abnormal_recon_after else np.array([]).reshape(0, X.shape[1])
+            
+            return normal_inputs, abnormal_inputs, abnormal_recon_before, abnormal_recon_after
+        
+        def subsample_data(normal_inputs, abnormal_inputs, abnormal_recon_before, abnormal_recon_after, max_per_type):
+            """Subsample each type"""
+            if len(normal_inputs) > max_per_type:
+                idx = np.random.choice(len(normal_inputs), max_per_type, replace=False)
+                normal_inputs = normal_inputs[idx]
+            
+            if len(abnormal_inputs) > max_per_type:
+                idx = np.random.choice(len(abnormal_inputs), max_per_type, replace=False)
+                abnormal_inputs = abnormal_inputs[idx]
+                abnormal_recon_before = abnormal_recon_before[idx]
+                abnormal_recon_after = abnormal_recon_after[idx]
+            
+            return normal_inputs, abnormal_inputs, abnormal_recon_before, abnormal_recon_after
+        
+        # Collect data
+        normal_inputs, abnormal_inputs, abnormal_recon_before, abnormal_recon_after = collect_4type_data()
+        
+        # Subsample
+        normal_inputs, abnormal_inputs, abnormal_recon_before, abnormal_recon_after = subsample_data(
+            normal_inputs, abnormal_inputs, abnormal_recon_before, abnormal_recon_after, max_samples_per_class)
+        
+        # Stack all data
+        all_data = np.vstack([
+            normal_inputs,           # Type 0
+            abnormal_inputs,         # Type 1  
+            abnormal_recon_before,   # Type 2
+            abnormal_recon_after     # Type 3
+        ])
+        
+        # Create labels
+        data_type_labels = np.concatenate([
+            np.full(len(normal_inputs), 0),
+            np.full(len(abnormal_inputs), 1),
+            np.full(len(abnormal_recon_before), 2),
+            np.full(len(abnormal_recon_after), 3)
+        ])
+        
+        # Run T-SNE
+        tsne = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, random_state=random_state)
+        embedding = tsne.fit_transform(all_data)
+        
+        # Plot
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=200)
+        
+        colors = plt.cm.Set1.colors
+                
+
+        plot_configs = [
+            (data_type_labels == 0, colors[0], 1.0, 'o', 'Normal Input'),  # Normal input - blue
+            (data_type_labels == 1, colors[1], 1.0, 's', 'Abnormal input'),  # Abnormal input - orange  
+            (data_type_labels == 2, colors[2], 0.7, '^', 'Abnormal recon before addressing'),  # Abnormal recon before - green
+            (data_type_labels == 3, colors[3], 0.7, 'v', 'Abnormal recon after addressing')   # Abnormal recon after - red
+        ]
+        
+        for mask, color, alpha, marker, label in plot_configs:
+            if np.any(mask):
+                ax.scatter(embedding[mask, 0], embedding[mask, 1], label=label,
+                        c=[color], s=point_size, alpha=alpha, marker=marker)
+        
+        # ax.set_xticks([])
+        # ax.set_yticks([])
+        # ax.axis('off')
+        ax.set_xlabel('T-SNE Dimension 1', fontsize=16)
+        ax.set_ylabel('T-SNE Dimension 2', fontsize=16)
+        ax.legend(loc='best', fontsize=10, framealpha=0.9)
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        # Save
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, f'tsne_4types_{self.train_config["dataset_name"]}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        out_path_pdf = os.path.join(base_path, f'tsne_4types_{self.train_config["dataset_name"]}.pdf')
+        plt.savefig(out_path_pdf, bbox_inches='tight', dpi=200)
+        print(out_path)
+        plt.close()
+        
+        return out_path
