@@ -53,7 +53,7 @@ def plot_hp_sen():
     ]
 
 
-    def _plot_hp_vs_aucpr(metrics, xlabel, color):
+    def _plot_hp_vs_aucpr(metrics, xlabel, color, y_label = ' '):
         fig, ax = plt.subplots(1, 1, figsize=(4, 3))
 
         ax1 = ax
@@ -61,11 +61,12 @@ def plot_hp_sen():
         x1_positions = range(len(x1)) 
         ax1.plot(x1_positions, y1, marker='o', linestyle='-', color=color, label='Average AUC-PR')
         ax1.set_xticks(x1_positions) 
-        ax1.set_xticklabels(x1)      
-        ax1.tick_params(axis='x', length=0)
-        ax1.set_ylabel('AUC-PR', fontsize=11)
-        ax1.set_xlabel(f'{xlabel}', fontsize=11)
-        ax1.grid(True, axis='y', linestyle='--', linewidth=0.5) # 
+        ax1.set_xticklabels(x1, fontsize=12)      
+        ax1.tick_params(axis='x', labelsize=10)
+        ax1.tick_params(axis='y', labelsize=10)
+        # ax1.grid(True, axis='y', linestyle='--', linewidth=0.5) # 
+        ax1.set_ylabel(y_label, fontsize=16, labelpad=10)
+        ax1.set_xlabel(f'{xlabel}', fontsize=16, labelpad=10)
 
         plt.tight_layout()
         sns.despine(fig)
@@ -75,16 +76,16 @@ def plot_hp_sen():
 
         xlabel = xlabel.replace(' ', '_')        
         png_path = os.path.join(save_dir, f'hp_sensitivity_{xlabel}.png')
-        pdf_path = os.path.join(save_dir, f'hp_sensitivity_{xlabel}.pdf')
+        # pdf_path = os.path.join(save_dir, f'hp_sensitivity_{xlabel}.pdf')
 
         plt.savefig(png_path, dpi=300, bbox_inches='tight')
-        plt.savefig(pdf_path, bbox_inches='tight')
+        # plt.savefig(pdf_path, bbox_inches='tight')
         plt.show()
 
         print(f"Plot saved into {png_path}")
 
-    _plot_hp_vs_aucpr(aucpr_vs_latent, 'Latent Number Scale Factor', color='C0')
-    _plot_hp_vs_aucpr(aucpr_vs_memory, 'Memory Number Scale Factor', color='C1')
+    _plot_hp_vs_aucpr(aucpr_vs_latent, '# Latents (scale)', color='C0', y_label='AUC-PR')
+    _plot_hp_vs_aucpr(aucpr_vs_memory, 'Memory size (scale)', color='C1')
     _plot_hp_vs_aucpr(aucpr_vs_temperature, 'Temperature', color='C2')
     _plot_hp_vs_aucpr(aucpr_vs_depth, 'Depth', color='C3')
 

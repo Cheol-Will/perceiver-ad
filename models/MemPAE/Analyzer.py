@@ -1271,23 +1271,10 @@ class Analyzer(Trainer):
             print(f"Sample {data['idx']} label: {data['label']}")
         
         return out_path
+    
+    
     @torch.no_grad()
     def plot_2x4(self, abnormal_idx=0, abnormal_avg=False, plot_heads=False, plot_2x2=False):
-        """
-        Create a 2x4 plot showing:
-        Row 1: Normal Enc Map, Normal Self Map, Normal Z Dec Map, Normal Z_hat Dec Map
-        Row 2: Abnormal Enc Map, Abnormal Self Map, Abnormal Z Dec Map, Abnormal Z_hat Dec Map
-        
-        If plot_2x2=True, create a 2x2 plot showing only:
-        Row 1: Normal Z Dec Map, Normal Z_hat Dec Map
-        Row 2: Abnormal Z Dec Map, Abnormal Z_hat Dec Map
-        
-        Args:
-            abnormal_idx: which abnormal sample to analyze (ignored if abnormal_avg=True)
-            abnormal_avg: if True, average all abnormal samples; if False, use specific sample
-            plot_heads: if True, create separate plots for each head (assumes 4 heads)
-            plot_2x2: if True, create 2x2 decoder-only plot; if False, create 2x4 full plot
-        """
         self.model.eval()
 
         def find_sample_by_label(loader, target_label, sample_idx=0):
@@ -1327,29 +1314,22 @@ class Analyzer(Trainer):
                 self.model(X_batch, return_for_analysis=True)
             
             if plot_heads:
-                # Keep head dimension for head-wise plotting (assumes 4 heads)
-                # Encoder: (B, H, F, N) -> average over batch -> (H, F, N)
-                enc_attn = attn_weight_enc.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
-                # Decoder Z: (B, H, F, N) -> average over batch -> (H, F, N)
-                dec_attn_z = attn_weight_dec_z.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
-                # Decoder Z_hat: (B, H, F, N) -> average over batch -> (H, F, N)
-                dec_attn_z_hat = attn_weight_dec_z_hat.mean(dim=0).detach().cpu().numpy()  # (H=4, F, N)
+                enc_attn = attn_weight_enc.mean(dim=0).detach().cpu().numpy() 
+                dec_attn_z = attn_weight_dec_z.mean(dim=0).detach().cpu().numpy()  
+                dec_attn_z_hat = attn_weight_dec_z_hat.mean(dim=0).detach().cpu().numpy()  
                 
-                # Self attention: average over layers but keep heads
                 if attn_weight_self_list:
-                    all_self_attn = torch.stack([self_attn for self_attn in attn_weight_self_list], dim=0)  # (Depth, B, H, N, N)
-                    self_attn = all_self_attn.mean(dim=(0, 1)).detach().cpu().numpy()  # (H=4, N, N)
+                    all_self_attn = torch.stack([self_attn for self_attn in attn_weight_self_list], dim=0)  
+                    self_attn = all_self_attn.mean(dim=(0, 1)).detach().cpu().numpy()  # 
                 else:
-                    N = enc_attn.shape[2]  # Note: shape is now (H, F, N)
-                    self_attn = np.tile(np.eye(N)[None, :, :], (4, 1, 1))  # (H=4, N, N)
+                    N = enc_attn.shape[2]  
+                    self_attn = np.tile(np.eye(N)[None, :, :], (4, 1, 1))  
                     
             else:
-                # Average over heads and samples (original behavior)
                 enc_attn = attn_weight_enc.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
                 dec_attn_z = attn_weight_dec_z.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
                 dec_attn_z_hat = attn_weight_dec_z_hat.mean(dim=(0, 1)).detach().cpu().numpy()  # (F, N)
                 
-                # Average self attention over layers and heads
                 if attn_weight_self_list:
                     all_self_attn = torch.stack([self_attn for self_attn in attn_weight_self_list], dim=0)  # (Depth, B, H, N, N)
                     self_attn = all_self_attn.mean(dim=(0, 1, 2)).detach().cpu().numpy()  # (N, N)
@@ -1359,7 +1339,6 @@ class Analyzer(Trainer):
             
             return enc_attn, self_attn, dec_attn_z, dec_attn_z_hat
 
-        # Find normal sample (always use first normal sample for consistency)
         X_normal, y_normal = find_sample_by_label(self.test_loader, target_label=0, sample_idx=0)
         
         if X_normal is None:
@@ -1457,63 +1436,64 @@ class Analyzer(Trainer):
                 return saved_paths
                 
             else:
+                # Our current main focus.
                 # Single 2x2 plot with averaged heads
-                fig, axes = plt.subplots(2, 2, figsize=(10, 8), dpi=200)
-                
+                fig, axes = plt.subplots(2, 2, figsize=(11, 8), dpi=200)
+
                 # Plot configurations: (data, title, xlabel, ylabel) - only decoder maps
                 plots_config = [
                     # Row 0: Normal samples
                     (normal_dec_z, f'Before Addressing', 'Latent Index', 'Feature Index'),
-                    (normal_dec_z_hat, 'After Addresing', 'Before Addressing', 'Feature Index'),
+                    (normal_dec_z_hat, 'After Addressing', 'Before Addressing', 'Feature Index'),
                     
                     # Row 1: Abnormal samples
                     (abnormal_dec_z, f'Abnormal Decoder (Z)\n({abnormal_label_text.split("(")[1][:-1]})', 'Latent Index', 'Feature Index'),
                     (abnormal_dec_z_hat, 'Abnormal Decoder (Z_hat)', 'Latent Index', 'Feature Index')
                 ]
-                
-                # Find global min/max for each decoder type for consistent color scaling
-                dec_z_data = [normal_dec_z, abnormal_dec_z]
-                dec_z_hat_data = [normal_dec_z_hat, abnormal_dec_z_hat]
-                
-                dec_z_vmin, dec_z_vmax = min(d.min() for d in dec_z_data), max(d.max() for d in dec_z_data)
-                dec_z_hat_vmin, dec_z_hat_vmax = min(d.min() for d in dec_z_hat_data), max(d.max() for d in dec_z_hat_data)
-                
-                v_ranges = [
-                    (dec_z_vmin, dec_z_vmax),       # Column 0: Decoder Z
-                    (dec_z_hat_vmin, dec_z_hat_vmax) # Column 1: Decoder Z_hat
-                ]
-                
+
+                # Find global min/max for ALL decoder data for consistent color scaling
+                all_dec_data = [normal_dec_z, abnormal_dec_z, normal_dec_z_hat, abnormal_dec_z_hat]
+                global_vmin = min(d.min() for d in all_dec_data)
+                global_vmax = max(d.max() for d in all_dec_data)
+
                 # Plot each attention map
+                im = None  # Store the last imshow for colorbar
                 for idx, (attn_data, title, xlabel, ylabel) in enumerate(plots_config):
                     row, col = idx // 2, idx % 2
-                    vmin, vmax = v_ranges[col]
                     
-                    im = axes[row, col].imshow(attn_data, cmap='viridis', aspect='auto', vmin=vmin, vmax=vmax)
-                    # axes[row, col].set_title(title, fontsize=12)
+                    im = axes[row, col].imshow(attn_data, cmap='viridis', aspect='auto', 
+                                            vmin=global_vmin, vmax=global_vmax)
                     axes[row, col].set_xticks([])
                     axes[row, col].set_yticks([])
-                    
-                
-                # title
+
+                # Column titles
                 axes[0, 0].set_title('Before Addressing', fontsize=24, pad=20)
                 axes[0, 1].set_title('After Addressing', fontsize=24, pad=20)
                 axes[1, 0].set_title(' ', fontsize=24, pad=20)
                 axes[1, 1].set_title(' ', fontsize=24, pad=20)
-                
-                # axis name
+
+                # Adjust subplot spacing to make room for row labels and colorbar
+                plt.subplots_adjust(left=0.15, right=0.85)
+
+                # Get exact positions of subplots for proper row label alignment
+                pos_top = axes[0, 0].get_position()
+                pos_bottom = axes[1, 0].get_position()
+                row0_center = (pos_top.y0 + pos_top.y1) / 2
+                row1_center = (pos_bottom.y0 + pos_bottom.y1) / 2
+
+                # Row labels aligned with actual subplot centers
+                fig.text(0.08, row0_center, 'Normal', fontsize=24, rotation=90, ha='center', va='center')
+                fig.text(0.08, row1_center, 'Abnormal', fontsize=24, rotation=90, ha='center', va='center')
+
+                # Axis labels
                 axes[0, 0].set_ylabel('Column', fontsize=16, labelpad=15)
                 axes[1, 0].set_ylabel('Column', fontsize=16, labelpad=15)
                 axes[1, 0].set_xlabel('Latent', fontsize=16, labelpad=15)
                 axes[1, 1].set_xlabel('Latent', fontsize=16, labelpad=15)
 
-
-                # Overall title
-                # title_suffix = " (Abnormal Averaged)" if abnormal_avg else f" (Abnormal Sample {abnormal_idx})"
-                # fig.suptitle(f'Decoder Attention Maps: Normal vs Abnormal{title_suffix} • {self.train_config["dataset_name"].upper()}', 
-                #             fontsize=16, y=0.98)
-                
-                plt.tight_layout()
-                
+                # Add colorbar on the right side
+                cbar = fig.colorbar(im, ax=axes.ravel().tolist(), shrink=1.0, aspect=20, 
+                                fraction=0.046, pad=0.04)                                
                 # Save the plot
                 base_path = self.train_config['base_path']
                 filename_suffix = "_avg" if abnormal_avg else f"_idx{abnormal_idx}"
@@ -2334,3 +2314,309 @@ class Analyzer(Trainer):
             'shap_values_abnormal': shap_abnormal,
             'attention_values_abnormal': attention_abnormal
         }
+    @torch.no_grad()
+    def plot_tsne_memory_addressing(
+        self,
+        perplexity: float = 30.0,
+        n_iter: int = 1000,
+        random_state: int = 42,
+        figsize: tuple = (15, 6),
+        point_size: int = 20,
+        alpha: float = 0.7,
+        max_samples_per_class: int = 1000
+    ):
+        """
+        Create T-SNE plots for latent representations before and after memory addressing
+        
+        Args:
+            perplexity: T-SNE perplexity parameter
+            n_iter: Number of T-SNE iterations
+            random_state: Random seed for reproducibility
+            figsize: Figure size (width, height)
+            point_size: Size of scatter plot points
+            alpha: Transparency of points
+            max_samples_per_class: Maximum samples per class to avoid memory issues
+            
+        Returns:
+            dict: Information about saved plots and statistics
+        """
+        from sklearn.manifold import TSNE
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        self.model.eval()
+        
+        def collect_latents_and_labels():
+            """Collect all latents, latents_hat, and labels from both loaders"""
+            all_latents = []
+            all_latents_hat = []
+            all_labels = []
+            
+            # Process train loader
+            for X, y in self.train_loader:
+                X = X.to(self.device)
+                
+                # Get analysis data including both pre and post addressing latents
+                loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
+                    self.model(X, return_for_analysis=True)
+                
+                # latents shape: (B, N, D) -> flatten to (B*N, D)
+                B, N, D = latents.shape
+                latents_flat = latents.view(B * N, D).detach().cpu().numpy()  # (B*N, D)
+                latents_hat_flat = latents_hat.view(B * N, D).detach().cpu().numpy()  # (B*N, D)
+                
+                # Expand labels to match flattened latents: (B,) -> (B*N,)
+                y_expanded = y.unsqueeze(1).expand(B, N).reshape(B * N).detach().cpu().numpy()  # (B*N,)
+                
+                all_latents.append(latents_flat)
+                all_latents_hat.append(latents_hat_flat)
+                all_labels.append(y_expanded)
+                
+            # Process test loader
+            for X, y in self.test_loader:
+                X = X.to(self.device)
+                
+                loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
+                    self.model(X, return_for_analysis=True)
+                latents = F.normalize(latents, dim=-1)
+                latents_hat = F.normalize(latents_hat, dim=-1)
+                # latents shape: (B, N, D) -> flatten to (B*N, D)
+                B, N, D = latents.shape
+                latents_flat = latents.view(B * N, D).detach().cpu().numpy()
+                latents_hat_flat = latents_hat.view(B * N, D).detach().cpu().numpy()
+                
+                # Expand labels: (B,) -> (B*N,)
+                y_expanded = y.unsqueeze(1).expand(B, N).reshape(B * N).detach().cpu().numpy()
+                
+                all_latents.append(latents_flat)
+                all_latents_hat.append(latents_hat_flat)
+                all_labels.append(y_expanded)
+            
+            # Concatenate all data
+            latents = np.concatenate(all_latents, axis=0)  # (N_total_flattened, D)
+            latents_hat = np.concatenate(all_latents_hat, axis=0)  # (N_total_flattened, D)
+            labels = np.concatenate(all_labels, axis=0)  # (N_total_flattened,)
+            
+            return latents, latents_hat, labels
+        
+        def get_memory_vectors():
+            """Extract memory vectors from the model"""
+            # Access memory bank from model
+            if hasattr(self.model, 'memory_bank') and self.model.memory_bank is not None:
+                memory_vectors = self.model.memory_bank.detach().cpu().numpy()  # (M, D)
+            elif hasattr(self.model, 'memory') and self.model.memory is not None:
+                memory_vectors = self.model.memory.memories
+                memory_vectors = F.normalize(memory_vectors, dim=-1)
+                memory_vectors = memory_vectors.detach().cpu().numpy()
+            else:
+                print("Warning: Could not find memory vectors in model")
+                # Create dummy memory for demonstration
+                latent_dim = self.model_config.get('latent_dim', 64)
+                memory_size = self.model_config.get('memory_size', 100)
+                memory_vectors = np.random.randn(memory_size, latent_dim) * 0.1
+            
+            return memory_vectors
+        
+        def subsample_data(latents, latents_hat, labels, max_per_class):
+            """Subsample data to avoid memory issues"""
+            normal_mask = (labels == 0)
+            abnormal_mask = (labels != 0)
+            
+            normal_indices = np.where(normal_mask)[0]
+            abnormal_indices = np.where(abnormal_mask)[0]
+            
+            # Subsample if necessary
+            if len(normal_indices) > max_per_class:
+                normal_indices = np.random.choice(normal_indices, max_per_class, replace=False)
+            if len(abnormal_indices) > max_per_class:
+                abnormal_indices = np.random.choice(abnormal_indices, max_per_class, replace=False)
+            
+            selected_indices = np.concatenate([normal_indices, abnormal_indices])
+            
+            return (latents[selected_indices], 
+                    latents_hat[selected_indices], 
+                    labels[selected_indices], 
+                    len(normal_indices), 
+                    len(abnormal_indices))
+        
+        print("Collecting latent representations...")
+        latents, latents_hat, labels = collect_latents_and_labels()
+        
+        print("Getting memory vectors...")
+        memory_vectors = get_memory_vectors()
+        
+        print(f"Original data shapes:")
+        print(f"  Latents: {latents.shape}")
+        print(f"  Latents_hat: {latents_hat.shape}")
+        print(f"  Memory: {memory_vectors.shape}")
+        print(f"  Labels: {labels.shape}")
+        
+        # Subsample if necessary
+        latents, latents_hat, labels, n_normal, n_abnormal = subsample_data(
+            latents, latents_hat, labels, max_samples_per_class)
+        
+        print(f"After subsampling: {n_normal} normal, {n_abnormal} abnormal samples")
+        
+        # Combine data for T-SNE
+        # Before addressing: latents + memory
+        data_before = np.vstack([latents, memory_vectors])  # (N_samples*N + M, D)
+        labels_before = np.concatenate([
+            labels,  # Sample labels (0 for normal, 1+ for abnormal) - shape: (N_samples*N,)
+            np.full(memory_vectors.shape[0], -1)  # Memory vectors labeled as -1 - shape: (M,)
+        ])
+        
+        # After addressing: latents_hat + memory  
+        data_after = np.vstack([latents_hat, memory_vectors])  # (N_samples*N + M, D)
+        labels_after = labels_before.copy()  # Same labels
+        
+        print("Running T-SNE for before addressing...")
+        tsne_before = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, 
+                        random_state=random_state, verbose=1)
+        embedding_before = tsne_before.fit_transform(data_before)
+        
+        print("Running T-SNE for after addressing...")  
+        tsne_after = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter,
+                        random_state=random_state, verbose=1)
+        embedding_after = tsne_after.fit_transform(data_after)
+        
+        # Create plots
+        fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
+        
+        # Define colors and labels
+        colors = {'normal': 'blue', 'abnormal': 'red', 'memory': 'green'}
+        labels_map = {'normal': 'Normal', 'abnormal': 'Abnormal', 'memory': 'Memory Vectors'}
+        
+        def plot_tsne(ax, embedding, labels_data, title):
+            """Helper function to create a single T-SNE plot"""
+            # Separate data by type
+            normal_mask = (labels_data == 0)
+            abnormal_mask = (labels_data > 0)
+            memory_mask = (labels_data == -1)
+            
+            # Plot each group
+            if np.any(normal_mask):
+                ax.scatter(embedding[normal_mask, 0], embedding[normal_mask, 1], 
+                        c=colors['normal'], s=point_size, alpha=alpha, 
+                        label=f"{labels_map['normal']} (n={np.sum(normal_mask)})")
+            
+            if np.any(abnormal_mask):
+                ax.scatter(embedding[abnormal_mask, 0], embedding[abnormal_mask, 1], 
+                        c=colors['abnormal'], s=point_size, alpha=alpha,
+                        label=f"{labels_map['abnormal']} (n={np.sum(abnormal_mask)})")
+            
+            if np.any(memory_mask):
+                ax.scatter(embedding[memory_mask, 0], embedding[memory_mask, 1], 
+                        c=colors['memory'], s=point_size*1.5, alpha=alpha*1.2, 
+                        marker='s', edgecolors='black', linewidth=0.5,
+                        label=f"{labels_map['memory']} (n={np.sum(memory_mask)})")
+            
+            ax.set_title(title, fontsize=14, pad=20)
+            ax.set_xlabel('T-SNE Dimension 1', fontsize=12)
+            ax.set_ylabel('T-SNE Dimension 2', fontsize=12)
+            ax.legend(loc='best', fontsize=10)
+            ax.grid(True, alpha=0.3)
+        
+        # Create both plots
+        plot_tsne(axes[0], embedding_before, labels_before, 'Before Memory Addressing')
+        plot_tsne(axes[1], embedding_after, labels_after, 'After Memory Addressing')
+        
+        # Overall title
+        fig.suptitle(f'T-SNE: Latent Space Analysis • {self.train_config["dataset_name"].upper()}', 
+                    fontsize=16, y=0.98)
+        
+        plt.tight_layout()
+        
+        # Save plot
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, f'tsne_memory_addressing_{self.train_config["dataset_name"]}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        
+        # Also save as PDF
+        out_path_pdf = os.path.join(base_path, f'tsne_memory_addressing_{self.train_config["dataset_name"]}.pdf')
+        plt.savefig(out_path_pdf, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"T-SNE plots saved to:")
+        print(f"  PNG: {out_path}")
+        print(f"  PDF: {out_path_pdf}")
+        
+        # Calculate some statistics
+        def compute_cluster_separation(embedding, labels_data):
+            """Compute separation between normal and abnormal clusters"""
+            normal_points = embedding[labels_data == 0]
+            abnormal_points = embedding[labels_data > 0]
+            memory_points = embedding[labels_data == -1]
+            
+            if len(normal_points) == 0 or len(abnormal_points) == 0:
+                return None
+            
+            # Compute centroids
+            normal_centroid = np.mean(normal_points, axis=0)
+            abnormal_centroid = np.mean(abnormal_points, axis=0)
+            memory_centroid = np.mean(memory_points, axis=0) if len(memory_points) > 0 else None
+            
+            # Distance between normal and abnormal centroids
+            normal_abnormal_distance = np.linalg.norm(normal_centroid - abnormal_centroid)
+            
+            # Average intra-cluster distances
+            normal_intra_dist = np.mean([np.linalg.norm(p - normal_centroid) for p in normal_points])
+            abnormal_intra_dist = np.mean([np.linalg.norm(p - abnormal_centroid) for p in abnormal_points])
+            
+            return {
+                'inter_cluster_distance': normal_abnormal_distance,
+                'normal_intra_distance': normal_intra_dist,
+                'abnormal_intra_distance': abnormal_intra_dist,
+                'separation_ratio': normal_abnormal_distance / (normal_intra_dist + abnormal_intra_dist + 1e-8),
+                'normal_centroid': normal_centroid,
+                'abnormal_centroid': abnormal_centroid,
+                'memory_centroid': memory_centroid
+            }
+        
+        stats_before = compute_cluster_separation(embedding_before, labels_before)
+        stats_after = compute_cluster_separation(embedding_after, labels_after)
+        
+        print("\n" + "="*60)
+        print("T-SNE Cluster Analysis")
+        print("="*60)
+        
+        if stats_before:
+            print("Before Memory Addressing:")
+            print(f"  Inter-cluster distance: {stats_before['inter_cluster_distance']:.4f}")
+            print(f"  Normal intra-distance: {stats_before['normal_intra_distance']:.4f}")
+            print(f"  Abnormal intra-distance: {stats_before['abnormal_intra_distance']:.4f}")
+            print(f"  Separation ratio: {stats_before['separation_ratio']:.4f}")
+        
+        if stats_after:
+            print("After Memory Addressing:")
+            print(f"  Inter-cluster distance: {stats_after['inter_cluster_distance']:.4f}")
+            print(f"  Normal intra-distance: {stats_after['normal_intra_distance']:.4f}")
+            print(f"  Abnormal intra-distance: {stats_after['abnormal_intra_distance']:.4f}")
+            print(f"  Separation ratio: {stats_after['separation_ratio']:.4f}")
+        
+        if stats_before and stats_after:
+            separation_change = stats_after['separation_ratio'] - stats_before['separation_ratio']
+            print(f"\nSeparation ratio change: {separation_change:+.4f}")
+            if separation_change > 0:
+                print("  → Memory addressing improved cluster separation")
+            else:
+                print("  → Memory addressing reduced cluster separation")
+        
+        return {
+            'plot_paths': {'png': out_path, 'pdf': out_path_pdf},
+            'statistics': {
+                'before_addressing': stats_before,
+                'after_addressing': stats_after,
+                'data_info': {
+                    'n_normal': n_normal,
+                    'n_abnormal': n_abnormal,
+                    'n_memory': memory_vectors.shape[0],
+                    'latent_dim': latents.shape[1]
+                }
+            },
+            'embeddings': {
+                'before': embedding_before,
+                'after': embedding_after,
+                'labels': labels_before
+            }
+        }
+

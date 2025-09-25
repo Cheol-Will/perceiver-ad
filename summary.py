@@ -784,8 +784,7 @@ def main(args):
         # 'MCMPAE-ws-pos_query+token-d64-lr0.005',
         ##################################################################################
         # PAE
-        # 'AutoEncoder',
-        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         ##################################################################################
         # L: depth
         # 'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
@@ -803,8 +802,8 @@ def main(args):
         ##################################################################################
         # 'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-mlp_enc-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-mlp_dec_mixer-d64-lr0.001-t0.1',
-        # 'MemPAE-ws-pos_query+token-mlp_enc_mixer-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-mlp_dec_mixer-d64-lr0.001-t0.1',
+        'MemPAE-ws-pos_query+token-mlp_enc_mixer-d64-lr0.001-t0.1',
         ##################################################################################
         # "MemPAE-ws-pos_query+token-d64-lr0.001-t0.1",
         # "MemPAE-ws-global_query-d64-lr0.001-t0.1",
@@ -843,7 +842,7 @@ def main(args):
         'Disent',
     ]
     my_models = [
-        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        # 'PAE-ws-pos_query+tokesn-d64-lr0.001', # Final architecture for PAE
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
     ]

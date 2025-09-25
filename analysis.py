@@ -74,13 +74,13 @@ def train_test(args, model_config, train_config, analysis_config, run):
             analyzer.plot_feature_reconstruction_distribution(
                 feature_idx=i
             )
+    if args.plot_2x2:
+        # analyzer.plot_2x4(abnormal_avg=True, plot_heads=False, plot_2x2=True)
+        analyzer.plot_2x4(5, plot_heads=False, plot_2x2=True) # wine
+        analyzer.plot_2x4(1, plot_heads=False, plot_2x2=True) # pima
     if args.plot_2x4:
         analyzer.analyze_best_abnormal_sample()
-        #to show that memory adderessing makes anormaly's decoding attention map similar to that of normal samples.
         # analyzer.plot_2x4(abnormal_avg=True, plot_heads=False, plot_2x2=True)
-        # analyzer.plot_2x4(5, plot_heads=False, plot_2x2=True) # wine
-        # analyzer.plot_2x4(1, plot_heads=False, plot_2x2=True) # pima
-        
         # for i in range(100):
         #     analyzer.plot_2x4(i, plot_heads=False, plot_2x2=True) 
     if args.plot_2x3:
@@ -97,7 +97,8 @@ def train_test(args, model_config, train_config, analysis_config, run):
         analyzer.compare_shap_vs_encoder_attention_per_sample(plot_group_average=True, include_self_attention=True)
         analyzer.compare_shap_vs_encoder_attention_per_sample(plot_group_average=True, include_self_attention=False)
 
-    
+    if args.plot_tsne_memory_addressing:
+        analyzer.plot_tsne_memory_addressing()
 
     return 
 
@@ -185,9 +186,11 @@ if __name__ == "__main__":
     parser.add_argument('--plot_feature_reconstruction_distribution', action='store_true')
     parser.add_argument('--plot_2x4', action='store_true')
     parser.add_argument('--plot_2x3', action='store_true')
+    parser.add_argument('--plot_2x2', action='store_true')
     parser.add_argument('--plot_grad_z_x', action='store_true')
     parser.add_argument('--visualize_attention_vs_shap', action='store_true')
     parser.add_argument('--compare_shap_vs_encoder_attention_per_sample', action='store_true')
+    parser.add_argument('--plot_tsne_memory_addressing', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:
