@@ -3125,9 +3125,9 @@ class Analyzer(Trainer):
                         marker=marker, label=label, edgecolors='black', linewidth=0.3)
         
         # Customize plot
-        ax.set_xlabel('T-SNE Dimension 1', fontsize=12)
-        ax.set_ylabel('T-SNE Dimension 2', fontsize=12)
-        ax.legend(loc='best', fontsize=10, framealpha=0.9)
+        # ax.set_xlabel('T-SNE Dimension 1', fontsize=12)
+        # ax.set_ylabel('T-SNE Dimension 2', fontsize=12)
+        ax.legend(loc='best', fontsize=20, framealpha=0.9)
         ax.grid(True, alpha=0.3)
         
         # Simple title with only dataset name

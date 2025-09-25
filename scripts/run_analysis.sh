@@ -11,10 +11,10 @@ data_list=(
     # global_anomalies_7_Cardiotocography_42
     # cluster_anomalies_7_Cardiotocography_42
 
-    dependency_anomalies_18_Ionosphere_42
+    # dependency_anomalies_18_Ionosphere_42
     local_anomalies_18_Ionosphere_42
-    cluster_anomalies_18_Ionosphere_42
-    global_anomalies_18_Ionosphere_42
+    # cluster_anomalies_18_Ionosphere_42
+    # global_anomalies_18_Ionosphere_42
 
 
     # dependency_anomalies_30_satellite_42
