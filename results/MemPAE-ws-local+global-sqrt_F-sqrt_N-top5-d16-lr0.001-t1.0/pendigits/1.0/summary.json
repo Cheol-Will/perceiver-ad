@@ -1,0 +1,120 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "num_latents": 4,
+        "num_memories": 57,
+        "depth": 4,
+        "hidden_dim": 16,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 1.0,
+        "sim_type": "cos",
+        "shrink_thred": 0,
+        "use_entropy_loss_as_score": false,
+        "top_k": 5,
+        "is_weight_sharing": true,
+        "use_pos_enc_as_query": true,
+        "use_mask_token": true,
+        "global_decoder_query": false,
+        "mlp_mixer_decoder": false,
+        "mlp_mixer_encoder": false,
+        "mlp_encoder": false,
+        "mlp_decoder": false,
+        "latent_loss_weight": null,
+        "entropy_loss_weight": null,
+        "is_recurrent": false,
+        "num_features": 16
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "not_use_power_of_two": false,
+        "use_num_memories_sqrt_NF": false,
+        "use_num_memories_power_2": false,
+        "use_num_latents_power_2": false,
+        "model_type": "MemPAE",
+        "dataset_name": "pendigits",
+        "train_ratio": 1.0,
+        "base_path": "results/MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d16-lr0.001-t1.0/pendigits/1.0",
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9796229463119543,
+        "AUC-PR": 0.6977462859559508,
+        "f1": 0.6717948717948719
+    },
+    "total_time": 518.9235429763794,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9830377397401525,
+            "AUC-PR": 0.6664297855212576,
+            "f1": 0.6538461538461539
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9850713778327719,
+            "AUC-PR": 0.7047447646682506,
+            "f1": 0.6538461538461539
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9658921656240692,
+            "AUC-PR": 0.6012661738263587,
+            "f1": 0.5576923076923077
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9854781054512959,
+            "AUC-PR": 0.7113390397175305,
+            "f1": 0.6923076923076923
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9910367162377887,
+            "AUC-PR": 0.7984324313893326,
+            "f1": 0.7692307692307693
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9688939300199354,
+            "AUC-PR": 0.5826043183642818,
+            "f1": 0.5833333333333334
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.989310510758232,
+            "AUC-PR": 0.7837077652452208,
+            "f1": 0.7307692307692307
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9435947083400166,
+            "AUC-PR": 0.5497223133889569,
+            "f1": 0.532051282051282
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.9920048425410356,
+            "AUC-PR": 0.7721773292978545,
+            "f1": 0.7884615384615384
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.991909366574246,
+            "AUC-PR": 0.8070389381404632,
+            "f1": 0.7564102564102564
+        }
+    ]
+}

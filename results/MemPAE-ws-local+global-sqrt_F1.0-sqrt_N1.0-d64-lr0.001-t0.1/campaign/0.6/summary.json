@@ -1,0 +1,115 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "num_latents": 4,
+        "num_memories": 64,
+        "depth": 4,
+        "hidden_dim": 64,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.1,
+        "sim_type": "cos",
+        "shrink_thred": 0,
+        "use_entropy_loss_as_score": false,
+        "top_k": null,
+        "is_weight_sharing": true,
+        "use_pos_enc_as_query": true,
+        "use_mask_token": true,
+        "mlp_mixer_decoder": false,
+        "mlp_encoder": false,
+        "mlp_decoder": false,
+        "latent_loss_weight": null,
+        "entropy_loss_weight": null,
+        "is_recurrent": false,
+        "num_features": 62
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "not_use_power_of_two": false,
+        "model_type": "MemPAE",
+        "dataset_name": "campaign",
+        "train_ratio": 0.6,
+        "base_path": "results/MemPAE-ws-pos_query+token-d64-lr0.001-t0.1/campaign/0.6",
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.7924125671530684,
+        "AUC-PR": 0.5022091092026153,
+        "f1": 0.5246767241379311
+    },
+    "total_time": 1559.5497417449951,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.7874462032452363,
+            "AUC-PR": 0.5025278485511763,
+            "f1": 0.5234913793103448
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.7839137265872373,
+            "AUC-PR": 0.497079329676527,
+            "f1": 0.5163793103448275
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.7841886897438607,
+            "AUC-PR": 0.4962944069322623,
+            "f1": 0.524353448275862
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.7910312854988999,
+            "AUC-PR": 0.5113319827432529,
+            "f1": 0.51875
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.8054440747264816,
+            "AUC-PR": 0.50939081674192,
+            "f1": 0.5344827586206896
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.8089351202764055,
+            "AUC-PR": 0.5055737776162488,
+            "f1": 0.5321120689655172
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.7961773463711397,
+            "AUC-PR": 0.5060969185199594,
+            "f1": 0.5232758620689655
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.7819670423967726,
+            "AUC-PR": 0.4938451962271034,
+            "f1": 0.5174568965517241
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.798008588375042,
+            "AUC-PR": 0.5118830760224903,
+            "f1": 0.5344827586206896
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.7870135943096089,
+            "AUC-PR": 0.4880677389952124,
+            "f1": 0.5219827586206897
+        }
+    ]
+}

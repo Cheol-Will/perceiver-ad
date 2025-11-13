@@ -1,0 +1,107 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "beta": 1.0,
+        "depth": 4,
+        "hidden_dim": 16,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "vq_loss_weight": 0.1,
+        "is_weight_sharing": true,
+        "use_pos_enc_as_query": true,
+        "use_mask_token": true,
+        "num_features": 9,
+        "num_latents": 2,
+        "num_embeddings": 256
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "use_vq_loss_as_score": true,
+        "model_type": "PVQVAE",
+        "dataset_name": "shuttle",
+        "train_ratio": 1.0,
+        "base_path": "results/PVQVAE-ws-local+global-use_vq_loss0.1-sqrt_NF-d16-lr0.001-beta1.0/shuttle/1.0",
+        "not_use_power_of_two": false,
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9959906379687569,
+        "AUC-PR": 0.9622492931674336,
+        "f1": 0.9673312446596413
+    },
+    "total_time": 2766.3399229049683,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9965165543299476,
+            "AUC-PR": 0.9679038019605306,
+            "f1": 0.96553688407861
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9967685467299888,
+            "AUC-PR": 0.9570027227865199,
+            "f1": 0.9635431500996867
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9965215776833551,
+            "AUC-PR": 0.9701484682790933,
+            "f1": 0.9632583309598405
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9967372694822797,
+            "AUC-PR": 0.9648648600641855,
+            "f1": 0.9715180860153803
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9958069619254678,
+            "AUC-PR": 0.9687839141017656,
+            "f1": 0.9723725434349189
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9939496957141162,
+            "AUC-PR": 0.9476554252187854,
+            "f1": 0.9609797778410709
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9934894215862218,
+            "AUC-PR": 0.9568105025722458,
+            "f1": 0.9609797778410709
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9954778448059457,
+            "AUC-PR": 0.9640139424028896,
+            "f1": 0.9666761606379949
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.9971466103054745,
+            "AUC-PR": 0.9642233722288651,
+            "f1": 0.9774992879521504
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.9974918971247713,
+            "AUC-PR": 0.9610859220594551,
+            "f1": 0.9709484477356879
+        }
+    ]
+}

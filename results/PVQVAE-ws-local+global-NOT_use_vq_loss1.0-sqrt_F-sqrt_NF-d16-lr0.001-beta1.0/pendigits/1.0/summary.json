@@ -1,0 +1,110 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "beta": 1.0,
+        "depth": 4,
+        "hidden_dim": 16,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "vq_loss_weight": 1.0,
+        "is_weight_sharing": true,
+        "use_pos_enc_as_query": true,
+        "use_mask_token": true,
+        "num_features": 16,
+        "num_latents": 4,
+        "num_embeddings": 57
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "use_vq_loss_as_score": false,
+        "use_num_embeddings_sqrt_NF": false,
+        "use_num_embeddings_power_2": false,
+        "use_num_latents_power_2": false,
+        "model_type": "PVQVAE",
+        "dataset_name": "pendigits",
+        "train_ratio": 1.0,
+        "base_path": "results/PVQVAE-ws-local+global-NOT_use_vq_loss1.0-sqrt_F-sqrt_NF-d16-lr0.001-beta1.0/pendigits/1.0",
+        "not_use_power_of_two": false,
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9504023357240514,
+        "AUC-PR": 0.4591831915500893,
+        "f1": 0.4576923076923077
+    },
+    "total_time": 324.61435532569885,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9660277414969104,
+            "AUC-PR": 0.5937713215591737,
+            "f1": 0.6089743589743589
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9439212361464373,
+            "AUC-PR": 0.4567892889334174,
+            "f1": 0.42948717948717946
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9545152494214155,
+            "AUC-PR": 0.4499313391240799,
+            "f1": 0.4166666666666667
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9716531854601559,
+            "AUC-PR": 0.6657808990506464,
+            "f1": 0.6217948717948718
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9563235642324114,
+            "AUC-PR": 0.37242369862261937,
+            "f1": 0.3782051282051282
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9643492740007484,
+            "AUC-PR": 0.58157674984894,
+            "f1": 0.5961538461538461
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9441370118313817,
+            "AUC-PR": 0.4507047035289868,
+            "f1": 0.4230769230769231
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9275872077480658,
+            "AUC-PR": 0.29597648523739095,
+            "f1": 0.3717948717948718
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.9504766160262139,
+            "AUC-PR": 0.3230213997260355,
+            "f1": 0.3333333333333333
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.925032270876775,
+            "AUC-PR": 0.40185602986960295,
+            "f1": 0.3974358974358974
+        }
+    ]
+}
