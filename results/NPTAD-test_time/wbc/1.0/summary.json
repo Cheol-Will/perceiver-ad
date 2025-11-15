@@ -1,0 +1,49 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "depth": 2,
+        "hidden_dim": 16,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.1,
+        "train_mask_prob": 0.15,
+        "test_mask_prob": 0.15,
+        "num_features": 30
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.05,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "model_type": "NPTAD",
+        "dataset_name": "wbc",
+        "train_ratio": 1.0,
+        "base_path": "results/NPTAD-test_time/wbc/1.0",
+        "not_use_power_of_two": false,
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 0
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9595637137536579,
+        "AUC-PR": 0.7771509459595021,
+        "f1": 0.7142857142857143
+    },
+    "total_time": 46.92672038078308,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9595637137536579,
+            "AUC-PR": 0.7771509459595021,
+            "f1": 0.7142857142857143,
+            "train_time": 4.446322679519653,
+            "test_time": 41.1439208984375
+        }
+    ]
+}

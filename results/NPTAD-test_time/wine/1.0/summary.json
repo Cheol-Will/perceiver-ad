@@ -1,0 +1,49 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "depth": 2,
+        "hidden_dim": 8,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.1,
+        "train_mask_prob": 0.15,
+        "test_mask_prob": 0.15,
+        "num_features": 13
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "model_type": "NPTAD",
+        "dataset_name": "wine",
+        "train_ratio": 1.0,
+        "base_path": "results/NPTAD-test_time/wine/1.0",
+        "not_use_power_of_two": false,
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 0
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9566666666666667,
+        "AUC-PR": 0.7842316017316018,
+        "f1": 0.6
+    },
+    "total_time": 7.7066264152526855,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9566666666666667,
+            "AUC-PR": 0.7842316017316018,
+            "f1": 0.6,
+            "train_time": 6.406763792037964,
+            "test_time": 0.0747230052947998
+        }
+    ]
+}

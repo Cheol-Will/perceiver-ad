@@ -1,0 +1,49 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "depth": 2,
+        "hidden_dim": 16,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.1,
+        "train_mask_prob": 0.15,
+        "test_mask_prob": 0.15,
+        "num_features": 21
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "model_type": "NPTAD",
+        "dataset_name": "cardio",
+        "train_ratio": 1.0,
+        "base_path": "results/NPTAD-test_time/cardio/1.0",
+        "not_use_power_of_two": false,
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 0
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9541268664909969,
+        "AUC-PR": 0.8314757068827335,
+        "f1": 0.8011363636363636
+    },
+    "total_time": 21.524335384368896,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9541268664909969,
+            "AUC-PR": 0.8314757068827335,
+            "f1": 0.8011363636363636,
+            "train_time": 12.95227336883545,
+            "test_time": 7.332235813140869
+        }
+    ]
+}
