@@ -835,7 +835,7 @@ def main(args):
     models=  [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  
         'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent',
-        'NPTAD',
+        # 'NPTAD',
     ]
     data = [
         'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
@@ -971,7 +971,7 @@ def main(args):
     for base in keys:
         render(
             pivots, data, models, my_models, base, 
-            add_avg_rank=True, use_rank=False, use_std=False, 
+            add_avg_rank=True, use_rank=False, use_std=True, 
             use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False,
             use_top_k=False,
             use_hpo_memory_latent=False,
