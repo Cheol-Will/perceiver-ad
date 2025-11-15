@@ -290,7 +290,6 @@ class FeatureTokenizer(nn.Module):
         x_embedded = x.unsqueeze(-1) * self.embedding_matrix  # (batch_size, num_features, hidden_dim)
         return x_embedded
 
-
 class MLPMixerEncoder(nn.Module):
     def __init__(
         self, 
@@ -315,8 +314,6 @@ class MLPMixerEncoder(nn.Module):
 
         return x
 
-
-
 class MLPMixerDecoder(nn.Module):
     def __init__(
         self, 
@@ -336,7 +333,9 @@ class MLPMixerDecoder(nn.Module):
         
     def forward(self, x):
         assert x.ndim == 3
+        # print(f"in dim: {x.shape}")
         x = x.permute(0, 2, 1) # B, D, N
+        # print(f"in dim: {x.shape}")
         x = self.drop1(self.act1(self.lin1(x))) # B, D, H
         x = self.drop2(self.act2(self.lin2(x))) # B, D, H
         x = self.lin3(x) # B, D, F
@@ -495,6 +494,8 @@ class MemPAE(nn.Module):
             # input: (B, N, D)
             # output: (B, F)
             print("Init MLPMixerDecoder.")
+            if mlp_mixer_encoder:
+                num_latents = num_features
             self.decoder = MLPMixerDecoder(  
                 hidden_dim,
                 num_latents,

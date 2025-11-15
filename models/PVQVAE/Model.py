@@ -268,7 +268,9 @@ class PVQVAE(nn.Module):
         num_latents: int = None,
         is_weight_sharing: bool = False,
         use_pos_enc_as_query: bool = False,
+        use_mask_token: bool = False,
         beta: float = 0.25,
+        vq_loss_weight: float = 1.0,
     ):
         super().__init__()
         assert num_latents is not None
@@ -292,8 +294,14 @@ class PVQVAE(nn.Module):
         self.vq_layer = VectorQuantizer(num_embeddings, hidden_dim, beta)
 
         if use_pos_enc_as_query: 
-            print(f"Init decoder query of shape {(1, 1, hidden_dim)}")
-            self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
+            if use_mask_token:
+                print(f"Init decoder query of shape {(1, 1, hidden_dim)}")
+                print(f"Use decoder query = mask + pos_encoding")
+                self.decoder_query = nn.Parameter(torch.empty(1, 1, hidden_dim)) # 1 x d
+            else:
+                print(f"Init decoder query as None")
+                print(f"Use decoder query = pos_encoding")
+                self.decoder_query = None
         else:
             self.decoder_query = nn.Parameter(torch.empty(1, num_features, hidden_dim)) # f x d
 
@@ -301,11 +309,15 @@ class PVQVAE(nn.Module):
         self.num_latents = num_latents
         self.is_weight_sharing = is_weight_sharing
         self.use_pos_enc_as_query = use_pos_enc_as_query
+        self.use_mask_token = use_mask_token
         self.depth = depth
+        self.vq_loss_weight = vq_loss_weight
+
         self.reset_parameters()
 
     def reset_parameters(self):
-        nn.init.trunc_normal_(self.decoder_query, std=0.02)
+        if self.decoder_query is not None:
+            nn.init.trunc_normal_(self.decoder_query, std=0.02)
         nn.init.trunc_normal_(self.latents_query, std=0.02)
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
@@ -333,8 +345,11 @@ class PVQVAE(nn.Module):
         batch_size = latents.shape[0]
         num_features = self.num_features
         if self.use_pos_enc_as_query:
-            decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (B, F, D)
-            decoder_query = decoder_query + self.pos_encoding
+            if self.use_mask_token:
+                decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (B, F, D)            
+                decoder_query = decoder_query + self.pos_encoding
+            else:
+                decoder_query = self.pos_encoding.expand(batch_size, -1, -1) # only pos_encoding
         else:
             decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
         output, decoder_attn = self.decoder(decoder_query, latents, latents, return_weight=True)
@@ -349,4 +364,4 @@ class PVQVAE(nn.Module):
         x_hat = self._decode(latents)
         reconstruction_loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
 
-        return reconstruction_loss, vq_loss
+        return reconstruction_loss, vq_loss * self.vq_loss_weight

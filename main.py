@@ -9,15 +9,25 @@ from utils import get_parser, get_logger, build_trainer, load_yaml
 def train_test(model_config, train_config, run):
     train_config['run'] = run
     train_config['logger'].info(f"[run {run}]" + '-'*60)
-    trainer = build_trainer(model_config, train_config)    
+    trainer = build_trainer(model_config, train_config)   
+    start_train = time.time()    
     trainer.training()
+    end_train = time.time()
+    train_time = end_train - start_train
+    
+    start_test = time.time()    
     mse_rauc, mse_ap, mse_f1 = trainer.evaluate()
+    end_test = time.time()    
+    test_time = end_test - start_test
+    
     train_config['logger'].info(f"[run {run}] AUC-ROC: {mse_rauc:.4f} | AUC-PR: {mse_ap:.4f} | F1: {mse_f1:.4f}")
     results_dict = {
         'run': run,
         'AUC-ROC': float(mse_rauc),
         'AUC-PR': float(mse_ap),
         'f1': float(mse_f1),
+        'train_time': train_time,
+        'test_time': test_time,
     }
     return results_dict
 
@@ -38,7 +48,7 @@ def main(args):
     print(train_config)
     start = time.time()    
     all_results = []
-    for seed in range(10):
+    for seed in range(args.runs):
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         np.random.seed(seed)

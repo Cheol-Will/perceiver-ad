@@ -31,6 +31,7 @@ def get_parser():
     parser.add_argument('--dataname', type=str, default='Hepatitis')
     parser.add_argument('--model_type', type=str, default='DRL')
     parser.add_argument('--exp_name', type=str, default=None)
+    parser.add_argument('--runs', type=int, default=10)
     parser.add_argument('--train_ratio', type=float, default=1.0)
 
     # Experiment 
@@ -70,13 +71,29 @@ def get_parser():
     parser.add_argument('--global_decoder_query', action='store_true')    
     parser.add_argument('--mlp_encoder', action='store_true')    
     parser.add_argument('--mlp_decoder', action='store_true')    
+    parser.add_argument('--use_num_latents_power_2', action='store_true')
+    parser.add_argument('--use_num_memories_sqrt_NF', action='store_true')
+    parser.add_argument('--use_num_memories_power_2', action='store_true')
+    parser.add_argument('--use_latent_F', action='store_true')
+    parser.add_argument('--config_file_name', type=str, default=None)
 
+
+
+    # VQVAE
+    parser.add_argument('--vq_loss_weight', type=float, default=None)
+    parser.add_argument('--use_num_embeddings_sqrt_NF', action='store_true')
+    parser.add_argument('--use_num_embeddings_power_2', action='store_true')
+    
     return parser
 
 
 def load_yaml(args):    
+    if args.config_file_name is not None:
+        dict_to_import = args.config_file_name + '.yaml'
+        print(f"Load yaml from {args.config_file_name}")
+    else:
+        dict_to_import = args.model_type + '.yaml'
 
-    dict_to_import = args.model_type + '.yaml'
     if args.model_type in BASELINE_MODELS:
         dict_to_import = 'CLASSIC.yaml'
 
@@ -86,6 +103,24 @@ def load_yaml(args):
     model_config = configs['default']['model_config']
     train_config = configs['default']['train_config']
 
+    if args.model_type in ['Perceiver', 'RIN', 'MCMPAE', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE']:
+        model_config = replace_transformer_config(args, model_config)
+    elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
+        model_config = replace_mlp_config(args, model_config)
+    
+    if args.model_type in ['PVQVAE']:
+        model_config['vq_loss_weight'] = args.vq_loss_weight 
+        train_config['use_vq_loss_as_score'] = args.use_vq_loss_as_score 
+        train_config['use_num_embeddings_sqrt_NF'] = args.use_num_embeddings_sqrt_NF
+        train_config['use_num_embeddings_power_2'] = args.use_num_embeddings_power_2
+        train_config['use_num_latents_power_2'] = args.use_num_latents_power_2
+
+    if args.model_type in ['MemPAE']:
+        train_config['use_num_memories_sqrt_NF'] = args.use_num_memories_sqrt_NF
+        train_config['use_num_memories_power_2'] = args.use_num_memories_power_2
+        train_config['use_num_latents_power_2'] = args.use_num_latents_power_2
+        train_config['use_latent_F'] = args.use_latent_F
+
     # Replace hyperparameters with data specific ones. 
     if args.dataname in configs:
         for k, v in configs[args.dataname].items():
@@ -93,13 +128,6 @@ def load_yaml(args):
                 model_config[k] = v
             if k in train_config:
                 train_config[k] = v
-
-
-    if args.model_type in ['Perceiver', 'RIN', 'MCMPAE', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE']:
-        model_config = replace_transformer_config(args, model_config)
-    elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
-        model_config = replace_mlp_config(args, model_config)
-    
 
     train_config['model_type'] = args.model_type
     train_config['dataset_name'] = args.dataname
@@ -155,6 +183,8 @@ def build_trainer(model_config, train_config):
         from models.PDRL.Trainer import Trainer
     elif model_type == 'MCMPAE':
         from models.MCMPAE.Trainer import Trainer        
+    elif model_type == 'NPTAD':
+        from models.NPTAD.Trainer import Trainer        
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Trainer import Trainer
     else:
@@ -225,9 +255,6 @@ def replace_transformer_config(args, model_config):
 
         if args.model_type in ['PVAE', 'PVQVAE']:
             model_config['beta'] = args.beta if args.beta is not None else model_config['beta'] 
-
-        if args.model_type in ['PVQVAE']:
-            model_config['use_vq_loss_as_score'] = args.use_vq_loss_as_score 
 
     return model_config
 

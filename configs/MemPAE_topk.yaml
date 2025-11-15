@@ -1,0 +1,106 @@
+default: 
+  train_config:
+    data_dir: 'Data/'
+    epochs: 200
+    learning_rate: 0.05
+    sche_gamma: 0.98
+    batch_size: 512
+    random_seed: 42
+    num_workers: 0
+    preprocess: 'standard'
+    not_use_power_of_two: false
+  model_config:
+    num_heads: 4
+    num_latents: null
+    num_memories: null
+    depth: 4
+    hidden_dim: 8
+    mlp_ratio: 4.0
+    dropout_prob: 0.0
+    temperature: 1
+    sim_type: 'cos'
+    shrink_thred: 0
+    use_entropy_loss_as_score: null
+    top_k: null
+
+
+arrhythmia:
+  top_k: 1
+  temperature: 0.1
+
+breastw:
+  top_k: 15
+  temperature: 0.5
+
+cardio:
+  top_k: 1
+  temperature: 0.1
+
+cardiotocography:
+  top_k: 1
+  temperature: 0.1
+
+campaign: 
+  top_k: 15
+  temperature: 1.0
+
+census:
+  temperature: 0.1
+  epochs: 50
+  batch_size: 2048
+
+fraud:
+  temperature: 0.1
+  epochs: 50
+  batch_size: 2048
+
+glass:
+  top_k: 5
+  temperature: 0.1
+
+ionosphere:
+  top_k: 5
+  temperature: 0.1
+
+mammography: 
+  top_k: 15
+  temperature: 0.5
+
+nslkdd:
+  temperature: 0.1
+  epochs: 50
+  batch_size: 2048
+
+optdigits:
+  top_k: 5
+  temperature: 1.0
+
+pendigits: 
+  temperature: 0.1
+
+pima:
+  temperature: 0.1
+
+satellite:
+  top_k: 5
+  temperature: 0.1
+
+"satimage-2": 
+  top_k: 10
+  temperature: 1.0
+
+shuttle: 
+  top_k: 15
+  temperature: 1.0
+
+thyroid:
+  top_k: 1
+  temperature: 0.1
+
+wbc:
+  top_k: 15
+  temperature: 0.5
+
+wine:
+  top_k: 10
+  temperature: 1.0

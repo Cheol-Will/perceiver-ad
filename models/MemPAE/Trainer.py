@@ -16,25 +16,37 @@ class Trainer(object):
     def __init__(self, model_config: dict, train_config: dict):
         self.train_loader, self.test_loader = get_dataloader(train_config)
         if model_config['num_latents'] is None:
-            if train_config['not_use_power_of_two']:
-                model_config['num_latents'] = int(math.sqrt(model_config['num_features'])) # sqrt(F)
-            else:
-                if train_config['latent_ratio'] is not None:
-                    model_config['num_latents'] = train_config['latent_ratio'] * nearest_power_of_two(int(math.sqrt(model_config['num_features']))) 
-                    model_config['num_latents'] = int(model_config['num_latents'])
-                else:
-                    model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['num_features']))) 
+            model_config['num_latents'] = int(math.sqrt(model_config['num_features']))
 
+            if train_config['use_num_latents_power_2']:
+                model_config['num_latents'] = nearest_power_of_two(model_config['num_latents'])
+
+            if train_config['latent_ratio'] is not None:
+                model_config['num_latents'] *= train_config['latent_ratio']
+                model_config['num_latents'] = int(model_config['num_latents'])
 
         if model_config['num_memories'] is None:
             num_train = self.get_num_train()
-            if train_config['num_memories_not_use_power_of_two']:
-                model_config['num_memories'] = int(math.sqrt(num_train))
+
+            if train_config['use_num_memories_sqrt_NF']:
+                # M = sqrt(NF)
+                model_config['num_memories'] = int(math.sqrt(num_train * model_config['num_features']))
             else:
-                if train_config['memory_ratio'] is not None:
-                    model_config['num_memories'] = int(train_config['memory_ratio'] * nearest_power_of_two(int(math.sqrt(num_train))))
-                else:
-                    model_config['num_memories'] = nearest_power_of_two(int(math.sqrt(num_train)))
+                # default: M = sqrt(N) 
+                model_config['num_memories'] = int(math.sqrt(num_train))
+
+            if train_config['use_num_memories_power_2']:
+                # use power of 2
+                model_config['num_memories'] = nearest_power_of_two(model_config['num_memories'])        
+
+            if train_config['memory_ratio'] is not None:
+                model_config['num_memories'] *= train_config['memory_ratio']
+                model_config['num_memories'] = int(model_config['num_memories'])
+
+
+        if train_config['use_latent_F']:
+            print("Set num_latents = num_features")
+            model_config['num_latents'] = model_config['num_features'] 
 
 
         self.device = train_config['device']

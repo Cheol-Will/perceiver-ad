@@ -1,19 +1,23 @@
 default: 
-  data_dir: 'Data/'
-  epochs: 200
-  learning_rate: 0.05
-  sche_gamma: 0.98
-  batch_size: 512
-  num_heads: 4
-  depth: 4
-  hidden_dim: 8
-  mlp_ratio: 4.0
-  dropout_prob: 0.0
-  random_seed: 42
-  num_workers: 0
-  preprocess: 'standard'
-  beta: 1.0
-
+  train_config:
+    data_dir: 'Data/'
+    epochs: 200
+    learning_rate: 0.05
+    sche_gamma: 0.98
+    batch_size: 512
+    random_seed: 42
+    num_workers: 0
+    preprocess: 'standard'
+    use_vq_loss_as_score: null
+  model_config:
+    num_heads: 4
+    beta: 1.0
+    depth: 4
+    hidden_dim: 8
+    mlp_ratio: 4.0
+    dropout_prob: 0.0
+    vq_loss_weight: 1.0
+    
 census:
   batch_size: 2048
 

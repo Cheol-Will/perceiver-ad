@@ -287,6 +287,9 @@ def render(
     synthetic_type = None,
     is_plot = False,
     is_print = True,
+    use_top_k = False,
+    use_hpo_memory_latent = False,
+    use_hpo_memory_latent_top_k = False,
 ):
     tr, metr = base.split('_')[1], base.split('_')[2]  # e.g., '1.0', 'AUCPR'
     k_mean = f"ratio_{tr}_{metr}_mean"
@@ -305,12 +308,77 @@ def render(
     # df_mean.loc['MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1', ''] = 0.975 # current
     # df_mean.loc['MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1', 'census'] = 0.24 # current
 
+    if use_hpo_memory_latent_top_k:
 
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001', # t=1
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # this is final
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # this is final
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
+        our_model = ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']  # Ours
+        num_latent_list = [0.5, 1.0, 2.0, 4.0]
+        num_memory_list = [0.5, 1.0, 2.0, 4.0]
+        temperature_list = [0.1]
 
+        # no top-k
+        for l in num_latent_list:
+            for m in num_memory_list:
+                for t in temperature_list:
+                    model_name = f"MemPAE-ws-local+global-sqrt_F{l}-sqrt_N{m}-d64-lr0.001-t{t}"
+                    our_model.append(model_name)
+        top_k_list = [1, 5, 10, 15]
+        num_latent_list = [0.5, 1.0, 2.0, 4.0]
+        num_memory_list = [0.5, 1.0, 2.0, 4.0]
+        temperature_list = [0.1, 0.5, 1.0]
+
+        # with top-k
+        for k in top_k_list:
+            for l in num_latent_list:
+                for m in num_memory_list:
+                    for t in temperature_list:
+                        model_name = f"MemPAE-ws-local+global-sqrt_F{l}-sqrt_N{m}-top{k}-d64-lr0.001-t{t}"
+                        our_model.append(model_name)
+
+        df_mean.loc[our_model[0], :] = df_mean.loc[our_model, :].max(axis=0)
+        df_mean.drop(our_model[1:], axis=0, inplace=True)
+
+    # choose top-k
+    if use_top_k:
+        our_model = [
+            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.1", 
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.5", 
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t1.0", 
+
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1", 
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.5", 
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t1.0", 
+
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t0.1", 
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t0.5", 
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t1.0", 
+
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t0.1", 
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t0.5", 
+            "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t1.0", 
+        ]
+        df_mean.loc[our_model[0], :] = df_mean.loc[our_model, :].max(axis=0)
+        df_mean.drop(our_model[1:], axis=0, inplace=True)
+
+
+    # choose memory or latent
+    if use_hpo_memory_latent:
+        print(f"use_hpo_memory_latent=True")
+        our_model = ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']  # Ours
+
+        num_latent_list = [0.5, 1.0, 2.0, 4.0]
+        num_memory_list = [0.5, 1.0, 2.0, 4.0]
+        temperature_list = [0.1, 1.0]
+
+        for l in num_latent_list:
+            for m in num_memory_list:
+                for t in temperature_list:
+                    model_name = f"MemPAE-ws-local+global-sqrt_F{l}-sqrt_N{m}-d64-lr0.001-t{t}"
+                    # model_name = f"MemPAE-ws-local+global-sqrt_F-sqrt_N-top{k}-d64-lr0.001-t{temp}"
+                    our_model.append(model_name)
+
+        df_mean.loc[our_model[0], :] = df_mean.loc[our_model, :].max(axis=0)
+        df_mean.drop(our_model[1:], axis=0, inplace=True)
 
 
     df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
@@ -760,12 +828,14 @@ def main(args):
         # 'ratio_0.1_AUCPR', 'ratio_0.5_AUCPR',
         'ratio_1.0_AUCROC',
         'ratio_1.0_AUCPR',
+        'ratio_1.0_f1',
         # 'ratio_0.8_AUCPR',
         # 'ratio_0.5_AUCPR',
     ]
     models=  [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  
         'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent',
+        'NPTAD',
     ]
     data = [
         'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
@@ -784,6 +854,7 @@ def main(args):
         # 'MCMPAE-ws-pos_query+token-d64-lr0.005',
         ##################################################################################
         # PAE
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
         'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         ##################################################################################
         # L: depth
@@ -795,16 +866,18 @@ def main(args):
         # temperature
         # 'MemPAE-ws-pos_query+token-d64-lr0.001', # t=1
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.5', # 
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05', # done
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # (working on)
 
         ##################################################################################
+        # Encoder, Decoder, Memory ablation
         # 'MemPAE-ws-pos_query+token-mlp_dec-d64-lr0.001-t0.1',
         # 'MemPAE-ws-pos_query+token-mlp_enc-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-mlp_dec_mixer-d64-lr0.001-t0.1',
-        'MemPAE-ws-pos_query+token-mlp_enc_mixer-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-mlp_dec_mixer-d64-lr0.001-t0.1',
+        # 'MemPAE-ws-pos_query+token-mlp_enc_mixer-d64-lr0.001-t0.1',
         ##################################################################################
+
         # "MemPAE-ws-pos_query+token-d64-lr0.001-t0.1",
         # "MemPAE-ws-global_query-d64-lr0.001-t0.1",
         # "MemPAE-ws-d64-lr0.001-t0.1",
@@ -820,9 +893,75 @@ def main(args):
         
         # 'MemPAE-ws-l2-d64-lr0.001',
 
+        # 251104: VQVAE
+        # "MemPAE-ws-pos_query+token-top1-L4-d64-lr0.001-t0.1",
+        # "MemPAE-ws-pos_query+token-top5-L4-d64-lr0.001-t0.1",
+        # "PVQVAE-ws-local+global-use_vq_loss1.0-sqrt_NF_2p-d64-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-use_vq_loss1.0-sqrt_NF_2p-d32-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-use_vq_loss1.0-sqrt_NF_2p-d16-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-use_vq_loss0.5-sqrt_NF_2p-d64-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-use_vq_loss0.5-sqrt_NF_2p-d32-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-use_vq_loss0.5-sqrt_NF_2p-d16-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-use_vq_loss0.1-sqrt_NF_2p-d64-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-use_vq_loss0.1-sqrt_NF_2p-d32-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-use_vq_loss0.1-sqrt_NF_2p-d16-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-NOT_use_vq_loss1.0-sqrt_NF_2p-d64-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-NOT_use_vq_loss1.0-sqrt_NF_2p-d32-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-NOT_use_vq_loss1.0-sqrt_NF_2p-d16-lr0.001-beta1.0",
+
+        # "PVQVAE-ws-local+global-NOT_use_vq_loss0.1-sqrt_F-sqrt_NF-d16-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-NOT_use_vq_loss0.1-sqrt_F-sqrt_NF-d32-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-NOT_use_vq_loss0.1-sqrt_F-sqrt_NF-d64-lr0.001-beta1.0",
+
+        # "PVQVAE-ws-local+global-NOT_use_vq_loss1.0-sqrt_F-sqrt_NF-d16-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-NOT_use_vq_loss1.0-sqrt_F-sqrt_NF-d32-lr0.001-beta1.0",
+        # "PVQVAE-ws-local+global-NOT_use_vq_loss1.0-sqrt_F-sqrt_NF-d64-lr0.001-beta1.0",
         ##################################################################################
+    
+        # pos not sharing between enc and dec
+        "MemPAE-ws-d64-lr0.001-t0.1",        
+        "MemPAE-ws-local+global-F-sqrt_N1.0-d64-lr0.001-t0.1", # Reviewer: 
+        "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_mixer-d64-lr0.001-t0.1",
+        "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
+    ]
+
+    # 251111: tuned with top-k
+    num_latent_list = [0.5, 1.0, 2.0, 4.0]
+    num_memory_list = [0.5, 1.0, 2.0, 4.0]
+    temperature_list = [0.1, 1.0]
+
+    # no top-k
+    for l in num_latent_list:
+        for m in num_memory_list:
+            for t in temperature_list:
+                # model_name = f"MemPAE-ws-local+global-sqrt_F{l}-sqrt_N{m}-d64-lr0.001-t{t}"
+                # my_models.append(model_name)
+                0
+    top_k_list = [1, 5, 10, 15]
+    num_latent_list = [0.5, 1.0, 2.0, 4.0]
+    num_memory_list = [0.5, 1.0, 2.0, 4.0]
+    temperature_list = [0.1, 0.5, 1.0]
+
+    # with top-k
+    temperature_list = [0.01, 0.05, 0.1, 0.5, 1.0]
+    for k in top_k_list:
+        for l in num_latent_list:
+            for m in num_memory_list:
+                for t in temperature_list:
+                    # model_name = f"MemPAE-ws-local+global-sqrt_F{l}-sqrt_N{m}-top{k}-d64-lr0.001-t{t}"
+                    # my_models.append(model_name)
+                    0
 
 
+    # top-k, temperature
+    temperature_list = [0.01, 0.05, 0.1, 0.5, 1.0]
+    for k in top_k_list:
+        for t in temperature_list:
+            model_name = f"MemPAE-ws-local+global-sqrt_F-sqrt_N-top{k}-d64-lr0.001-t{t}"
+            my_models.append(model_name)
+
+    my_models = [
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
     ]
 
     results = collect_results()
@@ -830,9 +969,14 @@ def main(args):
     pivots = make_pivots(dfs, save_csv=False)
 
     for base in keys:
-        render(pivots, data, models, my_models, base, 
-               add_avg_rank=True, use_rank=False, use_std=True, 
-               use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False)
+        render(
+            pivots, data, models, my_models, base, 
+            add_avg_rank=True, use_rank=False, use_std=False, 
+            use_baseline_pr=False, is_temp_tune=False, is_sort=False, is_plot=False,
+            use_top_k=False,
+            use_hpo_memory_latent=False,
+            use_hpo_memory_latent_top_k=False,
+        )
 
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',  # KNN: 0.6918, LOF: 0.6612
@@ -842,9 +986,12 @@ def main(args):
         'Disent',
     ]
     my_models = [
-        # 'PAE-ws-pos_query+tokesn-d64-lr0.001', # Final architecture for PAE
         'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # 0.6878    3.7500 (SOTA! KNN: 4.2500)
         # 'PDRL-ws-pos_query+token-d64-lr0.001',
+
+        # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
+        "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_mixer-d64-lr0.001-t0.1",
+        "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
     ]
 
     dataname_list = [
@@ -876,12 +1023,11 @@ def main(args):
             'Disent',
         ]
 
-
         anomaly_type_list = [
+            'dependency_anomalies_',
             'global_anomalies_',
             'cluster_anomalies_',
             'local_anomalies_',
-            'dependency_anomalies_',
         ]
         irrelevant_features_list = [
             '',  

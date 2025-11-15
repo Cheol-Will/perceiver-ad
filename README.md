@@ -1,4 +1,3 @@
-# LATTE
 
 This repository is the official implementation of Tabular Anomaly Detection vai Reconstruction with Attention-based Bottleneck. 
 
