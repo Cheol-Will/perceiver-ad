@@ -5,19 +5,17 @@ import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+import json
 from sklearn.linear_model import LinearRegression
+import umap
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.stats import spearmanr
 import xgboost as xgb
 import shap
 from sklearn.metrics import classification_report, roc_auc_score
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from scipy.stats import spearmanr, pearsonr
 from models.MemPAE.Trainer import Trainer
-
 
 
 class Analyzer(Trainer):
@@ -1957,363 +1955,12 @@ class Analyzer(Trainer):
                 'comparison': comparison_path
             }
         }
-
     @torch.no_grad()
-    def compare_shap_vs_encoder_attention_per_sample(
-        self, 
-        similarity_threshold: float = 0.7,
-        top_k_samples: int = 10,
-        figsize: tuple = (12, 6),
-        plot_group_average: bool = True,
-        include_self_attention: bool = False
+    def plot_umap_memory_addressing(
+        self,
     ):
-        """
-        Compare XGBoost SHAP values with MemPAE encoder attention maps for individual abnormal samples.
-        Saves 1x2 plots for samples where SHAP and attention patterns are similar.
-        
-        Args:
-            similarity_threshold: Minimum correlation to consider patterns "similar"
-            top_k_samples: Number of most similar samples to save plots for
-            figsize: Figure size for each 1x2 plot
-            plot_group_average: If True, also plot average SHAP vs attention for normal/abnormal groups
-            include_self_attention: If True, include self-attention in the attention computation (enc @ self_attn_1 @ ... @ self_attn_L)
-            
-        Returns:
-            dict: Results including correlations, saved plots info, and statistics
-        """
-        import xgboost as xgb
-        import shap
-        from scipy.stats import pearsonr, spearmanr
-        
-        print("Analysis for SHAP vs Encoder Attention comparison for individual abnormal samples")
-        print(f"Include self attention: {include_self_attention}")
-        print(f"Plot group average: {plot_group_average}")
-        self.model.eval()
-        
-        X_train, y_train = [], []
-        for X, y in self.train_loader:
-            X_train.append(X.cpu().numpy())
-            y_train.append(y.cpu().numpy())
-        
-        X_test, y_test = [], []
-        for X, y in self.test_loader:
-            X_test.append(X.cpu().numpy())
-            y_test.append(y.cpu().numpy())
-        
-        X_train = np.concatenate(X_train, axis=0)
-        y_train = np.concatenate(y_train, axis=0)
-        X_test = np.concatenate(X_test, axis=0)
-        y_test = np.concatenate(y_test, axis=0)
-        
-        # Combine train and test for supervised learning
-        X_all = np.concatenate([X_train, X_test], axis=0)
-        y_all = np.concatenate([y_train, y_test], axis=0)
-        
-        print(f"Total data shape: {X_all.shape}, Num normal={np.sum(y_all==0)}, Num Abnormal={np.sum(y_all!=0)}")
-        print("Training XGBoost")
-        xgb_model = xgb.XGBClassifier(
-            n_estimators=100, 
-            max_depth=6, 
-            learning_rate=0.1, 
-            random_state=42
-        )
-        xgb_model.fit(X_all, y_all)
-        print("Training Done")
-        
-        # get shap values for all samples
-        explainer = shap.TreeExplainer(xgb_model)
-        shap_values = explainer.shap_values(X_all)  # Shape: (N_samples, N_features)
-        
-        # get encoder attn map
-        print("Calculating encoder attention map")
-        all_encoder_attention = []
-        sample_indices = []
-        current_idx = 0
-        
-        def compute_attention_with_self(attn_enc, attn_self_list):
-            """
-            Compute attention including self-attention layers
-            attn_enc: (B, H, N, F)
-            attn_self_list: List of (B, H, N, N)
-            Returns: (B, F) - attention per feature
-            """
-            B, H, N, F = attn_enc.shape
-            
-            # Start with encoder attention: (B, H, N, F)
-            # Average over heads first: (B, N, F)
-            enc_mean = attn_enc.mean(dim=1)
-            
-            if attn_self_list and len(attn_self_list) > 0:
-                # Compute cumulative self-attention: enc @ self_1 @ self_2 @ ... @ self_L
-                # Each self attention: (B, H, N, N)
-                # Average over heads: (B, N, N)
-                cumulative_self = torch.eye(N, device=attn_enc.device).unsqueeze(0).expand(B, -1, -1)  # (B, N, N)
-                
-                for self_attn in attn_self_list:
-                    self_attn_mean = self_attn.mean(dim=1)  # (B, N, N)
-                    # Add residual connection (identity matrix) for self-attention
-                    self_attn_with_residual = self_attn_mean + torch.eye(N, device=attn_enc.device).unsqueeze(0).expand(B, -1, -1)
-                    # Multiply: cumulative_self @ self_attn_with_residual
-                    cumulative_self = torch.bmm(cumulative_self, self_attn_with_residual)  # (B, N, N)
-                
-                # Apply cumulative self-attention to encoder attention
-                # cumulative_self: (B, N, N), enc_mean: (B, N, F)
-                final_attn = torch.bmm(cumulative_self, enc_mean)  # (B, N, F)
-            else:
-                final_attn = enc_mean  # (B, N, F)
-            
-            # Average over latent dimensions to get per-feature attention: (B, F)
-            return final_attn.mean(dim=1).detach().cpu().numpy()
-        
-        # trainset
-        for X, y in self.train_loader:
-            X = X.to(self.device)
-            loss, attn_enc, attn_self_list, attn_dec = self.model(X, return_attn_weight=True)
-            
-            if include_self_attention:
-                enc_attn_per_feature = compute_attention_with_self(attn_enc, attn_self_list)
-            else:
-                # attn_enc shape: (B, H, N, F) -> (B, F)
-                enc_attn_per_feature = attn_enc.mean(dim=(1, 2)).detach().cpu().numpy()  # (B, F)
-            
-            all_encoder_attention.append(enc_attn_per_feature)
-            
-            batch_size = X.shape[0]
-            sample_indices.extend(list(range(current_idx, current_idx + batch_size)))
-            current_idx += batch_size
-        
-        # testset
-        for X, y in self.test_loader:
-            X = X.to(self.device)
-            loss, attn_enc, attn_self_list, attn_dec = self.model(X, return_attn_weight=True)
-            
-            if include_self_attention:
-                enc_attn_per_feature = compute_attention_with_self(attn_enc, attn_self_list)
-            else:
-                enc_attn_per_feature = attn_enc.mean(dim=(1, 2)).detach().cpu().numpy()
-            
-            all_encoder_attention.append(enc_attn_per_feature)
-            
-            batch_size = X.shape[0]
-            sample_indices.extend(list(range(current_idx, current_idx + batch_size)))
-            current_idx += batch_size
-        
-        all_encoder_attention = np.concatenate(all_encoder_attention, axis=0) # (N_total, F)
-        
-        print(f"Encoder attention shape: {all_encoder_attention.shape}")
-        print(f"SHAP values shape: {shap_values.shape}")
-        
-        abnormal_mask = y_all != 0
-        abnormal_indices = np.where(abnormal_mask)[0]
-        
-        if len(abnormal_indices) == 0:
-            print("No abnormal samples found")
-            return None
-        
-        print(f"Found {len(abnormal_indices)} abnormal samples")
-        
-        # Consider abnormal samples
-        shap_abnormal = np.abs(shap_values[abnormal_mask])  # absolute SHAP
-        attention_abnormal = np.abs(all_encoder_attention[abnormal_mask])  # Use absolute attention, not required.
-        X_abnormal = X_all[abnormal_mask]
-        
-        # Option 1: Plot group averages (normal vs abnormal)
-        if plot_group_average:
-            print("Creating group average plots...")
-            normal_mask = y_all == 0
-            normal_indices = np.where(normal_mask)[0]
-            
-            if len(normal_indices) > 0:
-                # Normal group averages
-                shap_normal_mean = np.abs(shap_values[normal_mask]).mean(axis=0)
-                attention_normal_mean = np.abs(all_encoder_attention[normal_mask]).mean(axis=0)
-                
-                # Abnormal group averages
-                shap_abnormal_mean = shap_abnormal.mean(axis=0)
-                attention_abnormal_mean = attention_abnormal.mean(axis=0)
-                
-                # Normalize for visualization
-                shap_normal_norm = shap_normal_mean / (np.max(shap_normal_mean) + 1e-8)
-                attention_normal_norm = attention_normal_mean / (np.max(attention_normal_mean) + 1e-8)
-                shap_abnormal_norm = shap_abnormal_mean / (np.max(shap_abnormal_mean) + 1e-8)
-                attention_abnormal_norm = attention_abnormal_mean / (np.max(attention_abnormal_mean) + 1e-8)
-                
-                feature_indices = np.arange(len(shap_normal_mean))
-                
-                # Normal group plot
-                fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
-                axes[0].bar(feature_indices, shap_normal_norm, alpha=0.7, color='red', width=0.8)
-                axes[0].set_title('SHAP Values', fontsize=14)
-                axes[0].set_xlabel('Feature Index', fontsize=14)
-                axes[0].set_ylabel('Normalized SHAP value', fontsize=14)
-                axes[0].grid(True, alpha=0.3)
-                
-                axes[1].bar(feature_indices, attention_normal_norm, alpha=0.7, color='blue', width=0.8)
-                axes[1].set_title('Encoder Attention', fontsize=14)
-                axes[1].set_xlabel('Feature Index', fontsize=14)
-                axes[1].set_ylabel('Normalized Attention Weight', fontsize=14)
-                axes[1].grid(True, alpha=0.3)
-                
-                plt.tight_layout()
-                
-                base_path = self.train_config['base_path']
-                attention_type = "with_self" if include_self_attention else "enc_only"
-                normal_plot_path = os.path.join(base_path, f'shap_vs_attention_normal_average_{attention_type}.png')
-                plt.savefig(normal_plot_path, bbox_inches='tight', dpi=200)
-                plt.close()
-                print(f"Saved normal group average plot to {normal_plot_path}")
-                
-                # Abnormal group plot
-                fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
-                axes[0].bar(feature_indices, shap_abnormal_norm, alpha=0.7, color='red', width=0.8)
-                axes[0].set_title('SHAP Values', fontsize=14)
-                axes[0].set_xlabel('Feature Index', fontsize=14)
-                axes[0].set_ylabel('Normalized SHAP value', fontsize=14)
-                axes[0].grid(True, alpha=0.3)
-                
-                axes[1].bar(feature_indices, attention_abnormal_norm, alpha=0.7, color='blue', width=0.8)
-                axes[1].set_title('Encoder Attention', fontsize=14)
-                axes[1].set_xlabel('Feature Index', fontsize=14)
-                axes[1].set_ylabel('Normalized Attention Weight', fontsize=14)
-                axes[1].grid(True, alpha=0.3)
-                
-                plt.tight_layout()
-                
-                abnormal_plot_path = os.path.join(base_path, f'shap_vs_attention_abnormal_average_{attention_type}.png')
-                plt.savefig(abnormal_plot_path, bbox_inches='tight', dpi=200)
-                plt.close()
-                print(f"Saved abnormal group average plot to {abnormal_plot_path}")
-                
-                # Calculate correlations for group averages
-                normal_pearson_r, _ = pearsonr(shap_normal_mean, attention_normal_mean)
-                normal_spearman_r, _ = spearmanr(shap_normal_mean, attention_normal_mean)
-                abnormal_pearson_r, _ = pearsonr(shap_abnormal_mean, attention_abnormal_mean)
-                abnormal_spearman_r, _ = spearmanr(shap_abnormal_mean, attention_abnormal_mean)
-                
-                print(f"Normal group correlations - Pearson: {normal_pearson_r:.4f}, Spearman: {normal_spearman_r:.4f}")
-                print(f"Abnormal group correlations - Pearson: {abnormal_pearson_r:.4f}, Spearman: {abnormal_spearman_r:.4f}")
-            else:
-                print("No normal samples found for group average plotting")
+        return
 
-        # calculate pearson and spearman for each sample between SHAP and Attn
-        correlations = []
-        for i in range(len(abnormal_indices)):
-            shap_sample = shap_abnormal[i]
-            attention_sample = attention_abnormal[i]
-
-            pearson_r, pearson_p = pearsonr(shap_sample, attention_sample)
-            spearman_r, spearman_p = spearmanr(shap_sample, attention_sample)
-            
-            correlations.append({
-                'abnormal_idx': i,
-                'global_idx': abnormal_indices[i],
-                'pearson_r': pearson_r,
-                'pearson_p': pearson_p,
-                'spearman_r': spearman_r,
-                'spearman_p': spearman_p,
-                'max_correlation': max(abs(pearson_r), abs(spearman_r))
-            })
-
-        # sort and save nice ones        
-        correlations.sort(key=lambda x: x['max_correlation'], reverse=True)
-        similar_samples = [c for c in correlations if c['max_correlation'] >= similarity_threshold]
-        similar_samples += [c for c in correlations if c['max_correlation'] <= -similarity_threshold]
-        print(f"Found {len(similar_samples)} samples with correlation >= {similarity_threshold} or correlation <= {-similarity_threshold}")
-        
-        if len(similar_samples) == 0:
-            print(f"No samples found with correlation >= {similarity_threshold}")
-            # save top-k but not high correlation between SHAP and Attn
-            similar_samples = correlations[:min(top_k_samples, len(correlations))]
-            similar_samples += correlations[-min(top_k_samples, len(correlations)):]
-            print(f"Saving top {len(similar_samples)} samples instead")
-        
-        # Save plots for top samples
-        base_path = self.train_config['base_path']
-        saved_plots = []
-        
-        samples_to_plot = similar_samples[:min(top_k_samples, len(similar_samples))] # top-k
-        samples_to_plot += similar_samples[-min(top_k_samples, len(similar_samples)):] # bottom-k
-        
-        for sample_info in samples_to_plot:
-            abnormal_idx = sample_info['abnormal_idx']
-            global_idx = sample_info['global_idx']
-            pearson_r = sample_info['pearson_r']
-            spearman_r = sample_info['spearman_r']
-            
-            # Get SHAP and Attn for current sample and normalize 
-            shap_sample = shap_abnormal[abnormal_idx]
-            attention_sample = attention_abnormal[abnormal_idx]
-            
-            shap_norm = shap_sample / (np.max(shap_sample) + 1e-8)
-            attention_norm = attention_sample / (np.max(attention_sample) + 1e-8)
-            
-            fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
-            feature_indices = np.arange(len(shap_sample))
-            
-            # SHAP values
-            axes[0].bar(feature_indices, shap_norm, alpha=0.7, color='red', width=0.8)
-            axes[0].set_title(f'SHAP Values', fontsize=14)
-            axes[0].set_xlabel('Feature Index', fontsize=14)
-            axes[0].set_ylabel('Normalized SHAP value', fontsize=14)
-            axes[0].grid(True, alpha=0.3)
-            
-            # Encoder attention
-            axes[1].bar(feature_indices, attention_norm, alpha=0.7, color='blue', width=0.8)
-            axes[1].set_title(f'Encoder Attention', fontsize=14)
-            axes[1].set_xlabel('Feature Index', fontsize=14)
-            axes[1].set_ylabel('Normalized Attention Weight', fontsize=14)
-            axes[1].grid(True, alpha=0.3)
-            
-            plt.tight_layout()
-            
-            # Save plot
-            attention_type = "with_self" if include_self_attention else "enc_only"
-            plot_path = os.path.join(base_path, f'shap_vs_attention_sample_{global_idx}_corr_{sample_info["max_correlation"]:.3f}_{attention_type}.png')
-            plt.savefig(plot_path, bbox_inches='tight', dpi=200)
-            plt.close()
-            
-            saved_plots.append({
-                'sample_idx': global_idx,
-                'abnormal_idx': abnormal_idx,
-                'plot_path': plot_path,
-                'correlations': sample_info
-            })
-            
-            print(f"Saved plot for sample {global_idx} (correlation: {sample_info['max_correlation']:.3f}) to {plot_path}")
-        
-        # Create summary statistics
-        all_correlations = [c['max_correlation'] for c in correlations]
-        
-        summary_stats = {
-            'total_abnormal_samples': len(abnormal_indices),
-            'samples_above_threshold': len([c for c in correlations if c['max_correlation'] >= similarity_threshold]),
-            'mean_correlation': np.mean(all_correlations),
-            'median_correlation': np.median(all_correlations),
-            'max_correlation': np.max(all_correlations),
-            'min_correlation': np.min(all_correlations),
-            'std_correlation': np.std(all_correlations)
-        }
-        
-        print("\n" + "="*60)
-        print("SHAP vs Encoder Attention Comparison Summary")
-        print("="*60)
-        print(f"Total abnormal samples: {summary_stats['total_abnormal_samples']}")
-        print(f"Samples above threshold ({similarity_threshold}): {summary_stats['samples_above_threshold']}")
-        print(f"Mean correlation: {summary_stats['mean_correlation']:.4f}")
-        print(f"Median correlation: {summary_stats['median_correlation']:.4f}")
-        print(f"Max correlation: {summary_stats['max_correlation']:.4f}")
-        print(f"Min correlation: {summary_stats['min_correlation']:.4f}")
-        print(f"Std correlation: {summary_stats['std_correlation']:.4f}")
-        print(f"Saved {len(saved_plots)} plots")
-        
-        return {
-            'correlations': correlations,
-            'saved_plots': saved_plots,
-            'summary_stats': summary_stats,
-            'similarity_threshold': similarity_threshold,
-            'shap_values_abnormal': shap_abnormal,
-            'attention_values_abnormal': attention_abnormal
-        }
     @torch.no_grad()
     def plot_tsne_memory_addressing(
         self,
@@ -2323,23 +1970,9 @@ class Analyzer(Trainer):
         figsize: tuple = (15, 6),
         point_size: int = 20,
         alpha: float = 0.7,
-        max_samples_per_class: int = 1000
+        max_samples_per_class: int = 1000,
+        latent_idx: int = None,
     ):
-        """
-        Create T-SNE plots for latent representations before and after memory addressing
-        
-        Args:
-            perplexity: T-SNE perplexity parameter
-            n_iter: Number of T-SNE iterations
-            random_state: Random seed for reproducibility
-            figsize: Figure size (width, height)
-            point_size: Size of scatter plot points
-            alpha: Transparency of points
-            max_samples_per_class: Maximum samples per class to avoid memory issues
-            
-        Returns:
-            dict: Information about saved plots and statistics
-        """
         from sklearn.manifold import TSNE
         import matplotlib.pyplot as plt
         import numpy as np
@@ -2360,7 +1993,8 @@ class Analyzer(Trainer):
                 loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
                     self.model(X, return_for_analysis=True)
                 
-                # latents shape: (B, N, D) -> flatten to (B*N, D)
+                latents = F.normalize(latents, dim=-1)
+                latents_hat = F.normalize(latents_hat, dim=-1)
                 B, N, D = latents.shape
                 latents_flat = latents.view(B * N, D).detach().cpu().numpy()  # (B*N, D)
                 latents_hat_flat = latents_hat.view(B * N, D).detach().cpu().numpy()  # (B*N, D)
@@ -2439,24 +2073,14 @@ class Analyzer(Trainer):
                     len(normal_indices), 
                     len(abnormal_indices))
         
-        print("Collecting latent representations...")
         latents, latents_hat, labels = collect_latents_and_labels()
-        
-        print("Getting memory vectors...")
         memory_vectors = get_memory_vectors()
         
-        print(f"Original data shapes:")
-        print(f"  Latents: {latents.shape}")
-        print(f"  Latents_hat: {latents_hat.shape}")
-        print(f"  Memory: {memory_vectors.shape}")
-        print(f"  Labels: {labels.shape}")
+
         
         # Subsample if necessary
         latents, latents_hat, labels, n_normal, n_abnormal = subsample_data(
             latents, latents_hat, labels, max_samples_per_class)
-        
-        print(f"After subsampling: {n_normal} normal, {n_abnormal} abnormal samples")
-        
         # Combine data for T-SNE
         # Before addressing: latents + memory
         data_before = np.vstack([latents, memory_vectors])  # (N_samples*N + M, D)
@@ -2469,12 +2093,10 @@ class Analyzer(Trainer):
         data_after = np.vstack([latents_hat, memory_vectors])  # (N_samples*N + M, D)
         labels_after = labels_before.copy()  # Same labels
         
-        print("Running T-SNE for before addressing...")
         tsne_before = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, 
                         random_state=random_state, verbose=1)
         embedding_before = tsne_before.fit_transform(data_before)
         
-        print("Running T-SNE for after addressing...")  
         tsne_after = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter,
                         random_state=random_state, verbose=1)
         embedding_after = tsne_after.fit_transform(data_after)
@@ -2540,430 +2162,7 @@ class Analyzer(Trainer):
         print(f"  PNG: {out_path}")
         print(f"  PDF: {out_path_pdf}")
         
-        # Calculate some statistics
-        def compute_cluster_separation(embedding, labels_data):
-            """Compute separation between normal and abnormal clusters"""
-            normal_points = embedding[labels_data == 0]
-            abnormal_points = embedding[labels_data > 0]
-            memory_points = embedding[labels_data == -1]
-            
-            if len(normal_points) == 0 or len(abnormal_points) == 0:
-                return None
-            
-            # Compute centroids
-            normal_centroid = np.mean(normal_points, axis=0)
-            abnormal_centroid = np.mean(abnormal_points, axis=0)
-            memory_centroid = np.mean(memory_points, axis=0) if len(memory_points) > 0 else None
-            
-            # Distance between normal and abnormal centroids
-            normal_abnormal_distance = np.linalg.norm(normal_centroid - abnormal_centroid)
-            
-            # Average intra-cluster distances
-            normal_intra_dist = np.mean([np.linalg.norm(p - normal_centroid) for p in normal_points])
-            abnormal_intra_dist = np.mean([np.linalg.norm(p - abnormal_centroid) for p in abnormal_points])
-            
-            return {
-                'inter_cluster_distance': normal_abnormal_distance,
-                'normal_intra_distance': normal_intra_dist,
-                'abnormal_intra_distance': abnormal_intra_dist,
-                'separation_ratio': normal_abnormal_distance / (normal_intra_dist + abnormal_intra_dist + 1e-8),
-                'normal_centroid': normal_centroid,
-                'abnormal_centroid': abnormal_centroid,
-                'memory_centroid': memory_centroid
-            }
-        
-        stats_before = compute_cluster_separation(embedding_before, labels_before)
-        stats_after = compute_cluster_separation(embedding_after, labels_after)
-        
-        print("\n" + "="*60)
-        print("T-SNE Cluster Analysis")
-        print("="*60)
-        
-        if stats_before:
-            print("Before Memory Addressing:")
-            print(f"  Inter-cluster distance: {stats_before['inter_cluster_distance']:.4f}")
-            print(f"  Normal intra-distance: {stats_before['normal_intra_distance']:.4f}")
-            print(f"  Abnormal intra-distance: {stats_before['abnormal_intra_distance']:.4f}")
-            print(f"  Separation ratio: {stats_before['separation_ratio']:.4f}")
-        
-        if stats_after:
-            print("After Memory Addressing:")
-            print(f"  Inter-cluster distance: {stats_after['inter_cluster_distance']:.4f}")
-            print(f"  Normal intra-distance: {stats_after['normal_intra_distance']:.4f}")
-            print(f"  Abnormal intra-distance: {stats_after['abnormal_intra_distance']:.4f}")
-            print(f"  Separation ratio: {stats_after['separation_ratio']:.4f}")
-        
-        if stats_before and stats_after:
-            separation_change = stats_after['separation_ratio'] - stats_before['separation_ratio']
-            print(f"\nSeparation ratio change: {separation_change:+.4f}")
-            if separation_change > 0:
-                print("  → Memory addressing improved cluster separation")
-            else:
-                print("  → Memory addressing reduced cluster separation")
-        
-        return {
-            'plot_paths': {'png': out_path, 'pdf': out_path_pdf},
-            'statistics': {
-                'before_addressing': stats_before,
-                'after_addressing': stats_after,
-                'data_info': {
-                    'n_normal': n_normal,
-                    'n_abnormal': n_abnormal,
-                    'n_memory': memory_vectors.shape[0],
-                    'latent_dim': latents.shape[1]
-                }
-            },
-            'embeddings': {
-                'before': embedding_before,
-                'after': embedding_after,
-                'labels': labels_before
-            }
-        }
-
-    def compare_shap_vs_anomaly_gradient_per_sample(
-        self, 
-        similarity_threshold: float = 0.7,
-        top_k_samples: int = 10,
-        figsize: tuple = (12, 6),
-        plot_group_average: bool = True
-    ):
-        """
-        Compare XGBoost SHAP values with MemPAE anomaly score gradients for individual abnormal samples.
-        Uses gradient of anomaly loss w.r.t. input features as feature importance measure.
-        
-        Args:
-            similarity_threshold: Minimum correlation to consider patterns "similar"
-            top_k_samples: Number of most similar samples to save plots for
-            figsize: Figure size for each 1x2 plot
-            plot_group_average: If True, also plot average SHAP vs gradient for normal/abnormal groups
-            
-        Returns:
-            dict: Results including correlations, saved plots info, and statistics
-        """
-        import xgboost as xgb
-        import shap
-        from scipy.stats import pearsonr, spearmanr
-        
-        print("Analysis for SHAP vs Anomaly Gradient comparison for individual abnormal samples")
-        print(f"Plot group average: {plot_group_average}")
-        
-        # Collect data for XGBoost training
-        X_train, y_train = [], []
-        for X, y in self.train_loader:
-            X_train.append(X.cpu().numpy())
-            y_train.append(y.cpu().numpy())
-        
-        X_test, y_test = [], []
-        for X, y in self.test_loader:
-            X_test.append(X.cpu().numpy())
-            y_test.append(y.cpu().numpy())
-        
-        X_train = np.concatenate(X_train, axis=0)
-        y_train = np.concatenate(y_train, axis=0)
-        X_test = np.concatenate(X_test, axis=0)
-        y_test = np.concatenate(y_test, axis=0)
-        
-        # Combine train and test for supervised learning
-        X_all = np.concatenate([X_train, X_test], axis=0)
-        y_all = np.concatenate([y_train, y_test], axis=0)
-        
-        print(f"Total data shape: {X_all.shape}, Num normal={np.sum(y_all==0)}, Num Abnormal={np.sum(y_all!=0)}")
-        print("Training XGBoost...")
-        xgb_model = xgb.XGBClassifier(
-            n_estimators=100, 
-            max_depth=6, 
-            learning_rate=0.1, 
-            random_state=42
-        )
-        xgb_model.fit(X_all, y_all)
-        print("XGBoost training done")
-        
-        # Get SHAP values for all samples
-        print("Calculating SHAP values...")
-        explainer = shap.TreeExplainer(xgb_model)
-        shap_values = explainer.shap_values(X_all)  # Shape: (N_samples, N_features)
-        print("SHAP calculation done")
-        
-        # Calculate anomaly score gradients for all samples
-        print("Calculating anomaly score gradients...")
-        self.model.eval()
-        all_gradients = []
-        sample_indices = []
-        current_idx = 0
-        
-        def compute_anomaly_gradient(X_batch):
-            """
-            Compute gradient of anomaly score w.r.t. input features
-            Args:
-                X_batch: Input batch tensor with requires_grad=True
-            Returns:
-                gradients: (B, F) numpy array of gradients
-            """
-            X_batch.requires_grad_(True)
-            
-            # Forward pass to get anomaly scores
-            anomaly_scores = self.model(X_batch)  # (B,) or (B, 1)
-            
-            if anomaly_scores.dim() > 1:
-                anomaly_scores = anomaly_scores.squeeze(-1)  # Ensure (B,)
-            
-            # Compute gradients for each sample in batch
-            batch_gradients = []
-            for i in range(X_batch.shape[0]):
-                # Compute gradient of i-th sample's anomaly score w.r.t. input
-                grad_outputs = torch.zeros_like(anomaly_scores)
-                grad_outputs[i] = 1.0
-                
-                gradients = torch.autograd.grad(
-                    outputs=anomaly_scores,
-                    inputs=X_batch,
-                    grad_outputs=grad_outputs,
-                    retain_graph=True,
-                    create_graph=False
-                )[0]  # (B, F)
-                
-                # Take gradient for i-th sample
-                sample_gradient = gradients[i].detach().cpu().numpy()  # (F,)
-                batch_gradients.append(sample_gradient)
-            
-            return np.array(batch_gradients)  # (B, F)
-        
-        # Process train loader
-        for X, y in self.train_loader:
-            X = X.to(self.device)
-            gradients = compute_anomaly_gradient(X)  # (B, F)
-            all_gradients.append(gradients)
-            
-            batch_size = X.shape[0]
-            sample_indices.extend(list(range(current_idx, current_idx + batch_size)))
-            current_idx += batch_size
-        
-        # Process test loader
-        for X, y in self.test_loader:
-            X = X.to(self.device)
-            gradients = compute_anomaly_gradient(X)  # (B, F)
-            all_gradients.append(gradients)
-            
-            batch_size = X.shape[0]
-            sample_indices.extend(list(range(current_idx, current_idx + batch_size)))
-            current_idx += batch_size
-        
-        all_gradients = np.concatenate(all_gradients, axis=0)  # (N_total, F)
-        
-        print(f"Gradient calculation done")
-        print(f"Anomaly gradients shape: {all_gradients.shape}")
-        print(f"SHAP values shape: {shap_values.shape}")
-        
-        # Focus on abnormal samples
-        abnormal_mask = y_all != 0
-        abnormal_indices = np.where(abnormal_mask)[0]
-        
-        if len(abnormal_indices) == 0:
-            print("No abnormal samples found")
-            return None
-        
-        print(f"Found {len(abnormal_indices)} abnormal samples")
-        
-        # Extract abnormal samples data
-        shap_abnormal = np.abs(shap_values[abnormal_mask])  # Use absolute SHAP values
-        gradient_abnormal = np.abs(all_gradients[abnormal_mask])  # Use absolute gradients
-        X_abnormal = X_all[abnormal_mask]
-        
-        # Option 1: Plot group averages (normal vs abnormal)
-        if plot_group_average:
-            print("Creating group average plots...")
-            normal_mask = y_all == 0
-            normal_indices = np.where(normal_mask)[0]
-            
-            if len(normal_indices) > 0:
-                # Normal group averages
-                shap_normal_mean = np.abs(shap_values[normal_mask]).mean(axis=0)
-                gradient_normal_mean = np.abs(all_gradients[normal_mask]).mean(axis=0)
-                
-                # Abnormal group averages
-                shap_abnormal_mean = shap_abnormal.mean(axis=0)
-                gradient_abnormal_mean = gradient_abnormal.mean(axis=0)
-                
-                # Normalize for visualization
-                shap_normal_norm = shap_normal_mean / (np.max(shap_normal_mean) + 1e-8)
-                gradient_normal_norm = gradient_normal_mean / (np.max(gradient_normal_mean) + 1e-8)
-                shap_abnormal_norm = shap_abnormal_mean / (np.max(shap_abnormal_mean) + 1e-8)
-                gradient_abnormal_norm = gradient_abnormal_mean / (np.max(gradient_abnormal_mean) + 1e-8)
-                
-                feature_indices = np.arange(len(shap_normal_mean))
-                
-                # Normal group plot
-                fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
-                axes[0].bar(feature_indices, shap_normal_norm, alpha=0.7, color='red', width=0.8)
-                axes[0].set_title('SHAP Values', fontsize=14)
-                axes[0].set_xlabel('Feature Index', fontsize=14)
-                axes[0].set_ylabel('Normalized SHAP Value', fontsize=14)
-                axes[0].grid(True, alpha=0.3)
-                
-                axes[1].bar(feature_indices, gradient_normal_norm, alpha=0.7, color='blue', width=0.8)
-                axes[1].set_title('Anomaly Score Gradients', fontsize=14)
-                axes[1].set_xlabel('Feature Index', fontsize=14)
-                axes[1].set_ylabel('Normalized |Gradient|', fontsize=14)
-                axes[1].grid(True, alpha=0.3)
-                
-                plt.tight_layout()
-                
-                base_path = self.train_config['base_path']
-                normal_plot_path = os.path.join(base_path, 'shap_vs_gradient_normal_average.png')
-                plt.savefig(normal_plot_path, bbox_inches='tight', dpi=200)
-                plt.close()
-                print(f"Saved normal group average plot to {normal_plot_path}")
-                
-                # Abnormal group plot
-                fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
-                axes[0].bar(feature_indices, shap_abnormal_norm, alpha=0.7, color='red', width=0.8)
-                axes[0].set_title('SHAP Values', fontsize=14)
-                axes[0].set_xlabel('Feature Index', fontsize=14)
-                axes[0].set_ylabel('Normalized SHAP Value', fontsize=14)
-                axes[0].grid(True, alpha=0.3)
-                
-                axes[1].bar(feature_indices, gradient_abnormal_norm, alpha=0.7, color='blue', width=0.8)
-                axes[1].set_title('Anomaly Score Gradients', fontsize=14)
-                axes[1].set_xlabel('Feature Index', fontsize=14)
-                axes[1].set_ylabel('Normalized |Gradient|', fontsize=14)
-                axes[1].grid(True, alpha=0.3)
-                
-                plt.tight_layout()
-                
-                abnormal_plot_path = os.path.join(base_path, 'shap_vs_gradient_abnormal_average.png')
-                plt.savefig(abnormal_plot_path, bbox_inches='tight', dpi=200)
-                plt.close()
-                print(f"Saved abnormal group average plot to {abnormal_plot_path}")
-                
-                # Calculate correlations for group averages
-                normal_pearson_r, _ = pearsonr(shap_normal_mean, gradient_normal_mean)
-                normal_spearman_r, _ = spearmanr(shap_normal_mean, gradient_normal_mean)
-                abnormal_pearson_r, _ = pearsonr(shap_abnormal_mean, gradient_abnormal_mean)
-                abnormal_spearman_r, _ = spearmanr(shap_abnormal_mean, gradient_abnormal_mean)
-                
-                print(f"Normal group correlations - Pearson: {normal_pearson_r:.4f}, Spearman: {normal_spearman_r:.4f}")
-                print(f"Abnormal group correlations - Pearson: {abnormal_pearson_r:.4f}, Spearman: {abnormal_spearman_r:.4f}")
-            else:
-                print("No normal samples found for group average plotting")
-
-        # Calculate correlations for individual abnormal samples
-        correlations = []
-        for i in range(len(abnormal_indices)):
-            shap_sample = shap_abnormal[i]
-            gradient_sample = gradient_abnormal[i]
-
-            pearson_r, pearson_p = pearsonr(shap_sample, gradient_sample)
-            spearman_r, spearman_p = spearmanr(shap_sample, gradient_sample)
-            
-            correlations.append({
-                'abnormal_idx': i,
-                'global_idx': abnormal_indices[i],
-                'pearson_r': pearson_r,
-                'pearson_p': pearson_p,
-                'spearman_r': spearman_r,
-                'spearman_p': spearman_p,
-                'max_correlation': max(abs(pearson_r), abs(spearman_r))
-            })
-
-        # Sort by correlation and filter similar samples
-        correlations.sort(key=lambda x: x['max_correlation'], reverse=True)
-        similar_samples = [c for c in correlations if abs(c['max_correlation']) >= similarity_threshold]
-        
-        print(f"Found {len(similar_samples)} samples with |correlation| >= {similarity_threshold}")
-        
-        if len(similar_samples) == 0:
-            print(f"No samples found with |correlation| >= {similarity_threshold}")
-            # Save top-k samples instead
-            similar_samples = correlations[:min(top_k_samples, len(correlations))]
-            similar_samples += correlations[-min(top_k_samples, len(correlations)):]
-            print(f"Saving top {len(similar_samples)} samples instead")
-        
-        # Save plots for selected samples
-        base_path = self.train_config['base_path']
-        saved_plots = []
-        
-        samples_to_plot = similar_samples[:min(top_k_samples, len(similar_samples))] # top-k
-        samples_to_plot += similar_samples[-min(top_k_samples, len(similar_samples)):] # bottom-k
-        
-        for sample_info in samples_to_plot:
-            abnormal_idx = sample_info['abnormal_idx']
-            global_idx = sample_info['global_idx']
-            pearson_r = sample_info['pearson_r']
-            spearman_r = sample_info['spearman_r']
-            
-            # Get SHAP and gradient for current sample and normalize
-            shap_sample = shap_abnormal[abnormal_idx]
-            gradient_sample = gradient_abnormal[abnormal_idx]
-            
-            shap_norm = shap_sample / (np.max(shap_sample) + 1e-8)
-            gradient_norm = gradient_sample / (np.max(gradient_sample) + 1e-8)
-            
-            fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
-            feature_indices = np.arange(len(shap_sample))
-            
-            # SHAP values
-            axes[0].bar(feature_indices, shap_norm, alpha=0.7, color='red', width=0.8)
-            axes[0].set_title(f'SHAP Values', fontsize=14)
-            axes[0].set_xlabel('Feature Index', fontsize=14)
-            axes[0].set_ylabel('Normalized SHAP Value', fontsize=14)
-            axes[0].grid(True, alpha=0.3)
-            
-            # Anomaly score gradients
-            axes[1].bar(feature_indices, gradient_norm, alpha=0.7, color='blue', width=0.8)
-            axes[1].set_title(f'Anomaly Score Gradients', fontsize=14)
-            axes[1].set_xlabel('Feature Index', fontsize=14)
-            axes[1].set_ylabel('Normalized |Gradient|', fontsize=14)
-            axes[1].grid(True, alpha=0.3)
-            
-            plt.tight_layout()
-            
-            # Save plot
-            plot_path = os.path.join(base_path, f'shap_vs_gradient_sample_{global_idx}_corr_{sample_info["max_correlation"]:.3f}.png')
-            plt.savefig(plot_path, bbox_inches='tight', dpi=200)
-            plt.close()
-            
-            saved_plots.append({
-                'sample_idx': global_idx,
-                'abnormal_idx': abnormal_idx,
-                'plot_path': plot_path,
-                'correlations': sample_info
-            })
-            
-            print(f"Saved plot for sample {global_idx} (correlation: {sample_info['max_correlation']:.3f}) to {plot_path}")
-        
-        # Create summary statistics
-        all_correlations = [c['max_correlation'] for c in correlations]
-        
-        summary_stats = {
-            'total_abnormal_samples': len(abnormal_indices),
-            'samples_above_threshold': len([c for c in correlations if abs(c['max_correlation']) >= similarity_threshold]),
-            'mean_correlation': np.mean(all_correlations),
-            'median_correlation': np.median(all_correlations),
-            'max_correlation': np.max(all_correlations),
-            'min_correlation': np.min(all_correlations),
-            'std_correlation': np.std(all_correlations)
-        }
-        
-        print("\n" + "="*60)
-        print("SHAP vs Anomaly Gradient Comparison Summary")
-        print("="*60)
-        print(f"Total abnormal samples: {summary_stats['total_abnormal_samples']}")
-        print(f"Samples above threshold ({similarity_threshold}): {summary_stats['samples_above_threshold']}")
-        print(f"Mean correlation: {summary_stats['mean_correlation']:.4f}")
-        print(f"Median correlation: {summary_stats['median_correlation']:.4f}")
-        print(f"Max correlation: {summary_stats['max_correlation']:.4f}")
-        print(f"Min correlation: {summary_stats['min_correlation']:.4f}")
-        print(f"Std correlation: {summary_stats['std_correlation']:.4f}")
-        print(f"Saved {len(saved_plots)} plots")
-        
-        return {
-            'correlations': correlations,
-            'saved_plots': saved_plots,
-            'summary_stats': summary_stats,
-            'similarity_threshold': similarity_threshold,
-            'shap_values_abnormal': shap_abnormal,
-            'gradient_values_abnormal': gradient_abnormal
-        }
+        return        
 
     @torch.no_grad()
     def plot_tsne_input_vs_reconstruction(
@@ -3196,6 +2395,267 @@ class Analyzer(Trainer):
         }
 
     @torch.no_grad()
+    def plot_umap_input_vs_reconstruction(
+        self,
+        n_neighbors: int = 15,
+        min_dist: float = 0.1,
+        metric: str = 'euclidean',
+        random_state: int = 42,
+        figsize: tuple = (10, 8),
+        point_size: int = 100,
+        max_samples_per_class: int = 300
+    ):
+        """
+        Create UMAP plot for input vs reconstruction data
+        Plots 4 types: normal input, normal reconstruction, abnormal input, abnormal reconstruction
+        
+        UMAP is more robust to hyperparameters than T-SNE and better preserves global structure.
+        
+        Args:
+            n_neighbors: UMAP n_neighbors parameter (controls local vs global structure)
+            min_dist: UMAP min_dist parameter (controls how tightly points are packed)
+            metric: Distance metric for UMAP
+            random_state: Random seed for reproducibility
+            figsize: Figure size (width, height)
+            point_size: Size of scatter plot points
+            max_samples_per_class: Maximum samples per class to avoid memory issues
+            
+        Returns:
+            dict: Information about saved plots and statistics
+        """
+        try:
+            import umap
+        except ImportError:
+            print("ERROR: UMAP not installed. Install with: pip install umap-learn")
+            return None
+        
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        print("="*70)
+        print("UMAP Visualization: Input vs Reconstruction")
+        print("="*70)
+        print(f"UMAP parameters: n_neighbors={n_neighbors}, min_dist={min_dist}, metric={metric}")
+        
+        self.model.eval()
+        
+        def collect_input_and_reconstruction_data():
+            """Collect input data and reconstructions with labels"""
+            all_inputs = []
+            all_reconstructions = []
+            all_labels = []
+            
+            # Process test loader (primary source for evaluation)
+            for X, y in self.test_loader:
+                X = X.to(self.device)
+                
+                # Get reconstructions
+                _, x_input, x_reconstruction = self.model(X, return_pred=True)
+                
+                all_inputs.append(x_input.detach().cpu().numpy())
+                all_reconstructions.append(x_reconstruction.detach().cpu().numpy())
+                all_labels.append(y.detach().cpu().numpy())
+            
+            # If test data is insufficient, add some from train loader
+            if len(all_inputs) == 0:
+                for X, y in self.train_loader:
+                    X = X.to(self.device)
+                    _, x_input, x_reconstruction = self.model(X, return_pred=True)
+                    
+                    all_inputs.append(x_input.detach().cpu().numpy())
+                    all_reconstructions.append(x_reconstruction.detach().cpu().numpy())
+                    all_labels.append(y.detach().cpu().numpy())
+            
+            # Concatenate all data
+            inputs = np.concatenate(all_inputs, axis=0)  # (N, F)
+            reconstructions = np.concatenate(all_reconstructions, axis=0)  # (N, F)
+            labels = np.concatenate(all_labels, axis=0)  # (N,)
+            
+            return inputs, reconstructions, labels
+        
+        def subsample_balanced_data(inputs, reconstructions, labels, max_per_class):
+            """Subsample data to get balanced normal/abnormal samples"""
+            normal_mask = (labels == 0)
+            abnormal_mask = (labels != 0)
+            
+            normal_indices = np.where(normal_mask)[0]
+            abnormal_indices = np.where(abnormal_mask)[0]
+            
+            # Subsample if necessary
+            if len(normal_indices) > max_per_class:
+                normal_indices = np.random.choice(normal_indices, max_per_class, replace=False)
+            if len(abnormal_indices) > max_per_class:
+                abnormal_indices = np.random.choice(abnormal_indices, max_per_class, replace=False)
+            
+            # Combine selected indices
+            selected_indices = np.concatenate([normal_indices, abnormal_indices])
+            
+            return (inputs[selected_indices], 
+                    reconstructions[selected_indices], 
+                    labels[selected_indices],
+                    len(normal_indices), 
+                    len(abnormal_indices))
+        
+        print("Collecting input and reconstruction data...")
+        inputs, reconstructions, labels = collect_input_and_reconstruction_data()
+        
+        print(f"Original data shapes:")
+        print(f"  Inputs: {inputs.shape}")
+        print(f"  Reconstructions: {reconstructions.shape}")
+        print(f"  Labels: {labels.shape}")
+        
+        # Subsample if necessary
+        inputs, reconstructions, labels, n_normal, n_abnormal = subsample_balanced_data(
+            inputs, reconstructions, labels, max_samples_per_class)
+        
+        print(f"After subsampling: {n_normal} normal, {n_abnormal} abnormal samples")
+        
+        # Prepare data for UMAP
+        # Combine all 4 types of data: normal_input, normal_recon, abnormal_input, abnormal_recon
+        normal_mask = (labels == 0)
+        abnormal_mask = (labels != 0)
+        
+        normal_inputs = inputs[normal_mask]
+        normal_reconstructions = reconstructions[normal_mask]
+        abnormal_inputs = inputs[abnormal_mask]  
+        abnormal_reconstructions = reconstructions[abnormal_mask]
+        
+        # Stack all data together
+        all_data = np.vstack([
+            normal_inputs,           # Type 0: Normal Input
+            normal_reconstructions,  # Type 1: Normal Reconstruction  
+            abnormal_inputs,         # Type 2: Abnormal Input
+            abnormal_reconstructions # Type 3: Abnormal Reconstruction
+        ])
+        
+        # Create corresponding labels for the 4 types
+        data_type_labels = np.concatenate([
+            np.full(len(normal_inputs), 0),           # Normal Input
+            np.full(len(normal_reconstructions), 1),  # Normal Reconstruction
+            np.full(len(abnormal_inputs), 2),         # Abnormal Input  
+            np.full(len(abnormal_reconstructions), 3) # Abnormal Reconstruction
+        ])
+        
+        print(f"Combined data shape for UMAP: {all_data.shape}")
+        print(f"Data type distribution: {np.bincount(data_type_labels)}")
+        
+        # Run UMAP
+        print("Running UMAP...")
+        reducer = umap.UMAP(
+            n_neighbors=n_neighbors,
+            min_dist=min_dist,
+            metric=metric,
+            random_state=random_state,
+            verbose=True
+        )
+        embedding = reducer.fit_transform(all_data)
+        
+        # Create the plot
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=200)
+        
+        # Define colors and alphas for each type
+        colors = plt.cm.tab10.colors  # Default matplotlib colors
+        
+        plot_config = [
+            # (mask, color, alpha, marker, label)
+            (data_type_labels == 0, colors[0], 0.5, 'o', f'Normal Input'),
+            (data_type_labels == 1, colors[0], 1.0, '^', f'Normal Recon'),
+            (data_type_labels == 2, colors[1], 0.5, 'o', f'Abnormal Input'),
+            (data_type_labels == 3, colors[1], 1.0, '^', f'Abnormal Recon')
+        ]
+        
+        # Plot each type
+        for mask, color, alpha, marker, label in plot_config:
+            if np.any(mask):
+                ax.scatter(embedding[mask, 0], embedding[mask, 1], 
+                        c=[color], s=point_size, alpha=alpha, 
+                        marker=marker, label=label, edgecolors='black', linewidth=0.3)
+        
+        # Customize plot
+        # ax.set_xlabel('UMAP Dimension 1', fontsize=12)
+        # ax.set_ylabel('UMAP Dimension 2', fontsize=12)
+        ax.legend(loc='upper right', fontsize=20, framealpha=0.9)
+        ax.grid(True, alpha=0.3)
+        
+        # Title
+        dataset_name = self.train_config['dataset_name'].upper()
+        # ax.set_title(f'UMAP: Input vs Reconstruction • {dataset_name}', fontsize=14, pad=20)
+        
+        plt.tight_layout()
+        
+        # Save plot
+        base_path = self.train_config['base_path']
+        file_name = f'umap_in_vs_rec_{self.train_config["dataset_name"]}_{n_neighbors}_{metric}_{min_dist}'
+        out_path = os.path.join(base_path, f'{file_name}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        
+        # Also save as PDF
+        out_path_pdf = os.path.join(base_path, f'{file_name}.pdf')
+        plt.savefig(out_path_pdf, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"\nUMAP plots saved to:")
+        print(f"  PNG: {out_path}")
+        print(f"  PDF: {out_path_pdf}")
+        
+        # Calculate statistics
+        def compute_centroid_distances(embedding, labels):
+            """Compute distances between centroids of different data types"""
+            centroids = {}
+            for data_type in range(4):
+                mask = (labels == data_type)
+                if np.any(mask):
+                    centroids[data_type] = np.mean(embedding[mask], axis=0)
+            
+            distances = {}
+            type_names = ['Normal Input', 'Normal Recon', 'Abnormal Input', 'Abnormal Recon']
+            
+            for i in range(4):
+                for j in range(i+1, 4):
+                    if i in centroids and j in centroids:
+                        dist = np.linalg.norm(centroids[i] - centroids[j])
+                        distances[f'{type_names[i]} - {type_names[j]}'] = dist
+            
+            return centroids, distances
+        
+        centroids, distances = compute_centroid_distances(embedding, data_type_labels)
+        
+        # print("\n" + "="*70)
+        # print("UMAP Analysis: Input vs Reconstruction")
+        # print("="*70)
+        # print("Centroid Distances:")
+        # for pair, dist in distances.items():
+        #     print(f"  {pair}: {dist:.4f}")
+        
+        # Compare with T-SNE results if available
+        tsne_path = os.path.join(base_path, f'tsne_input_vs_reconstruction_{self.train_config["dataset_name"]}.png')
+        if os.path.exists(tsne_path):
+            print("\nT-SNE version also exists for comparison")
+            print("  UMAP generally provides more stable results across different parameter settings")
+        
+        return {
+            'plot_paths': {'png': out_path, 'pdf': out_path_pdf},
+            'statistics': {
+                'centroid_distances': distances,
+                'centroids': centroids,
+                'data_info': {
+                    'n_normal': n_normal,
+                    'n_abnormal': n_abnormal,
+                    'total_points': len(data_type_labels),
+                    'feature_dim': inputs.shape[1]
+                }
+            },
+            'umap_parameters': {
+                'n_neighbors': n_neighbors,
+                'min_dist': min_dist,
+                'metric': metric
+            },
+            'embedding': embedding,
+            'data_type_labels': data_type_labels
+        }
+
+
+    @torch.no_grad()
     def plot_tsne_4types(
         self,
         perplexity: float = 30.0,
@@ -3378,3 +2838,1259 @@ class Analyzer(Trainer):
         plt.close()
         
         return out_path
+
+    def training_with_history_tracking(self):
+        print(self.model_config)
+        print(self.train_config)
+        parameter_path = os.path.join(self.train_config['base_path'], 'model.pt')
+        history_path = os.path.join(self.train_config['base_path'], 'training_history.npy')
+
+
+        if os.path.exists(parameter_path) and os.path.exists(history_path):
+            print(f"model.pt and training_history.npy already exist at {self.train_config['base_path']}.")
+            print("Loading model and history...")
+            
+            self.model.load_state_dict(torch.load(parameter_path))
+            self.model.eval()
+            
+            # Load history
+            history = np.load(history_path, allow_pickle=True).item()
+            print(f"Loaded training history with {len(history['train_loss'])} epochs")
+            return history
+
+
+        self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
+        self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
+
+        optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
+        scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
+        self.model.train()
+        history = {
+            'train_loss': [],
+            'auc_pr': [],
+            'auc_roc': [],
+            'f1': [],
+        }
+
+        print("Training Start.")
+
+        for epoch in range(self.epochs):
+            running_loss = 0.0
+            for step, (x_input, y_label) in enumerate(self.train_loader):
+                x_input = x_input.to(self.device)
+                loss = self.model(x_input).mean() # (B) -> scalar
+
+                running_loss += loss.item()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+            scheduler.step()
+            info = 'Epoch:[{}]\t loss={:.4f}\t'
+            running_loss = running_loss / len(self.train_loader)
+            self.logger.info(info.format(epoch,loss.cpu()))
+        
+            auc_roc, auc_pr, f1 = self.evaluate()
+
+            history['train_loss'].append(float(running_loss))
+            history['auc_roc'].append(float(auc_roc))
+            history['auc_pr'].append(float(auc_pr))
+            history['f1'].append(float(f1))
+
+        print("Training complete.")
+        print("Saving")
+        torch.save(self.model.state_dict(), parameter_path)
+        np.save(history_path, history)
+
+        return history
+
+    def plot_training(
+        self,
+        history=None,
+        figsize=(7, 5),
+        save_path=None,
+        smoothing_window=5
+    ):
+        # Load history if not provided
+        if history is None:
+            history_path = os.path.join(self.train_config['base_path'], 'training_history.npy')
+            if os.path.exists(history_path):
+                print(f"Loading training history from {history_path}")
+                history = np.load(history_path, allow_pickle=True).item()
+            else:
+                print("No training history found. Running training with history tracking...")
+                history = self.training_with_history_tracking()
+        
+        if history is None or len(history['train_loss']) == 0:
+            print("ERROR: No training history available")
+            return None
+        
+        # Extract data
+        epochs = np.arange(1, len(history['train_loss']) + 1)
+        train_loss = np.array(history['train_loss'])
+        auc_pr = np.array(history['auc_pr'])
+        
+        # Apply smoothing
+        def smooth_curve(data, window):
+            if window > 1 and len(data) >= window:
+                return np.convolve(data, np.ones(window)/window, mode='valid')
+            return data
+        
+        if smoothing_window > 1:
+            train_loss_smooth = smooth_curve(train_loss, smoothing_window)
+            auc_pr_smooth = smooth_curve(auc_pr, smoothing_window)
+            epochs_smooth = epochs[smoothing_window-1:]
+        else:
+            train_loss_smooth = train_loss
+            auc_pr_smooth = auc_pr
+            epochs_smooth = epochs
+        
+        # Create figure with dual axes
+        fig, ax1 = plt.subplots(1, 1, figsize=figsize, dpi=200)
+        
+        # Left axis - Training Loss (blue)
+        color_loss = '#1f77b4'
+        ax1.set_xlabel('Epoch', fontsize=14)
+        ax1.set_ylabel('Training Loss', fontsize=14, color=color_loss)
+        ax1.plot(epochs_smooth, train_loss_smooth, 
+                linewidth=2.5, alpha=0.9, color=color_loss, label='Training Loss')
+        ax1.tick_params(axis='y', labelcolor=color_loss)
+        ax1.grid(True, alpha=0.3)
+        
+        # Right axis - AUC-PR (green)
+        ax2 = ax1.twinx()
+        color_auc = '#2ca02c'
+        ax2.set_ylabel('AUC-PR', fontsize=14, color=color_auc)
+        ax2.plot(epochs_smooth, auc_pr_smooth, 
+                linewidth=2.5, alpha=0.9, color=color_auc, label='AUC-PR')
+        ax2.tick_params(axis='y', labelcolor=color_auc)
+        ax2.set_ylim([np.min(auc_pr)-0.05, np.max(auc_pr)+0.05])
+        
+        # Title
+        dataset_name = self.train_config.get('dataset_name', 'Unknown')
+        # title = f'Training History • {dataset_name.upper()}'
+        # if smoothing_window > 1:
+        #     title += f' (smoothed, window={smoothing_window})'
+        # plt.title(title, fontsize=16, fontweight='bold', pad=20)
+        
+        # Add legends
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc='best', fontsize=12, framealpha=0.9)
+        
+        plt.tight_layout()
+        
+        # Save plots
+        if save_path is None:
+            base_path = self.train_config['base_path']
+            save_path = os.path.join(base_path, f'training_history_{dataset_name}_w{smoothing_window}.png')
+        
+        plt.savefig(save_path, bbox_inches='tight', dpi=200)
+        print(f"Plot saved to: {save_path}")
+        
+        save_path_pdf = save_path.replace('.png', '.pdf')
+        plt.savefig(save_path_pdf, bbox_inches='tight', dpi=200)
+        print(f"Plot (PDF) saved to: {save_path_pdf}")
+        
+        plt.close()
+        
+        # Print summary
+        print(f"\nFinal values:")
+        print(f"  Training Loss: {train_loss[-1]:.6f}")
+        print(f"  AUC-PR: {auc_pr[-1]:.6f}")
+        print(f"Best AUC-PR: {np.max(auc_pr):.6f} (epoch {np.argmax(auc_pr) + 1})")
+        
+        return {
+            'plot_paths': {
+                'png': save_path,
+                'pdf': save_path_pdf
+            }
+        }
+        
+    # ============================================================================
+    # Q4: UMAP Visualization (Alternative to T-SNE)
+    # ============================================================================
+
+    @torch.no_grad()
+    def plot_umap_memory_addressing(
+        self,
+        n_neighbors: int = 15,
+        min_dist: float = 0.1,
+        metric: str = 'euclidean',
+        random_state: int = 42,
+        figsize: tuple = (15, 6),
+        point_size: int = 20,
+        alpha: float = 0.7,
+        max_samples_per_class: int = 1000
+    ):
+        
+        print("="*70)
+        print("UMAP Visualization: Memory Addressing Analysis")
+        print("="*70)
+        print(f"UMAP parameters: n_neighbors={n_neighbors}, min_dist={min_dist}, metric={metric}")
+        
+        self.model.eval()
+        
+        def collect_latents_and_labels():
+            """Collect all latents, latents_hat, and labels"""
+            all_latents = []
+            all_latents_hat = []
+            all_labels = []
+            
+            for loader in [self.train_loader, self.test_loader]:
+                for X, y in loader:
+                    X = X.to(self.device)
+                    
+                    loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, \
+                    attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
+                        self.model(X, return_for_analysis=True)
+                    
+                    # Flatten latents: (B, N, D) -> (B*N, D)
+                    B, N, D = latents.shape
+                    latents_flat = latents.view(B * N, D).detach().cpu().numpy()
+                    latents_hat_flat = latents_hat.view(B * N, D).detach().cpu().numpy()
+                    
+                    # Expand labels: (B,) -> (B*N,)
+                    y_expanded = y.unsqueeze(1).expand(B, N).reshape(B * N).detach().cpu().numpy()
+                    
+                    all_latents.append(latents_flat)
+                    all_latents_hat.append(latents_hat_flat)
+                    all_labels.append(y_expanded)
+            
+            return (np.concatenate(all_latents, axis=0),
+                    np.concatenate(all_latents_hat, axis=0),
+                    np.concatenate(all_labels, axis=0))
+        
+        def get_memory_vectors():
+            """Extract memory vectors from the model"""
+            if hasattr(self.model, 'memory') and self.model.memory is not None:
+                memory_vectors = self.model.memory.memories.detach().cpu().numpy()
+            else:
+                print("Warning: Could not find memory vectors")
+                return None
+            return memory_vectors
+        
+        def subsample_data(latents, latents_hat, labels, max_per_class):
+            """Subsample data"""
+            normal_mask = (labels == 0)
+            abnormal_mask = (labels != 0)
+            
+            normal_indices = np.where(normal_mask)[0]
+            abnormal_indices = np.where(abnormal_mask)[0]
+            
+            if len(normal_indices) > max_per_class:
+                normal_indices = np.random.choice(normal_indices, max_per_class, replace=False)
+            if len(abnormal_indices) > max_per_class:
+                abnormal_indices = np.random.choice(abnormal_indices, max_per_class, replace=False)
+            
+            selected_indices = np.concatenate([normal_indices, abnormal_indices])
+            
+            return (latents[selected_indices],
+                    latents_hat[selected_indices],
+                    labels[selected_indices],
+                    len(normal_indices),
+                    len(abnormal_indices))
+        
+        print("Collecting latent representations...")
+        latents, latents_hat, labels = collect_latents_and_labels()
+        
+        print("Getting memory vectors...")
+        memory_vectors = get_memory_vectors()
+        
+        if memory_vectors is None:
+            print("Cannot proceed without memory vectors")
+            return None
+        
+        print(f"Original data shapes:")
+        print(f"  Latents: {latents.shape}")
+        print(f"  Latents_hat: {latents_hat.shape}")
+        print(f"  Memory: {memory_vectors.shape}")
+        
+        # Subsample
+        latents, latents_hat, labels, n_normal, n_abnormal = subsample_data(
+            latents, latents_hat, labels, max_samples_per_class)
+        
+        print(f"After subsampling: {n_normal} normal, {n_abnormal} abnormal samples")
+        
+        # Prepare data for UMAP
+        # Before addressing: latents + memory
+        data_before = np.vstack([latents, memory_vectors])
+        labels_before = np.concatenate([
+            labels,
+            np.full(memory_vectors.shape[0], -1)  # Memory vectors labeled as -1
+        ])
+        
+        # After addressing: latents_hat + memory
+        data_after = np.vstack([latents_hat, memory_vectors])
+        labels_after = labels_before.copy()
+        
+        print("Running UMAP for before addressing...")
+        reducer_before = umap.UMAP(
+            n_neighbors=n_neighbors,
+            min_dist=min_dist,
+            metric=metric,
+            random_state=random_state,
+            verbose=True
+        )
+        embedding_before = reducer_before.fit_transform(data_before)
+        
+        print("Running UMAP for after addressing...")
+        reducer_after = umap.UMAP(
+            n_neighbors=n_neighbors,
+            min_dist=min_dist,
+            metric=metric,
+            random_state=random_state,
+            verbose=True
+        )
+        embedding_after = reducer_after.fit_transform(data_after)
+        
+        # Create plots
+        fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
+        
+        colors = {'normal': 'blue', 'abnormal': 'red', 'memory': 'green'}
+        labels_map = {'normal': 'Normal', 'abnormal': 'Abnormal', 'memory': 'Memory Vectors'}
+        
+        def plot_umap(ax, embedding, labels_data, title):
+            """Helper function to create a single UMAP plot"""
+            normal_mask = (labels_data == 0)
+            abnormal_mask = (labels_data > 0)
+            memory_mask = (labels_data == -1)
+            
+            if np.any(normal_mask):
+                ax.scatter(embedding[normal_mask, 0], embedding[normal_mask, 1],
+                        c=colors['normal'], s=point_size, alpha=alpha,
+                        label=f"{labels_map['normal']} (n={np.sum(normal_mask)})")
+            
+            if np.any(abnormal_mask):
+                ax.scatter(embedding[abnormal_mask, 0], embedding[abnormal_mask, 1],
+                        c=colors['abnormal'], s=point_size, alpha=alpha,
+                        label=f"{labels_map['abnormal']} (n={np.sum(abnormal_mask)})")
+            
+            if np.any(memory_mask):
+                ax.scatter(embedding[memory_mask, 0], embedding[memory_mask, 1],
+                        c=colors['memory'], s=point_size*1.5, alpha=alpha*1.2,
+                        marker='s', edgecolors='black', linewidth=0.5,
+                        label=f"{labels_map['memory']} (n={np.sum(memory_mask)})")
+            
+            ax.set_title(title, fontsize=14, pad=20)
+            ax.set_xlabel('UMAP Dimension 1', fontsize=12)
+            ax.set_ylabel('UMAP Dimension 2', fontsize=12)
+            ax.legend(loc='best', fontsize=10)
+            ax.grid(True, alpha=0.3)
+        
+        plot_umap(axes[0], embedding_before, labels_before, 'Before Memory Addressing')
+        plot_umap(axes[1], embedding_after, labels_after, 'After Memory Addressing')
+        
+        fig.suptitle(f'UMAP: Latent Space Analysis • {self.train_config["dataset_name"].upper()}',
+                    fontsize=16, y=0.98)
+        
+        plt.tight_layout()
+        
+        # Save plots
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, f'umap_memory_addressing_{self.train_config["dataset_name"]}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        
+        out_path_pdf = os.path.join(base_path, f'umap_memory_addressing_{self.train_config["dataset_name"]}.pdf')
+        plt.savefig(out_path_pdf, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"\nUMAP plots saved to:")
+        print(f"  PNG: {out_path}")
+        print(f"  PDF: {out_path_pdf}")
+        
+        # Calculate statistics (similar to T-SNE version)
+        def compute_cluster_separation(embedding, labels_data):
+            """Compute separation between normal and abnormal clusters"""
+            normal_points = embedding[labels_data == 0]
+            abnormal_points = embedding[labels_data > 0]
+            memory_points = embedding[labels_data == -1]
+            
+            if len(normal_points) == 0 or len(abnormal_points) == 0:
+                return None
+            
+            normal_centroid = np.mean(normal_points, axis=0)
+            abnormal_centroid = np.mean(abnormal_points, axis=0)
+            memory_centroid = np.mean(memory_points, axis=0) if len(memory_points) > 0 else None
+            
+            normal_abnormal_distance = np.linalg.norm(normal_centroid - abnormal_centroid)
+            
+            normal_intra_dist = np.mean([np.linalg.norm(p - normal_centroid) for p in normal_points])
+            abnormal_intra_dist = np.mean([np.linalg.norm(p - abnormal_centroid) for p in abnormal_points])
+            
+            return {
+                'inter_cluster_distance': normal_abnormal_distance,
+                'normal_intra_distance': normal_intra_dist,
+                'abnormal_intra_distance': abnormal_intra_dist,
+                'separation_ratio': normal_abnormal_distance / (normal_intra_dist + abnormal_intra_dist + 1e-8),
+                'normal_centroid': normal_centroid,
+                'abnormal_centroid': abnormal_centroid,
+                'memory_centroid': memory_centroid
+            }
+        
+        stats_before = compute_cluster_separation(embedding_before, labels_before)
+        stats_after = compute_cluster_separation(embedding_after, labels_after)
+        
+        print("\n" + "="*70)
+        print("UMAP Cluster Analysis")
+        print("="*70)
+        
+        if stats_before:
+            print("Before Memory Addressing:")
+            print(f"  Inter-cluster distance: {stats_before['inter_cluster_distance']:.4f}")
+            print(f"  Normal intra-distance: {stats_before['normal_intra_distance']:.4f}")
+            print(f"  Abnormal intra-distance: {stats_before['abnormal_intra_distance']:.4f}")
+            print(f"  Separation ratio: {stats_before['separation_ratio']:.4f}")
+        
+        if stats_after:
+            print("After Memory Addressing:")
+            print(f"  Inter-cluster distance: {stats_after['inter_cluster_distance']:.4f}")
+            print(f"  Normal intra-distance: {stats_after['normal_intra_distance']:.4f}")
+            print(f"  Abnormal intra-distance: {stats_after['abnormal_intra_distance']:.4f}")
+            print(f"  Separation ratio: {stats_after['separation_ratio']:.4f}")
+        
+        if stats_before and stats_after:
+            separation_change = stats_after['separation_ratio'] - stats_before['separation_ratio']
+            print(f"\nSeparation ratio change: {separation_change:+.4f}")
+            if separation_change > 0:
+                print("  → Memory addressing improved cluster separation")
+            else:
+                print("  → Memory addressing reduced cluster separation")
+        
+        return {
+            'plot_paths': {'png': out_path, 'pdf': out_path_pdf},
+            'statistics': {
+                'before_addressing': stats_before,
+                'after_addressing': stats_after,
+                'data_info': {
+                    'n_normal': n_normal,
+                    'n_abnormal': n_abnormal,
+                    'n_memory': memory_vectors.shape[0],
+                    'latent_dim': latents.shape[1]
+                }
+            },
+            'umap_parameters': {
+                'n_neighbors': n_neighbors,
+                'min_dist': min_dist,
+                'metric': metric
+            },
+            'embeddings': {
+                'before': embedding_before,
+                'after': embedding_after,
+                'labels': labels_before
+            }
+        }
+
+
+    # ============================================================================
+    # Q5: Memory Bank Selection Pattern Visualization
+    # ============================================================================
+
+    @torch.no_grad()
+    def plot_memory_selection_patterns(
+        self,
+        n_neighbors: int = 15,
+        min_dist: float = 0.1,
+        random_state: int = 42,
+        figsize: tuple = (20, 8),
+        point_size: int = 50,
+        alpha: float = 0.6,
+        max_samples: int = 500,
+        top_k_memories: int = 5
+    ):
+        """
+        Visualize memory bank selection patterns for normal vs abnormal samples.
+        
+        This addresses Q5 from the reviewers: Provide representation of chosen vectors
+        from the memory bank for normal samples vs anomaly samples. The expectation is
+        that chosen vectors should be:
+        - Close together (clustered) for normal samples
+        - Scattered in the representation space for anomaly samples
+        
+        Args:
+            n_neighbors: UMAP n_neighbors parameter
+            min_dist: UMAP min_dist parameter
+            random_state: Random seed
+            figsize: Figure size
+            point_size: Size of scatter plot points
+            alpha: Transparency
+            max_samples: Maximum samples to analyze per class
+            top_k_memories: Number of top memory vectors to highlight per sample
+            
+        Returns:
+            dict: Visualization results and statistics
+        """
+        try:
+            import umap
+        except ImportError:
+            print("ERROR: UMAP not installed. Install with: pip install umap-learn")
+            return None
+        
+        print("="*70)
+        print("Memory Selection Pattern Analysis")
+        print("="*70)
+        
+        self.model.eval()
+        
+        def collect_data_with_memory_weights():
+            """Collect samples, their memory weights, and labels"""
+            all_samples = []
+            all_memory_weights = []
+            all_labels = []
+            
+            for X, y in self.test_loader:
+                X = X.to(self.device)
+                
+                # Get memory weights
+                loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, \
+                attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
+                    self.model(X, return_for_analysis=True)
+                
+                # memory_weight shape: (B, N, M)
+                # Average over latent dimensions: (B, M)
+                memory_weight_avg = memory_weight.mean(dim=1).detach().cpu().numpy()
+                
+                all_samples.append(X.detach().cpu().numpy())
+                all_memory_weights.append(memory_weight_avg)
+                all_labels.append(y.detach().cpu().numpy())
+            
+            return (np.concatenate(all_samples, axis=0),
+                    np.concatenate(all_memory_weights, axis=0),
+                    np.concatenate(all_labels, axis=0))
+        
+        def get_memory_vectors():
+            """Extract memory vectors from the model"""
+            if hasattr(self.model, 'memory') and self.model.memory is not None:
+                return self.model.memory.memories.detach().cpu().numpy()
+            return None
+        
+        print("Collecting samples and memory selection patterns...")
+        samples, memory_weights, labels = collect_data_with_memory_weights()
+        memory_vectors = get_memory_vectors()
+        
+        if memory_vectors is None:
+            print("Cannot proceed without memory vectors")
+            return None
+        
+        print(f"Data shapes:")
+        print(f"  Samples: {samples.shape}")
+        print(f"  Memory weights: {memory_weights.shape}")
+        print(f"  Memory vectors: {memory_vectors.shape}")
+        
+        # Separate normal and abnormal samples
+        normal_mask = (labels == 0)
+        abnormal_mask = (labels != 0)
+        
+        # Subsample if needed
+        normal_indices = np.where(normal_mask)[0]
+        abnormal_indices = np.where(abnormal_mask)[0]
+        
+        if len(normal_indices) > max_samples:
+            normal_indices = np.random.choice(normal_indices, max_samples, replace=False)
+        if len(abnormal_indices) > max_samples:
+            abnormal_indices = np.random.choice(abnormal_indices, max_samples, replace=False)
+        
+        print(f"Analyzing {len(normal_indices)} normal and {len(abnormal_indices)} abnormal samples")
+        
+        # Get top-k selected memory indices for each sample
+        def get_top_k_memory_indices(memory_weights, k):
+            """Get indices of top-k most selected memory vectors for each sample"""
+            # memory_weights: (N_samples, M)
+            top_k_indices = np.argsort(memory_weights, axis=1)[:, -k:]  # (N_samples, k)
+            return top_k_indices
+        
+        normal_top_k = get_top_k_memory_indices(memory_weights[normal_indices], top_k_memories)
+        abnormal_top_k = get_top_k_memory_indices(memory_weights[abnormal_indices], top_k_memories)
+        
+        # Flatten to get all selected memory indices
+        normal_selected_memories = normal_top_k.flatten()
+        abnormal_selected_memories = abnormal_top_k.flatten()
+        
+        # Count frequency of each memory vector selection
+        M = memory_vectors.shape[0]
+        normal_memory_freq = np.bincount(normal_selected_memories, minlength=M)
+        abnormal_memory_freq = np.bincount(abnormal_selected_memories, minlength=M)
+        
+        print(f"\nMemory selection statistics:")
+        print(f"  Normal samples:")
+        print(f"    Unique memories selected: {np.sum(normal_memory_freq > 0)} / {M}")
+        print(f"    Most frequent memory: index {np.argmax(normal_memory_freq)} (selected {np.max(normal_memory_freq)} times)")
+        print(f"  Abnormal samples:")
+        print(f"    Unique memories selected: {np.sum(abnormal_memory_freq > 0)} / {M}")
+        print(f"    Most frequent memory: index {np.argmax(abnormal_memory_freq)} (selected {np.max(abnormal_memory_freq)} times)")
+        
+        # Create UMAP embedding of memory vectors
+        print("\nRunning UMAP on memory vectors...")
+        reducer = umap.UMAP(
+            n_neighbors=min(n_neighbors, M-1),
+            min_dist=min_dist,
+            random_state=random_state,
+            verbose=False
+        )
+        memory_embedding = reducer.fit_transform(memory_vectors)
+        
+        # Create visualizations
+        fig, axes = plt.subplots(1, 3, figsize=figsize, dpi=200)
+        
+        # Plot 1: Memory selection frequency for normal samples
+        ax = axes[0]
+        scatter = ax.scatter(memory_embedding[:, 0], memory_embedding[:, 1],
+                            c=normal_memory_freq, s=point_size, alpha=alpha,
+                            cmap='Blues', edgecolors='black', linewidth=0.5)
+        ax.set_title(f'Memory Selection by Normal Samples\n(n={len(normal_indices)})', fontsize=12)
+        ax.set_xlabel('UMAP Dimension 1', fontsize=10)
+        ax.set_ylabel('UMAP Dimension 2', fontsize=10)
+        plt.colorbar(scatter, ax=ax, label='Selection Frequency')
+        ax.grid(True, alpha=0.3)
+        
+        # Highlight most frequently selected memories
+        top_normal_memories = np.argsort(normal_memory_freq)[-10:]
+        ax.scatter(memory_embedding[top_normal_memories, 0],
+                memory_embedding[top_normal_memories, 1],
+                s=point_size*2, facecolors='none', edgecolors='red',
+                linewidth=2, label='Top 10 selected')
+        ax.legend(loc='best', fontsize=8)
+        
+        # Plot 2: Memory selection frequency for abnormal samples
+        ax = axes[1]
+        scatter = ax.scatter(memory_embedding[:, 0], memory_embedding[:, 1],
+                            c=abnormal_memory_freq, s=point_size, alpha=alpha,
+                            cmap='Reds', edgecolors='black', linewidth=0.5)
+        ax.set_title(f'Memory Selection by Abnormal Samples\n(n={len(abnormal_indices)})', fontsize=12)
+        ax.set_xlabel('UMAP Dimension 1', fontsize=10)
+        ax.set_ylabel('UMAP Dimension 2', fontsize=10)
+        plt.colorbar(scatter, ax=ax, label='Selection Frequency')
+        ax.grid(True, alpha=0.3)
+        
+        # Highlight most frequently selected memories
+        top_abnormal_memories = np.argsort(abnormal_memory_freq)[-10:]
+        ax.scatter(memory_embedding[top_abnormal_memories, 0],
+                memory_embedding[top_abnormal_memories, 1],
+                s=point_size*2, facecolors='none', edgecolors='darkred',
+                linewidth=2, label='Top 10 selected')
+        ax.legend(loc='best', fontsize=8)
+        
+        # Plot 3: Selection dispersion comparison
+        ax = axes[2]
+        
+        # Compute selection entropy (higher entropy = more dispersed)
+        def compute_entropy(freq):
+            freq_norm = freq / (freq.sum() + 1e-10)
+            return -np.sum(freq_norm * np.log(freq_norm + 1e-10))
+        
+        normal_entropy = compute_entropy(normal_memory_freq)
+        abnormal_entropy = compute_entropy(abnormal_memory_freq)
+        
+        # Compute spatial dispersion of selected memories
+        def compute_spatial_dispersion(embedding, freq):
+            if freq.sum() == 0:
+                return 0
+            # Weighted centroid
+            centroid = np.average(embedding, axis=0, weights=freq)
+            # Weighted average distance from centroid
+            distances = np.linalg.norm(embedding - centroid, axis=1)
+            avg_distance = np.average(distances, weights=freq)
+            return avg_distance
+        
+        normal_dispersion = compute_spatial_dispersion(memory_embedding, normal_memory_freq)
+        abnormal_dispersion = compute_spatial_dispersion(memory_embedding, abnormal_memory_freq)
+        
+        # Bar plot comparison
+        metrics = ['Selection Entropy', 'Spatial Dispersion']
+        normal_values = [normal_entropy, normal_dispersion]
+        abnormal_values = [abnormal_entropy, abnormal_dispersion]
+        
+        x = np.arange(len(metrics))
+        width = 0.35
+        
+        bars1 = ax.bar(x - width/2, normal_values, width, label='Normal Samples',
+                    alpha=0.8, color='blue')
+        bars2 = ax.bar(x + width/2, abnormal_values, width, label='Abnormal Samples',
+                    alpha=0.8, color='red')
+        
+        ax.set_ylabel('Value', fontsize=10)
+        ax.set_title('Memory Selection Pattern Comparison', fontsize=12)
+        ax.set_xticks(x)
+        ax.set_xticklabels(metrics)
+        ax.legend(loc='best', fontsize=10)
+        ax.grid(True, alpha=0.3, axis='y')
+        
+        # Add value labels on bars
+        for bars in [bars1, bars2]:
+            for bar in bars:
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                    f'{height:.3f}', ha='center', va='bottom', fontsize=9)
+        
+        fig.suptitle(f'Memory Bank Selection Patterns: Normal vs Abnormal • {self.train_config["dataset_name"].upper()}',
+                    fontsize=14, y=0.98)
+        
+        plt.tight_layout()
+        
+        # Save plots
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, f'memory_selection_patterns_{self.train_config["dataset_name"]}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        
+        out_path_pdf = os.path.join(base_path, f'memory_selection_patterns_{self.train_config["dataset_name"]}.pdf')
+        plt.savefig(out_path_pdf, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"\nMemory selection pattern plots saved to:")
+        print(f"  PNG: {out_path}")
+        print(f"  PDF: {out_path_pdf}")
+        
+        # Print detailed statistics
+        print("\n" + "="*70)
+        print("Memory Selection Pattern Analysis")
+        print("="*70)
+        print(f"\nNormal Samples:")
+        print(f"  Selection entropy: {normal_entropy:.4f}")
+        print(f"  Spatial dispersion: {normal_dispersion:.4f}")
+        print(f"  Unique memories used: {np.sum(normal_memory_freq > 0)} / {M}")
+        print(f"  Concentration (top 10%): {np.sum(np.sort(normal_memory_freq)[-M//10:]) / normal_memory_freq.sum():.2%}")
+        
+        print(f"\nAbnormal Samples:")
+        print(f"  Selection entropy: {abnormal_entropy:.4f}")
+        print(f"  Spatial dispersion: {abnormal_dispersion:.4f}")
+        print(f"  Unique memories used: {np.sum(abnormal_memory_freq > 0)} / {M}")
+        print(f"  Concentration (top 10%): {np.sum(np.sort(abnormal_memory_freq)[-M//10:]) / abnormal_memory_freq.sum():.2%}")
+        
+        print(f"\nInterpretation:")
+        if normal_entropy < abnormal_entropy:
+            print("  ✓ Normal samples show MORE CONCENTRATED memory selection (lower entropy)")
+            print("    → Consistent with expected behavior")
+        else:
+            print("  ✗ Normal samples show less concentrated memory selection")
+        
+        if normal_dispersion < abnormal_dispersion:
+            print("  ✓ Normal samples select memories from a MORE COMPACT region (lower dispersion)")
+            print("    → Consistent with expected behavior")
+        else:
+            print("  ✗ Normal samples select from a more dispersed region")
+        
+        return 
+
+    @torch.no_grad()
+    def plot_latent_memory_relationship(
+        self,
+        n_normal_samples: int = 10,
+        n_abnormal_samples: int = 10,
+        top_k: int = 5,
+        perplexity: float = 30.0,
+        n_iter: int = 1000,
+        random_state: int = 42,
+        figsize: tuple = (16, 7),
+        point_size: int = 200
+    ):
+        """
+        T-SNE visualization of latents and their top-k selected memory vectors.
+        
+        Simple visualization to show:
+        - Normal: Z_normal should cluster with M_chosen (close together)
+        - Abnormal: Z_abnormal should be far from M_chosen (scattered)
+        
+        Args:
+            n_normal_samples: Number of normal samples to visualize
+            n_abnormal_samples: Number of abnormal samples to visualize
+            top_k: Number of top memory vectors per sample
+            perplexity: T-SNE perplexity
+            n_iter: T-SNE iterations
+            random_state: Random seed
+            figsize: Figure size
+            point_size: Point size
+        """
+        from sklearn.manifold import TSNE
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        self.model.eval()
+        
+        # Get memory vectors
+        if hasattr(self.model, 'memory') and self.model.memory is not None:
+            memory_vectors = self.model.memory.memories
+            memory_vectors = F.normalize(memory_vectors, dim=-1)
+            memory_vectors = memory_vectors.detach().cpu().numpy()
+        elif hasattr(self.model, 'memory_bank') and self.model.memory_bank is not None:
+            memory_vectors = self.model.memory_bank.detach().cpu().numpy()
+        else:
+            print("No memory vectors found")
+            return
+        
+        # Collect samples
+        normal_latents = []
+        normal_weights = []
+        abnormal_latents = []
+        abnormal_weights = []
+        
+        for X, y in self.test_loader:
+            X = X.to(self.device)
+            
+            loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, \
+            attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
+                self.model(X, return_for_analysis=True)
+            
+            # latents: (B, N, D), memory_weight: (B, N, M)
+            latents_avg = latents.mean(dim=1).detach().cpu().numpy()  # (B, D)
+            weights_avg = memory_weight.mean(dim=1).detach().cpu().numpy()  # (B, M)
+            
+            for i in range(len(y)):
+                if y[i] == 0 and len(normal_latents) < n_normal_samples:
+                    normal_latents.append(latents_avg[i])
+                    normal_weights.append(weights_avg[i])
+                elif y[i] != 0 and len(abnormal_latents) < n_abnormal_samples:
+                    abnormal_latents.append(latents_avg[i])
+                    abnormal_weights.append(weights_avg[i])
+            
+            if len(normal_latents) >= n_normal_samples and len(abnormal_latents) >= n_abnormal_samples:
+                break
+        
+        normal_latents = np.array(normal_latents)
+        normal_weights = np.array(normal_weights)
+        abnormal_latents = np.array(abnormal_latents)
+        abnormal_weights = np.array(abnormal_weights)
+        
+        print(f"Collected {len(normal_latents)} normal, {len(abnormal_latents)} abnormal samples")
+        
+        # Get top-k memory indices for each sample
+        normal_topk = np.argsort(normal_weights, axis=1)[:, -top_k:]  # (n_normal, top_k)
+        abnormal_topk = np.argsort(abnormal_weights, axis=1)[:, -top_k:]  # (n_abnormal, top_k)
+        
+        # Prepare data for T-SNE
+        # Normal: latents + selected memories
+        normal_data = [normal_latents]
+        for i in range(len(normal_latents)):
+            selected_memories = memory_vectors[normal_topk[i]]
+            normal_data.append(selected_memories)
+        normal_data = np.vstack(normal_data)
+        
+        # Abnormal: latents + selected memories  
+        abnormal_data = [abnormal_latents]
+        for i in range(len(abnormal_latents)):
+            selected_memories = memory_vectors[abnormal_topk[i]]
+            abnormal_data.append(selected_memories)
+        abnormal_data = np.vstack(abnormal_data)
+        
+        # Run T-SNE separately for normal and abnormal
+        print("Running T-SNE for normal samples...")
+        tsne_normal = TSNE(n_components=2, perplexity=min(perplexity, len(normal_data)-1), 
+                        n_iter=n_iter, random_state=random_state, verbose=0)
+        normal_embedding = tsne_normal.fit_transform(normal_data)
+        
+        print("Running T-SNE for abnormal samples...")
+        tsne_abnormal = TSNE(n_components=2, perplexity=min(perplexity, len(abnormal_data)-1),
+                            n_iter=n_iter, random_state=random_state, verbose=0)
+        abnormal_embedding = tsne_abnormal.fit_transform(abnormal_data)
+        
+        # Plot
+        fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=200)
+        
+        # ===== Plot 1: Normal =====
+        ax = axes[0]
+        
+        # Split embeddings
+        n_normal = len(normal_latents)
+        normal_latent_emb = normal_embedding[:n_normal]
+        normal_memory_emb = normal_embedding[n_normal:]
+        
+        # Plot memories (small squares)
+        ax.scatter(normal_memory_emb[:, 0], normal_memory_emb[:, 1],
+                c='lightblue', s=point_size*0.6, alpha=0.6, marker='s',
+                edgecolors='blue', linewidth=1, label=f'Selected Memories (top-{top_k})')
+        
+        # Plot latents (big circles)
+        ax.scatter(normal_latent_emb[:, 0], normal_latent_emb[:, 1],
+                c='darkblue', s=point_size, alpha=0.9, marker='o',
+                edgecolors='black', linewidth=2, label=f'Normal Latents (n={n_normal})')
+        
+        ax.set_title('Normal: Z_normal + M_chosen\n(Expected: Clustered)', fontsize=16, fontweight='bold')
+        ax.set_xlabel('T-SNE Dimension 1', fontsize=12)
+        ax.set_ylabel('T-SNE Dimension 2', fontsize=12)
+        ax.legend(loc='best', fontsize=11)
+        ax.grid(True, alpha=0.3)
+        
+        # ===== Plot 2: Abnormal =====
+        ax = axes[1]
+        
+        # Split embeddings
+        n_abnormal = len(abnormal_latents)
+        abnormal_latent_emb = abnormal_embedding[:n_abnormal]
+        abnormal_memory_emb = abnormal_embedding[n_abnormal:]
+        
+        # Plot memories (small squares)
+        ax.scatter(abnormal_memory_emb[:, 0], abnormal_memory_emb[:, 1],
+                c='lightcoral', s=point_size*0.6, alpha=0.6, marker='s',
+                edgecolors='red', linewidth=1, label=f'Selected Memories (top-{top_k})')
+        
+        # Plot latents (big circles)
+        ax.scatter(abnormal_latent_emb[:, 0], abnormal_latent_emb[:, 1],
+                c='darkred', s=point_size, alpha=0.9, marker='o',
+                edgecolors='black', linewidth=2, label=f'Abnormal Latents (n={n_abnormal})')
+        
+        ax.set_title('Abnormal: Z_abnormal + M_chosen\n(Expected: Scattered/Distant)', fontsize=16, fontweight='bold')
+        ax.set_xlabel('T-SNE Dimension 1', fontsize=12)
+        ax.set_ylabel('T-SNE Dimension 2', fontsize=12)
+        ax.legend(loc='best', fontsize=11)
+        ax.grid(True, alpha=0.3)
+        
+        # Save
+        plt.tight_layout()
+        base_path = self.train_config['base_path']
+        out_path = os.path.join(base_path, f'latent_memory_tsne_{self.train_config["dataset_name"]}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        out_path_pdf = os.path.join(base_path, f'latent_memory_tsne_{self.train_config["dataset_name"]}.pdf')
+        plt.savefig(out_path_pdf, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"Saved: {out_path}")
+        print(f"Saved: {out_path_pdf}")
+
+
+    @torch.no_grad()
+    def plot_first_latent_tsne(
+        self,
+        max_samples_per_class: int = 500,
+        perplexity: float = 30.0,
+        n_iter: int = 1000,
+        random_state: int = 42,
+        figsize: tuple = (10, 8),
+        point_size: int = 50,
+        latent_idx: int = 0,
+        filter_memory_by_similarity: bool = False,
+        top_memory_ratio: float = 0.5,
+    ):
+        """
+        T-SNE visualization of first latents from normal/abnormal samples with memory vectors.
+        
+        Collects only the first latent (index 0) from each sample and visualizes with memory bank.
+        Can filter memory vectors to only show those most similar to normal latents.
+        
+        Args:
+            max_samples_per_class: Maximum samples per class
+            perplexity: T-SNE perplexity
+            n_iter: T-SNE iterations
+            random_state: Random seed
+            figsize: Figure size
+            point_size: Point size
+            latent_idx: Which latent index to use
+            filter_memory_by_similarity: If True, only use top similar memories to normal latents
+            top_memory_ratio: Ratio of memories to keep (e.g., 0.5 = top 50%)
+        """
+        from sklearn.manifold import TSNE
+        from sklearn.metrics.pairwise import cosine_similarity
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        self.model.eval()
+        
+        # Get memory vectors
+        if hasattr(self.model, 'memory') and self.model.memory is not None:
+            memory_vectors = self.model.memory.memories
+            memory_vectors = F.normalize(memory_vectors, dim=-1)
+            memory_vectors = memory_vectors.detach().cpu().numpy()
+        elif hasattr(self.model, 'memory_bank') and self.model.memory_bank is not None:
+            memory_vectors = self.model.memory_bank.detach().cpu().numpy()
+        else:
+            print("No memory vectors found")
+            return
+        
+        print(f"Memory vectors shape: {memory_vectors.shape}")
+        
+        # Collect first latents
+        normal_first_latents = []
+        abnormal_first_latents = []
+        
+        for X, y in self.test_loader:
+            X = X.to(self.device)
+            
+            loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, \
+            attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
+                self.model(X, return_for_analysis=True)
+            
+            # latents: (B, N, D) - take specific latent index
+            latents = F.normalize(latents, dim=-1)
+            first_latent = latents[:, latent_idx, :].detach().cpu().numpy()  # (B, D)
+            
+            for i in range(len(y)):
+                if y[i] == 0 and len(normal_first_latents) < max_samples_per_class:
+                    normal_first_latents.append(first_latent[i])
+                elif y[i] != 0 and len(abnormal_first_latents) < max_samples_per_class:
+                    abnormal_first_latents.append(first_latent[i])
+            
+            if len(normal_first_latents) >= max_samples_per_class and len(abnormal_first_latents) >= max_samples_per_class:
+                break
+        
+        normal_first_latents = np.array(normal_first_latents)
+        abnormal_first_latents = np.array(abnormal_first_latents)
+        
+        print(f"Collected {len(normal_first_latents)} normal first latents")
+        print(f"Collected {len(abnormal_first_latents)} abnormal first latents")
+        
+        # Filter memory vectors by similarity to normal latents if requested
+        if filter_memory_by_similarity and len(normal_first_latents) > 0:
+            print(f"\nFiltering memory vectors by similarity to normal latents...")
+            
+            # Compute cosine similarity between normal latents and memory vectors
+            # Shape: (n_normal, n_memory)
+            similarities = cosine_similarity(normal_first_latents, memory_vectors)
+            
+            # Average similarity for each memory vector
+            avg_similarity = similarities.mean(axis=0)  # (n_memory,)
+            
+            # Select top memories
+            n_keep = int(len(memory_vectors) * top_memory_ratio)
+            top_memory_indices = np.argsort(avg_similarity)[-n_keep:]
+            
+            memory_vectors = memory_vectors[top_memory_indices]
+            
+        # Stack all data: normal + abnormal + memory
+        all_data = np.vstack([
+            normal_first_latents,
+            abnormal_first_latents,
+            memory_vectors
+        ])
+        
+        # Create labels
+        n_normal = len(normal_first_latents)
+        n_abnormal = len(abnormal_first_latents)
+        n_memory = len(memory_vectors)
+        
+        labels = np.concatenate([
+            np.zeros(n_normal),      # 0: normal
+            np.ones(n_abnormal),     # 1: abnormal
+            np.full(n_memory, 2)     # 2: memory
+        ])
+        
+        # Run T-SNE
+        print("\nRunning T-SNE...")
+        tsne = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, 
+                    random_state=random_state, verbose=1)
+        embedding = tsne.fit_transform(all_data)
+        
+        # Split embeddings
+        normal_emb = embedding[labels == 0]
+        abnormal_emb = embedding[labels == 1]
+        memory_emb = embedding[labels == 2]
+        
+        # Plot
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=200)
+        
+        # Plot memory vectors (green squares)
+        ax.scatter(memory_emb[:, 0], memory_emb[:, 1],
+                c='green', s=point_size, alpha=0.5, marker='s',
+                edgecolors='darkgreen', linewidth=0.5, label=f'Memory Vectors')
+        
+        # Plot normal latents (blue circles)
+        ax.scatter(normal_emb[:, 0], normal_emb[:, 1],
+                c='blue', s=point_size, alpha=0.7, marker='o',
+                edgecolors='darkblue', linewidth=0.5, label=f'Normal Latents')
+        
+        # Plot abnormal latents (red circles)
+        ax.scatter(abnormal_emb[:, 0], abnormal_emb[:, 1],
+                c='red', s=point_size, alpha=0.7, marker='o',
+                edgecolors='darkred', linewidth=0.5, label=f'Abnormal Latents')
+        
+        # Title with filtering info
+        title = f'T-SNE: Latent[{latent_idx}] + Memory Vectors • {self.train_config["dataset_name"].upper()}'
+        if filter_memory_by_similarity:
+            title += f'\n(Memory filtered: top {top_memory_ratio*100:.0f}% similar to normal)'
+        
+        # ax.set_title(title, fontsize=14, fontweight='bold')
+        ax.set_xlabel('T-SNE Dimension 1', fontsize=18)
+        ax.set_ylabel('T-SNE Dimension 2', fontsize=18)
+        ax.legend(loc='upper right', fontsize=10)
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        # Save
+        base_path = self.train_config['base_path']
+        filter_suffix = f'_filtered{int(top_memory_ratio*100)}' if filter_memory_by_similarity else ''
+        filename = f'latent_tsne_{self.train_config["dataset_name"]}_idx{latent_idx}{filter_suffix}_p{perplexity}-rs{random_state}'
+        if filter_memory_by_similarity:
+            filename = filename + f'-mr{top_memory_ratio}'
+        else:
+            pass
+        out_path = os.path.join(base_path, f'{filename}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        out_path_pdf = os.path.join(base_path, f'{filename}.pdf')
+        plt.savefig(out_path_pdf, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"\nSaved: {out_path}")
+        print(f"Saved: {out_path_pdf}")
+
+
+    @torch.no_grad()
+    def plot_first_latent_umap(
+        self,
+        max_samples_per_class: int = 500,
+        n_neighbors: int = 15,
+        min_dist: float = 0.1,
+        metric: str = 'euclidean',
+        random_state: int = 42,
+        figsize: tuple = (10, 8),
+        point_size: int = 50,
+        latent_idx: int = 0,
+        filter_memory_by_similarity: bool = False,
+        top_memory_ratio: float = 0.5,
+    ):
+        """
+        UMAP visualization of first latents from normal/abnormal samples with memory vectors.
+        
+        Collects only the first latent (index 0) from each sample and visualizes with memory bank.
+        Can filter memory vectors to only show those most similar to normal latents.
+        
+        Args:
+            max_samples_per_class: Maximum samples per class
+            n_neighbors: UMAP n_neighbors parameter
+            min_dist: UMAP min_dist parameter
+            metric: UMAP distance metric
+            random_state: Random seed
+            figsize: Figure size
+            point_size: Point size
+            latent_idx: Which latent index to use
+            filter_memory_by_similarity: If True, only use top similar memories to normal latents
+            top_memory_ratio: Ratio of memories to keep (e.g., 0.5 = top 50%)
+        """
+        from umap import UMAP
+        from sklearn.metrics.pairwise import cosine_similarity
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        self.model.eval()
+        
+        # Get memory vectors
+        if hasattr(self.model, 'memory') and self.model.memory is not None:
+            memory_vectors = self.model.memory.memories
+            memory_vectors = F.normalize(memory_vectors, dim=-1)
+            memory_vectors = memory_vectors.detach().cpu().numpy()
+        elif hasattr(self.model, 'memory_bank') and self.model.memory_bank is not None:
+            memory_vectors = self.model.memory_bank.detach().cpu().numpy()
+        else:
+            print("No memory vectors found")
+            return
+        
+        print(f"Memory vectors shape: {memory_vectors.shape}")
+        
+        # Collect first latents
+        normal_first_latents = []
+        abnormal_first_latents = []
+        
+        for X, y in self.test_loader:
+            X = X.to(self.device)
+            
+            loss, x, x_hat, latents, latents_hat, memory_weight, attn_weight_enc, \
+            attn_weight_self_list, attn_weight_dec_z, attn_weight_dec_z_hat = \
+                self.model(X, return_for_analysis=True)
+            
+            # latents: (B, N, D) - take specific latent index
+            latents = F.normalize(latents, dim=-1)
+            first_latent = latents[:, latent_idx, :].detach().cpu().numpy()  # (B, D)
+            
+            for i in range(len(y)):
+                if y[i] == 0 and len(normal_first_latents) < max_samples_per_class:
+                    normal_first_latents.append(first_latent[i])
+                elif y[i] != 0 and len(abnormal_first_latents) < max_samples_per_class:
+                    abnormal_first_latents.append(first_latent[i])
+            
+            if len(normal_first_latents) >= max_samples_per_class and len(abnormal_first_latents) >= max_samples_per_class:
+                break
+        
+        normal_first_latents = np.array(normal_first_latents)
+        abnormal_first_latents = np.array(abnormal_first_latents)
+        
+        
+        # Filter memory vectors by similarity to normal latents if requested
+        if filter_memory_by_similarity and len(normal_first_latents) > 0:
+            print(f"\nFiltering memory vectors by similarity to normal latents...")
+            
+            # Compute cosine similarity between normal latents and memory vectors
+            # Shape: (n_normal, n_memory)
+            similarities = cosine_similarity(normal_first_latents, memory_vectors)
+            
+            # Average similarity for each memory vector
+            avg_similarity = similarities.mean(axis=0)  # (n_memory,)
+            
+            # Select top memories
+            n_keep = int(len(memory_vectors) * top_memory_ratio)
+            top_memory_indices = np.argsort(avg_similarity)[-n_keep:]
+            
+            memory_vectors = memory_vectors[top_memory_indices]
+            
+        # Stack all data: normal + abnormal + memory
+        all_data = np.vstack([
+            normal_first_latents,
+            abnormal_first_latents,
+            memory_vectors
+        ])
+        
+        # Create labels
+        n_normal = len(normal_first_latents)
+        n_abnormal = len(abnormal_first_latents)
+        n_memory = len(memory_vectors)
+        
+        labels = np.concatenate([
+            np.zeros(n_normal),      # 0: normal
+            np.ones(n_abnormal),     # 1: abnormal
+            np.full(n_memory, 2)     # 2: memory
+        ])
+        
+        # Run UMAP
+        print("\nRunning UMAP...")
+        umap_model = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric,
+                          random_state=random_state, verbose=True)
+        embedding = umap_model.fit_transform(all_data)
+        
+        # Split embeddings
+        normal_emb = embedding[labels == 0]
+        abnormal_emb = embedding[labels == 1]
+        memory_emb = embedding[labels == 2]
+        
+        # Plot
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=200)
+        
+        # Plot memory vectors (green squares)
+        ax.scatter(memory_emb[:, 0], memory_emb[:, 1],
+                c='green', s=point_size, alpha=0.5, marker='s',
+                edgecolors='darkgreen', linewidth=0.5, label=f'Memory Vectors')
+        
+        # Plot normal latents (blue circles)
+        ax.scatter(normal_emb[:, 0], normal_emb[:, 1],
+                c='blue', s=point_size, alpha=0.7, marker='o',
+                edgecolors='darkblue', linewidth=0.5, label=f'Normal Latents')
+        
+        # Plot abnormal latents (red circles)
+        ax.scatter(abnormal_emb[:, 0], abnormal_emb[:, 1],
+                c='red', s=point_size, alpha=0.7, marker='o',
+                edgecolors='darkred', linewidth=0.5, label=f'Abnormal Latents')
+        
+        # Title with filtering info
+        title = f'UMAP: Latent[{latent_idx}] + Memory Vectors • {self.train_config["dataset_name"].upper()}'
+        if filter_memory_by_similarity:
+            title += f'\n(Memory filtered: top {top_memory_ratio*100:.0f}% similar to normal)'
+        
+        # ax.set_title(title, fontsize=14, fontweight='bold')
+        ax.set_xlabel('UMAP Dimension 1', fontsize=18)
+        ax.set_ylabel('UMAP Dimension 2', fontsize=18)
+        ax.legend(loc='upper right', fontsize=10)
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        # Save
+        base_path = self.train_config['base_path']
+        filter_suffix = f'_filtered{int(top_memory_ratio*100)}' if filter_memory_by_similarity else ''
+        filename = f'latent_umap_{self.train_config["dataset_name"]}_idx{latent_idx}{filter_suffix}_n{n_neighbors}-md{min_dist}-rs{random_state}'
+        if filter_memory_by_similarity:
+            filename = filename + f'-mr{top_memory_ratio}'
+        else:
+            pass
+        out_path = os.path.join(base_path, f'{filename}.png')
+        plt.savefig(out_path, bbox_inches='tight', dpi=200)
+        out_path_pdf = os.path.join(base_path, f'{filename}.pdf')
+        plt.savefig(out_path_pdf, bbox_inches='tight', dpi=200)
+        plt.close()
+        
+        print(f"\nSaved: {out_path}")
+        print(f"Saved: {out_path_pdf}")

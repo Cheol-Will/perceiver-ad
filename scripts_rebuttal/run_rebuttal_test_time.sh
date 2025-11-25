@@ -2,13 +2,15 @@
 set -euo pipefail
 
 data_list=(arrhythmia breastw cardio cardiotocography glass ionosphere pima wbc wine thyroid optdigits pendigits satellite "satimage-2" campaign mammography shuttle nslkdd fraud census) # from MCM
-hidden_dim=64
-learning_rate=0.001
-temperature=0.1
-memory_ratio=1.0
-latent_ratio=1.0
-model_type="MemPAE"
+data_list=(campaign shuttle nslkdd fraud census) # from MCM
 
+
+# hidden_dim=64
+# learning_rate=0.001
+# temperature=0.1
+# memory_ratio=1.0
+# latent_ratio=1.0
+# model_type="MemPAE"
 # for data in "${data_list[@]}"; do
 #     exp_name="$model_type-test_time-ws-local+global-sqrt_F$latent_ratio-sqrt_N$memory_ratio-d$hidden_dim-lr$learning_rate-t$temperature"
 #     python main.py \
@@ -27,7 +29,10 @@ model_type="MemPAE"
 # done
 
 
-model_type="KNN"
+# model_type="KNN"
+# model_type="ICL"
+model_type="Disent"
+# model_type="DRL"
 for data in "${data_list[@]}"; do
     exp_name="$model_type-test_time"
     python main.py \

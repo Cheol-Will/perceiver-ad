@@ -923,6 +923,7 @@ def main(args):
         "MemPAE-ws-local+global-F-sqrt_N1.0-d64-lr0.001-t0.1", # Reviewer: 
         "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_mixer-d64-lr0.001-t0.1",
         "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
+        "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_dec_mixer-d64-lr0.001-t0.1",
     ]
 
     # 251111: tuned with top-k
@@ -992,6 +993,7 @@ def main(args):
         # 'PAE-ws-pos_query+token-d64-lr0.001', # Final architecture for PAE
         "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_mixer-d64-lr0.001-t0.1",
         "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
+        "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_dec_mixer-d64-lr0.001-t0.1",
     ]
 
     dataname_list = [

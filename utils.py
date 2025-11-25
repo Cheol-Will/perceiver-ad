@@ -76,8 +76,7 @@ def get_parser():
     parser.add_argument('--use_num_memories_power_2', action='store_true')
     parser.add_argument('--use_latent_F', action='store_true')
     parser.add_argument('--config_file_name', type=str, default=None)
-
-
+    parser.add_argument('--not_use_memory', action='store_true')
 
     # VQVAE
     parser.add_argument('--vq_loss_weight', type=float, default=None)
@@ -120,6 +119,7 @@ def load_yaml(args):
         train_config['use_num_memories_power_2'] = args.use_num_memories_power_2
         train_config['use_num_latents_power_2'] = args.use_num_latents_power_2
         train_config['use_latent_F'] = args.use_latent_F
+        model_config['not_use_memory'] = args.not_use_memory
 
     # Replace hyperparameters with data specific ones. 
     if args.dataname in configs:
@@ -185,6 +185,8 @@ def build_trainer(model_config, train_config):
         from models.MCMPAE.Trainer import Trainer        
     elif model_type == 'NPTAD':
         from models.NPTAD.Trainer import Trainer        
+    elif model_type == 'RetAug':
+        from models.RetAug.Trainer import Trainer        
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Trainer import Trainer
     else:

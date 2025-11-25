@@ -1,0 +1,114 @@
+default: 
+  train_config:
+    data_dir: 'Data/'
+    epochs: 200
+    learning_rate: 0.05
+    sche_gamma: 0.98
+    batch_size: 512
+    random_seed: 42
+    num_workers: 0
+    preprocess: 'standard'
+  model_config:
+    hidden_dim: 64
+    num_layers: 4
+    num_heads: 4
+    dropout_prob: 0.1
+    retrieval_type: 'knn'
+    retrieval_k: 5
+    retrieval_location: 'post-encoder' 
+    aggregation_lambda: 0.5
+    train_mask_prob:  0.15
+    test_mask_prob:  0.15
+    num_reconstructions:  10
+    max_masked_features: null
+
+glass:
+  learning_rate: 0.001
+  train_mask_prob: 0.15
+  test_mask_prob: 0
+  num_heads: 4
+  depth: 2
+  hidden_dim: 16
+  dropout_prob: 0.1
+
+wine:
+  learning_rate: 0.001
+  num_heads: 4
+  depth: 2
+  hidden_dim: 8
+  dropout_prob: 0.1
+  learning_rate: 0.01
+  train_mask_prob: 0.15
+  test_mask_prob: 0
+
+breastw :
+  num_heads: 4
+  depth: 2
+  hidden_dim: 8
+  dropout_prob: 0.1
+  learning_rate: 0.01
+  train_mask_prob: 0.15
+  test_mask_prob: 0
+
+pima:
+  num_heads: 4
+  depth: 2
+  hidden_dim: 8
+  dropout_prob: 0.1
+  learning_rate: 0.001
+  train_mask_prob: 0.15
+  test_mask_prob: 0
+
+thyroid:
+  num_heads: 4
+  depth: 2
+  hidden_dim: 8
+  dropout_prob: 0.1
+  learning_rate: 0.01
+  train_mask_prob: 0.1
+  test_mask_prob: 0
+
+pendigits: 
+  num_heads: 4
+  depth: 2
+  hidden_dim: 16
+  dropout_prob: 0.1
+  learning_rate: 0.01
+  train_mask_prob: 0.25
+  test_mask_prob: 0.15
+
+mammography:
+  num_heads: 4
+  depth: 2
+  hidden_dim: 16
+  dropout_prob: 0.1
+  learning_rate: 0.001
+  train_mask_prob: 0.15
+  test_mask_prob: 0
+
+cardio:
+  num_heads: 4
+  depth: 2
+  hidden_dim: 16
+  dropout_prob: 0.1
+  learning_rate: 0.001
+  train_mask_prob: 0.15
+  test_mask_prob: 0
+
+satimage-2:
+  num_heads: 4
+  depth: 2
+  hidden_dim: 16
+  dropout_prob: 0.1
+  learning_rate: 0.001
+  train_mask_prob: 0.1
+  test_mask_prob: 0
+
+satellite:
+  num_heads: 4
+  depth: 2
+  hidden_dim: 16
+  dropout_prob: 0.1
+  learning_rate: 0.001
+  train_mask_prob: 0.1
+  test_mask_prob: 0

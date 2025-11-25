@@ -1,0 +1,142 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "num_latents": 6,
+        "num_memories": 53,
+        "depth": 4,
+        "hidden_dim": 64,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.1,
+        "sim_type": "cos",
+        "shrink_thred": 0,
+        "use_entropy_loss_as_score": false,
+        "top_k": null,
+        "is_weight_sharing": false,
+        "use_pos_enc_as_query": true,
+        "use_mask_token": true,
+        "global_decoder_query": false,
+        "mlp_mixer_decoder": true,
+        "mlp_mixer_encoder": true,
+        "mlp_encoder": false,
+        "mlp_decoder": false,
+        "latent_loss_weight": null,
+        "entropy_loss_weight": null,
+        "is_recurrent": false,
+        "not_use_memory": false,
+        "num_features": 36
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "not_use_power_of_two": false,
+        "use_num_memories_sqrt_NF": false,
+        "use_num_memories_power_2": false,
+        "use_num_latents_power_2": false,
+        "use_latent_F": false,
+        "model_type": "MemPAE",
+        "dataset_name": "local_anomalies_31_satimage-2_42",
+        "train_ratio": 1.0,
+        "base_path": "results/MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_dec_mixer-d64-lr0.001-t0.1/local_anomalies_31_satimage-2_42/1.0",
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": 1.0,
+        "memory_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.8196981610528489,
+        "AUC-PR": 0.45625283951204054,
+        "f1": 0.428169014084507
+    },
+    "total_time": 201.05277228355408,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.8166851773586389,
+            "AUC-PR": 0.45585471269137623,
+            "f1": 0.4225352112676056,
+            "train_time": 20.499112367630005,
+            "test_time": 0.05596590042114258
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.8180513647130516,
+            "AUC-PR": 0.4513696690374024,
+            "f1": 0.43661971830985913,
+            "train_time": 22.704882383346558,
+            "test_time": 0.05174875259399414
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.820351277237746,
+            "AUC-PR": 0.4640505505000364,
+            "f1": 0.43661971830985913,
+            "train_time": 20.882057189941406,
+            "test_time": 0.05246543884277344
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.8207886537648782,
+            "AUC-PR": 0.4597647603310455,
+            "f1": 0.4225352112676056,
+            "train_time": 19.081042289733887,
+            "test_time": 0.02946639060974121
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.819599382758519,
+            "AUC-PR": 0.4645232166123541,
+            "f1": 0.43661971830985913,
+            "train_time": 19.610204696655273,
+            "test_time": 0.04645943641662598
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.8207493390208664,
+            "AUC-PR": 0.44493193026714895,
+            "f1": 0.4225352112676056,
+            "train_time": 21.472482681274414,
+            "test_time": 0.04896235466003418
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.8188425739362903,
+            "AUC-PR": 0.45840181846033695,
+            "f1": 0.4225352112676056,
+            "train_time": 20.01337718963623,
+            "test_time": 0.04946398735046387
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.820990141827939,
+            "AUC-PR": 0.4537745381286138,
+            "f1": 0.4225352112676056,
+            "train_time": 20.46323299407959,
+            "test_time": 0.04773688316345215
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.8217862653941794,
+            "AUC-PR": 0.4516420634917182,
+            "f1": 0.43661971830985913,
+            "train_time": 20.076387882232666,
+            "test_time": 0.02573990821838379
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.8191374345163795,
+            "AUC-PR": 0.45821513560037275,
+            "f1": 0.4225352112676056,
+            "train_time": 14.155928611755371,
+            "test_time": 0.017082691192626953
+        }
+    ]
+}

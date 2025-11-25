@@ -8,11 +8,9 @@ import pandas as pd
 import argparse
 import matplotlib.pyplot as plt
 import seaborn as sns
+from statistical_test import StatisticalTester
 
 pd.set_option('display.max_rows', None)
-
-
-
 @dataclass
 class Config:
     """실험 설정을 관리하는 클래스"""
@@ -407,11 +405,11 @@ class ResultRenderer:
         use_std: bool = False,
         use_baseline_pr: bool = True,
         use_alias: bool = False,
-        is_temp_tune: bool = False,
         is_synthetic: bool = False,
         synthetic_type: Optional[str] = None,
         is_plot: bool = False,
         is_print: bool = True,
+        use_temp: bool = False,
         use_top_k: bool = False,
         use_hpo_memory_latent: bool = False,
         use_hpo_memory_latent_top_k: bool = False,
@@ -448,6 +446,10 @@ class ResultRenderer:
         
         if use_hpo_memory_latent:
             df_mean = self._apply_hpo_memory_latent(df_mean)
+
+        if use_temp:
+            df_mean = self._apply_temp(df_mean)
+            
         
         # 모델 순서 재배열 (HPO 처리 이후)
         first = [m for m in models if m in df_mean.index]
@@ -583,6 +585,28 @@ class ResultRenderer:
         
         return df_mean
     
+    def _apply_temp(self, df_mean: pd.DataFrame) -> pd.DataFrame:
+        """top-k 모델 선택"""
+        our_model = ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
+        
+        # for t in [0.1, 0.5, 1.0]:
+        for t in [0.01, 0.05, 0.1, 0.5, 1.0]:
+            model_name = f"MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-d64-lr0.001-t{t}"
+            our_model.append(model_name)
+        
+        print("\n" + "="*80)
+        print("Best Model per Dataset (HPO: Temperature)")
+        print("="*80)
+        for col in df_mean.columns:
+            max_idx = df_mean.loc[our_model, col].idxmax()
+            max_val = df_mean.loc[our_model, col].max()
+            print(f"{col:20s} -> {max_idx:70s} (score: {max_val:.4f})")
+        print("="*80 + "\n")
+
+        df_mean.loc[our_model[0], :] = df_mean.loc[our_model, :].max(axis=0)
+        df_mean.drop(our_model[1:], axis=0, inplace=True)
+        
+        return df_mean
     def _apply_top_k(self, df_mean: pd.DataFrame) -> pd.DataFrame:
         """top-k 모델 선택"""
         our_model = ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
@@ -613,14 +637,50 @@ class ResultRenderer:
         
         num_latent_list = [0.5, 1.0, 2.0, 4.0]
         num_memory_list = [0.5, 1.0, 2.0, 4.0]
-        temperature_list = [0.1, 1.0]
+        temperature_list = [0.1, 0.5, 1.0]
         
         for l in num_latent_list:
             for m in num_memory_list:
                 for t in temperature_list:
                     model_name = f"MemPAE-ws-local+global-sqrt_F{l}-sqrt_N{m}-d64-lr0.001-t{t}"
                     our_model.append(model_name)
-        
+        a = [
+            'MemPAE-ws-pos_query-d16-lr0.001-t0.1',
+            'MemPAE-ws-pos_query-d16-lr0.005-t0.1',
+            'MemPAE-ws-pos_query-d16-lr0.01-t0.1',
+            'MemPAE-ws-pos_query-d16-lr0.05-t0.1',
+            'MemPAE-ws-pos_query-d32-lr0.001-t0.1',
+            'MemPAE-ws-pos_query-d32-lr0.005-t0.1',
+            'MemPAE-ws-pos_query-d32-lr0.01-t0.1',
+            'MemPAE-ws-pos_query-d32-lr0.05-t0.1',
+            'MemPAE-ws-pos_query-L6-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query-L2-d64-lr0.001-t0.1',
+
+            'MemPAE-ws-pos_query+token-d64-lr0.001',
+            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01',
+            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
+            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.5',
+            'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2',
+            'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-L5-d64-lr0.005-t0.1',
+            'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.01',
+            'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.05',
+            'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
+
+            'MemPAE-ws-pos_query+token-memory_ratio0.5-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-memory_ratio2.0-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-memory_ratio8.0-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-latent_ratio0.5-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-latent_ratio2.0-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-latent_ratio4.0-d64-lr0.001-t0.1',
+            'MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1',
+        ]
+
+        our_model = our_model + a
         print("\n" + "="*80)
         print("Best Model per Dataset (HPO Memory Latent)")
         print("="*80)
@@ -855,10 +915,11 @@ def main(args):
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',
         'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent', 
         # 'NPTAD',
+        # 'RetAug',
+        'RetAugv2',
     ]
     
     my_models = [
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
         # pos sharing
         # "MemPAE-ws-d64-lr0.001-t0.1", 
 
@@ -866,29 +927,105 @@ def main(args):
         # "MemPAE-ws-local+global-F-sqrt_N1.0-d64-lr0.001-t0.1", 
 
         # Ablation: Component Analysis
-        # "PAE-ws-pos_query+token-d64-lr0.001", # Ablation: no memory
-        # "MemPAE-mlp_enc_mixer", # Ablation: MLP Encoder
-        # "MemPAE-mlp_dec_mixer", # Ablation: MLP Encoder
-        # "MemPAE-mlp_enc_dec_mixer", # Ablation: MLP Encoder + MLP Decoder with memory
-        # "AutoEncoder", # Ablation: AE
-        # 'MemAE-d256-lr0.001-t0.1', # Ablation: AE with memory
+        
+        # "AutoEncoder", # MLP-MLP-X
+        # 'MemAE-d256-lr0.001-t0.1', # MLP-MLP-O
+        # 'MemAE-d256-lr0.001', # MLP-MLP-O
+        # "MemAE-d64-lr0.001-t0.1", 
+        # "MemAE-d64-lr0.001", 
+        # "MemAE-d64-lr0.005", 
+        # "MemAE-d64-lr0.005-t0.1", 
+        # "MemAE-d64-lr0.01", 
+        # "MemAE-d64-lr0.01-t0.1", 
+
+
+
+        "MemPAE-mlp-mlp-v3-no_mem", # MLP-MLP-X
+        "MemPAE-mlp-mlp-v3", # MLP-MLP-O
+
+        "MemPAE-attn-mlp-no_mem", # Attn-MLP-X
+        "MemPAE-attn-mlp", # Attn-MLP-O
+        # "MemPAE-attn-mlp-no_mem-v2", # Attn-MLP-X
+        # "MemPAE-attn-mlp-no_mem-lr0.01",
+        # "MemPAE-attn-mlp-no_mem-ws-lr0.01",
+        # "MemPAE-attn-mlp-ws-lr0.01",
+        "MemPAE-mlp-attn-no_mem",
+        'MemPAE-mlp-attn',
+        # "PAE-ws-pos_query+token-d64-lr0.001", # Attn-Attn-X
+        # "MemPAE-attn-attn-no_mem-v2", # Attn-Attn-X
+        "MemPAE-attn-attn-no_mem", # Attn-Attn-X
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
         # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_mixer-d64-lr0.001-t0.1",
         # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
-
     ]
     
     # 기본 메트릭 렌더링
-    keys = ['ratio_1.0_AUCROC', 'ratio_1.0_AUCPR', 'ratio_1.0_f1']
+    keys = [
+        'ratio_1.0_AUCROC', 
+        'ratio_1.0_AUCPR', 
+        # 'ratio_1.0_f1'
+    ]
     
     for base in keys:
         print(f"\nRendering {base}...")
         renderer.render(
             pivots, data, models, my_models, base,
-            add_avg_rank=True, use_rank=False, use_std=False,
+            add_avg_rank=True, use_rank=False, use_std=args.use_std,
             use_baseline_pr=False, is_plot=False,
-            use_top_k=args.use_top_k, use_hpo_memory_latent=args.use_hpo_memory_latent,
+            use_temp=args.use_temp, 
+            use_top_k=args.use_top_k, 
+            use_hpo_memory_latent=args.use_hpo_memory_latent,
             use_hpo_memory_latent_top_k=args.use_hpo_memory_latent_top_k,
         )
+
+    if args.stat_test:
+
+        test_models = [
+            'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',
+            'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent', 
+        ]
+
+        my_test_models = [
+            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
+        ]
+
+        from statistical_test import run_statistical_analysis
+        tr, metr = base.split('_')[1], base.split('_')[2]
+        k_mean = f"ratio_{tr}_{metr}_mean"
+        df_for_test = pivots[k_mean][data].copy()
+        highlight_models = [m for m in my_models if m in df_for_test.index]
+        # 모델 순서 재배열
+        first = [m for m in test_models if m in df_for_test.index]
+        rest = [m for m in my_test_models if m in df_for_test.index]
+        order = first + rest
+        df_for_test = df_for_test.loc[order]
+        from cd_diagram import draw_cd_diagram_from_pivot
+        print(df_for_test.index)
+        print(df_for_test.columns)
+        draw_cd_diagram_from_pivot(
+            df_pivot=df_for_test,
+            alpha=0.05,
+        )
+
+        # results_stat = run_statistical_analysis(
+        #     df_mean=df_for_test,
+        #     alpha=0.05,
+        #     plot=True,
+        #     save_dir='metrics/statistical_tests',
+        #     filename_prefix=f'{base}_critical_difference',
+        #     highlight_models=highlight_models
+        # )
+        
+        # # 결과를 CSV로 저장
+        # import os
+        # os.makedirs('metrics/statistical_tests', exist_ok=True)
+        
+        # # 평균 랭킹 저장
+        # results_stat['avg_ranks'].to_csv(
+        #     f'metrics/statistical_tests/{base}_avg_ranks.csv',
+        #     header=['Average Rank']
+        # )
+
 
         
     # 특수 분석
@@ -914,6 +1051,10 @@ def main(args):
             'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
             "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_mixer-d64-lr0.001-t0.1",
             "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
+            "MemPAE-mlp-mlp-d256-lr0.1",
+            # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_dec_mixer-d64-lr0.001-t0.1",
+            # "MemPAE-mlp-mlp-d256-lr0.1",
+            # "MemPAE-mlp-mlp-d256-lr0.01",
         ]
         
         dataname_list = [
@@ -923,10 +1064,10 @@ def main(args):
         ]
         
         anomaly_type_list = [
-            'dependency_anomalies_',
             'global_anomalies_',
             'cluster_anomalies_',
             'local_anomalies_',
+            'dependency_anomalies_',
         ]
         
         irrelevant_features_list = ['']
@@ -948,7 +1089,7 @@ def main(args):
                 df_render = renderer.render(
                     pivots, synthetic_data, models_synthetic, my_models_synthetic, base,
                     add_avg_rank=True, use_rank=False, use_std=False,
-                    use_baseline_pr=False, use_alias=True, is_temp_tune=False,
+                    use_baseline_pr=False, use_alias=True,
                     is_synthetic=True, synthetic_type=anomaly_type.strip('_'),
                     is_plot=False, is_print=True
                 )
@@ -1033,15 +1174,18 @@ def main(args):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='실험 결과 분석 스크립트')
+    parser.add_argument('--use_std', action='store_true', help='show std.')
     parser.add_argument('--synthetic', action='store_true', help='합성 데이터 분석 수행')
     parser.add_argument('--contamination', action='store_true', help='오염 비율 분석 수행')
     parser.add_argument('--hp_ratio', action='store_true', help='하이퍼파라미터 비율 분석 수행')
     parser.add_argument('--npt', action='store_true', help='NPT-AD와 비교')
     parser.add_argument('--train_ratio', action='store_true', help='훈련 비율별 분석 수행')
     parser.add_argument('--synthetic_type', type=str, default='dependency', help='합성 데이터 타입')
+    parser.add_argument('--use_temp', action='store_true', help='temperature')
     parser.add_argument('--use_top_k', action='store_true', help='topk')
     parser.add_argument('--use_hpo_memory_latent', action='store_true', help='memory latent')
     parser.add_argument('--use_hpo_memory_latent_top_k', action='store_true', help='memory latent topk')
+    parser.add_argument('--stat_test', action='store_true', help='Criticla Difference Diagram.')
     
     args = parser.parse_args()
     main(args)

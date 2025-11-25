@@ -294,6 +294,7 @@ class MLPMixerEncoder(nn.Module):
     def __init__(
         self, 
         hidden_dim,
+        num_features,
         num_latents,
         dropout_prob,
     ):
@@ -301,7 +302,7 @@ class MLPMixerEncoder(nn.Module):
         self.lin1 = nn.Linear(hidden_dim, hidden_dim)
         self.act1 = nn.GELU()
         self.drop1 = nn.Dropout(dropout_prob)
-        self.lin2 = nn.Linear(num_latents, num_latents)
+        self.lin2 = nn.Linear(num_features, num_latents)
         self.act2 = nn.ReLU()
         self.drop2 = nn.Dropout(dropout_prob)
         
@@ -447,6 +448,7 @@ class MemPAE(nn.Module):
         mlp_decoder: bool = False, # flatten latent_hat and apply mlp
         mlp_mixer_decoder: bool = False, # 
         global_decoder_query: bool = False,
+        not_use_memory: bool = False,
     ):
         super(MemPAE, self).__init__()
         assert num_latents is not None
@@ -465,6 +467,7 @@ class MemPAE(nn.Module):
 
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim) # only numerical inputs
         self.memory = MemoryUnit(num_memories, hidden_dim, sim_type, temperature, shrink_thred, top_k, num_heads)
+        print("Do not use memory module" if not_use_memory else "Use memory module")
         
         if is_weight_sharing:
             self.block = SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
@@ -479,10 +482,14 @@ class MemPAE(nn.Module):
             self.encoder = MLPEncoder(hidden_dim, num_features, dropout_prob)
         elif mlp_mixer_encoder: 
             print("Init MLPMixerEncoder.")
-            self.encoder = nn.Sequential(*[
-                MLPMixerEncoder(hidden_dim, num_features, dropout_prob)
-                for _ in range(depth)
-            ])
+            if is_weight_sharing:
+                self.encoder_ = MLPMixerEncoder(hidden_dim, num_features, num_latents, dropout_prob)
+                self.encoder = MLPMixerEncoder(hidden_dim, num_features, num_latents. dropout_prob)
+            else:
+                self.encoder = nn.Sequential(*[
+                    MLPMixerEncoder(hidden_dim, num_features if i==0 else num_latents, num_latents, dropout_prob)
+                    for i in range(depth)
+                ])
             
         else:
             self.encoder = CrossAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
@@ -494,8 +501,6 @@ class MemPAE(nn.Module):
             # input: (B, N, D)
             # output: (B, F)
             print("Init MLPMixerDecoder.")
-            if mlp_mixer_encoder:
-                num_latents = num_features
             self.decoder = MLPMixerDecoder(  
                 hidden_dim,
                 num_latents,
@@ -542,6 +547,7 @@ class MemPAE(nn.Module):
         self.mlp_mixer_encoder = mlp_mixer_encoder
         self.mlp_mixer_decoder = mlp_mixer_decoder
         self.global_decoder_query = global_decoder_query
+        self.not_use_memory = not_use_memory
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -573,7 +579,12 @@ class MemPAE(nn.Module):
             feature_embedding = feature_embedding + self.pos_encoding
 
             if self.mlp_mixer_encoder:
-                latents = self.encoder(feature_embedding)
+                if self.is_weight_sharing:
+                    latents = self.encoder_(feature_embedding) # (B, F, D) -> (B, N, D)
+                    for _ in range(self.depth):
+                        latents = self.encoder(latents)
+                else:
+                    latents = self.encoder(feature_embedding)
 
             else:
                 # encoder 
@@ -597,7 +608,11 @@ class MemPAE(nn.Module):
             latents_hat = latents # addressing is already performed
         else:    
             # memory addressing
-            latents_hat, memory_weight = self.memory(latents) # (B, N, D), (B, N, M) 
+            if self.not_use_memory:
+                latents_hat = latents
+                # print("No Memory Module")
+            else:
+                latents_hat, memory_weight = self.memory(latents) # (B, N, D), (B, N, M) 
 
         # decoder
         if self.global_decoder_query:

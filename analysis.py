@@ -37,12 +37,17 @@ def train_test(args, model_config, train_config, analysis_config, run):
     train_config['logger'].info(f"[run {run}]" + '-'*60)
     analyzer = build_analyzer(model_config, train_config, analysis_config)    
     
+    if args.plot_history:
+        history = analyzer.training_with_history_tracking()
+        analyzer.plot_training(history, smoothing_window=1)
+        analyzer.plot_training(history, smoothing_window=5)
+        analyzer.plot_training(history, smoothing_window=10)
+        # analyzer.plot_training(history, smoothing_window=5)
+        return
     if analysis_config['compare_regresssion_with_sup_attn']:
         analyzer.training_supervised()
-        
     else:
         analyzer.training()
-
     if analysis_config['plot_recon']:
         analyzer.plot_reconstruction()
     if analysis_config['plot_histogram']:
@@ -99,14 +104,66 @@ def train_test(args, model_config, train_config, analysis_config, run):
 
     if args.plot_tsne_memory_addressing:
         analyzer.plot_tsne_memory_addressing()
+    if args.plot_umap_memory_addressing:
+        analyzer.plot_umap_memory_addressing()
     if args.compare_shap_vs_anomaly_gradient_per_sample:
         analyzer.compare_shap_vs_anomaly_gradient_per_sample()
-
     if args.plot_tsne_input_vs_reconstruction:
         analyzer.plot_tsne_input_vs_reconstruction()
+    if args.plot_latent_memory_relationship:
+        analyzer.plot_latent_memory_relationship()
+    if args.plot_first_latent_tsne:
+        analyzer.plot_first_latent_tsne()
+    if args.plot_first_latent_tsne:
+        latent_idx_list = list(range(10))
+        rs_list = [0, 1, 42]
+        p_list = [5, 10, 30, 50]
+        for idx in latent_idx_list:
+            for p in p_list:
+                for rs in rs_list:
+                    analyzer.plot_first_latent_tsne(
+                        max_samples_per_class=500, perplexity=p, n_iter=1000,
+                        random_state=rs, point_size=50, latent_idx=idx,
+                        filter_memory_by_similarity = True,
+                        top_memory_ratio = 0.3,
+                    )
+    if args.plot_first_latent_umap:
+        latent_idx_list = list(range(10))
+        n_list = list(range(5, 26, 5))
+        dist_list = [0.1, 0.3, 0.5, 0.7, 1.0]
+        rs_list = [0, 1, 42]
+        for idx in latent_idx_list:
+            for n in n_list:
+                for d in dist_list:
+                    for rs in rs_list:
+                        analyzer.plot_first_latent_umap(
+                            n_neighbors=n,
+                            min_dist=d,
+                            random_state=rs,
+                            filter_memory_by_similarity=True,
+                            top_memory_ratio = 0.3,
+                            latent_idx=idx,
+                        )
+    if args.plot_umap_input_vs_reconstruction:
+        n_list = list(range(5, 26, 5))
+        dist_list = [0.1 * i for i in range(1, 11)]
 
-    if args.plot_tsne_4types:
-        analyzer.plot_tsne_4types()
+        metric_list = [
+            'euclidean', 
+            # 'minkowski',
+        ]
+        for n in n_list:
+            for d in dist_list:
+                for m in metric_list:
+                    analyzer.plot_umap_input_vs_reconstruction(
+                        n_neighbors=n,
+                        min_dist=d,
+                        metric=m,
+                        random_state=0,
+                    )
+
+    # if args.plot_tsne_4types:
+    #     analyzer.plot_tsne_4types()
     return 
 
 
@@ -197,10 +254,15 @@ if __name__ == "__main__":
     parser.add_argument('--plot_grad_z_x', action='store_true')
     parser.add_argument('--visualize_attention_vs_shap', action='store_true')
     parser.add_argument('--compare_shap_vs_encoder_attention_per_sample', action='store_true')
-    parser.add_argument('--plot_tsne_memory_addressing', action='store_true')
     parser.add_argument('--compare_shap_vs_anomaly_gradient_per_sample', action='store_true')
     parser.add_argument('--plot_tsne_input_vs_reconstruction', action='store_true')
-    parser.add_argument('--plot_tsne_4types', action='store_true')
+    parser.add_argument('--plot_umap_input_vs_reconstruction', action='store_true')
+    parser.add_argument('--plot_history', action='store_true')
+    parser.add_argument('--plot_tsne_memory_addressing', action='store_true')
+    parser.add_argument('--plot_umap_memory_addressing', action='store_true')
+    parser.add_argument('--plot_latent_memory_relationship', action='store_true')
+    parser.add_argument('--plot_first_latent_tsne', action='store_true')
+    parser.add_argument('--plot_first_latent_umap', action='store_true')
 
     args = parser.parse_args()
     if args.exp_name is None:
