@@ -11,7 +11,7 @@ def train_test(model_config, train_config, run):
     train_config['logger'].info(f"[run {run}]" + '-'*60)
     trainer = build_trainer(model_config, train_config)   
     start_train = time.time()    
-    trainer.training()
+    epochs = trainer.training()
     end_train = time.time()
     train_time = end_train - start_train
     
@@ -28,6 +28,7 @@ def train_test(model_config, train_config, run):
         'f1': float(mse_f1),
         'train_time': train_time,
         'test_time': test_time,
+        'epochs': epochs,
     }
     return results_dict
 

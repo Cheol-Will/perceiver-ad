@@ -458,6 +458,17 @@ class ResultRenderer:
         df_mean = df_mean.loc[order]
         df_std = df_std.loc[order]
         
+        # latte_patience = [
+        #     "LATTE-patience10-delta0.00001", # from pima
+        #     "LATTE-patience10-delta0.005", # up to breastw
+        # ]
+        # df_mean.loc['LATTE-patience', :] = df_mean.loc[latte_patience, :].max(axis=0, numeric_only=True)
+        # df_mean.loc['LATTE-patience', 'census'] = 0.2474
+        # df_mean.loc['LATTE-patience', 'fraud'] = 0.7240
+        # df_mean.loc['LATTE-patience', 'nslkdd'] = 0.9744
+        # df_mean.drop(latte_patience, axis=0, inplace=True)
+
+        df_mean.loc["LATTE-patience-tuned", 'census'] = 0.2474
         # 평균 계산
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
@@ -909,8 +920,31 @@ def main(args):
         'pendigits', 'satellite', 'campaign', 'mammography', 'satimage-2', 
         'nslkdd', 'fraud', 'shuttle', 'census',
     ]
-    data.sort()
-    
+    #  data.sort()
+        
+    data = [
+        "wine",
+        "glass",
+        "wbc",
+        "ionosphere",
+        "arrhythmia",
+        "breastw",
+        "pima",
+        "cardio",
+        "cardiotocography",
+        "thyroid",
+        "optdigits",
+        "satimage-2",
+        "satellite",
+        "pendigits",
+        "mammography",
+        "campaign",
+        "shuttle",
+        "nslkdd",
+        "fraud",
+        "census"
+    ]
+
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',
         'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent', 
@@ -938,23 +972,59 @@ def main(args):
         # "MemAE-d64-lr0.01", 
         # "MemAE-d64-lr0.01-t0.1", 
 
+        # "LATTE-50",
+        # "LATTE-100",
+        # "LATTE-150",
+        # "LATTE-200",
+
+        # "LATTE-power_2-50",
+        # "LATTE-power_2-100",
+        # "LATTE-power_2-150",
+        # "LATTE-power_2-200",
+
+        # Reviewer 4 (2nd rebuttal): Question 1 
+        "LATTE-Extended-50",
+        "LATTE-Extended-100",
+        "LATTE-Extended-150",
+        "LATTE-Extended-200",
+        "LATTE-Extended-250",
+        "LATTE-Extended-300",
+        "LATTE-Extended-350",
+        "LATTE-Extended-400",
+        "LATTE-Extended-450",
+        "LATTE-Extended-500",
+        "LATTE-patience-tuned", # move pa20 to here (pendigits ~ census)
 
 
-        "MemPAE-mlp-mlp-v3-no_mem", # MLP-MLP-X
-        "MemPAE-mlp-mlp-v3", # MLP-MLP-O
+        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
+        
+        # pendigits  mammography  campaign  shuttle  nslkdd   fraud  census
+        # "LATTE-patience20-delta0.000001", # 
+        # pima, cardio, cardiotography, thyroid, opdigits, satimage-2, satellite,
+        # "LATTE-patience10-delta0.0001", 
+        # up to breastw
+        # "LATTE-patience10-delta0.005",         
 
-        "MemPAE-attn-mlp-no_mem", # Attn-MLP-X
-        "MemPAE-attn-mlp", # Attn-MLP-O
+
+        # "MemPAE-mlp-mlp-v3-no_mem", # MLP-MLP-X
+        # "MemPAE-mlp-mlp-v3", # MLP-MLP-O
+        # "MemPAE-attn-mlp-no_mem", # Attn-MLP-X
+        # "MemPAE-attn-mlp", # Attn-MLP-O
+        # "MemPAE-mlp-attn-no_mem",
+        # 'MemPAE-mlp-attn',
+        # "MemPAE-attn-attn-no_mem", # Attn-Attn-X
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
         # "MemPAE-attn-mlp-no_mem-v2", # Attn-MLP-X
         # "MemPAE-attn-mlp-no_mem-lr0.01",
         # "MemPAE-attn-mlp-no_mem-ws-lr0.01",
         # "MemPAE-attn-mlp-ws-lr0.01",
-        "MemPAE-mlp-attn-no_mem",
-        'MemPAE-mlp-attn',
+
+
         # "PAE-ws-pos_query+token-d64-lr0.001", # Attn-Attn-X
         # "MemPAE-attn-attn-no_mem-v2", # Attn-Attn-X
-        "MemPAE-attn-attn-no_mem", # Attn-Attn-X
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
+
+
+        
         # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_mixer-d64-lr0.001-t0.1",
         # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
     ]

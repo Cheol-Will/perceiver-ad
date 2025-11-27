@@ -77,6 +77,8 @@ def get_parser():
     parser.add_argument('--use_latent_F', action='store_true')
     parser.add_argument('--config_file_name', type=str, default=None)
     parser.add_argument('--not_use_memory', action='store_true')
+    parser.add_argument('--patience', type=int, default=None)
+    parser.add_argument('--min_delta', type=float, default=1e-5)
 
     # VQVAE
     parser.add_argument('--vq_loss_weight', type=float, default=None)
@@ -119,6 +121,8 @@ def load_yaml(args):
         train_config['use_num_memories_power_2'] = args.use_num_memories_power_2
         train_config['use_num_latents_power_2'] = args.use_num_latents_power_2
         train_config['use_latent_F'] = args.use_latent_F
+        train_config['patience'] = args.patience
+        train_config['min_delta'] = args.min_delta
         model_config['not_use_memory'] = args.not_use_memory
 
     # Replace hyperparameters with data specific ones. 

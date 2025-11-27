@@ -49,6 +49,7 @@ class Trainer(object):
             info = 'Epoch:[{}]\t loss={:.4f}\t'
             running_loss = running_loss / len(self.train_loader)
             self.logger.info(info.format(epoch,loss.cpu()))
+
         print("Training complete.")
 
     @torch.no_grad()
@@ -67,3 +68,46 @@ class Trainer(object):
         rauc, ap = aucPerformance(score, test_label)
         f1 = F1Performance(score, test_label)
         return rauc, ap, f1
+    
+
+    def train_test_per_epoch(self, test_per_epochs = 50):
+        self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
+        self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
+
+        optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
+        scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
+        self.model.train()
+        print("Training Start.")
+        metrics = {
+            'rauc': [],
+            'ap': [],
+            'f1': [],
+        }
+        for epoch in range(self.epochs):
+            running_loss = 0.0
+            for step, (x_input, y_label) in enumerate(self.train_loader):
+                x_input = x_input.to(self.device)
+                loss = self.model(x_input).mean() # (B) -> scalar
+
+                running_loss += loss.item()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+            scheduler.step()
+            info = 'Epoch:[{}]\t loss={:.4f}\t'
+            running_loss = running_loss / len(self.train_loader)
+            self.logger.info(info.format(epoch,loss.cpu()))
+            if (epoch+1) % test_per_epochs == 0:
+                rauc, ap, f1 = self.evaluate()
+                metrics['rauc'].append(rauc)
+                metrics['ap'].append(ap)
+                metrics['f1'].append(f1)
+
+                print(f"Evaluate on test epoch={epoch+1}")
+                self.logger.info(f"[Epoch {epoch+1}] AUC-ROC: {rauc:.4f} | AUC-PR: {ap:.4f} | F1: {f1:.4f}")
+                
+
+
+        print("Training complete.")
+        return metrics
