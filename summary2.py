@@ -468,33 +468,33 @@ class ResultRenderer:
         # df_mean.loc['LATTE-patience', 'nslkdd'] = 0.9744
         # df_mean.drop(latte_patience, axis=0, inplace=True)
 
-        df_mean.loc["LATTE-patience-tuned", 'census'] = 0.2474
+        # df_mean.loc["LATTE-patience-tuned", 'census'] = 0.2474
         # 평균 계산
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
 
-        print("Best Model per Dataset")
-        print("="*80)
-        our_model = models + ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
-        for col in df_mean.columns:
-            # 해당 컬럼의 값들을 내림차순으로 정렬
-            sorted_values = df_mean.loc[our_model, col].sort_values(ascending=False)
+        # print("Best Model per Dataset")
+        # print("="*80)
+        # our_model = models + ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
+        # for col in df_mean.columns:
+        #     # 해당 컬럼의 값들을 내림차순으로 정렬
+        #     sorted_values = df_mean.loc[our_model, col].sort_values(ascending=False)
             
-            # Top 2 추출
-            if len(sorted_values) >= 2:
-                best1_idx = sorted_values.index[0]
-                best1_val = sorted_values.iloc[0]
-                best2_idx = sorted_values.index[1]
-                best2_val = sorted_values.iloc[1]
-                print(f"{col:20s} -> Best 1: {best1_idx:60s} ({best1_val:.4f}) | Best 2: {best2_idx:60s} ({best2_val:.4f})")
-            elif len(sorted_values) == 1:
-                # 모델이 1개만 있는 경우
-                best1_idx = sorted_values.index[0]
-                best1_val = sorted_values.iloc[0]
-                print(f"{col:20s} -> Best 1: {best1_idx:60s} (score: {best1_val:.4f})")
-            else:
-                print(f"{col:20s} -> No valid scores")
-        print("="*80 + "\n")
+        #     # Top 2 추출
+        #     if len(sorted_values) >= 2:
+        #         best1_idx = sorted_values.index[0]
+        #         best1_val = sorted_values.iloc[0]
+        #         best2_idx = sorted_values.index[1]
+        #         best2_val = sorted_values.iloc[1]
+        #         print(f"{col:20s} -> Best 1: {best1_idx:60s} ({best1_val:.4f}) | Best 2: {best2_idx:60s} ({best2_val:.4f})")
+        #     elif len(sorted_values) == 1:
+        #         # 모델이 1개만 있는 경우
+        #         best1_idx = sorted_values.index[0]
+        #         best1_val = sorted_values.iloc[0]
+        #         print(f"{col:20s} -> Best 1: {best1_idx:60s} (score: {best1_val:.4f})")
+        #     else:
+        #         print(f"{col:20s} -> No valid scores")
+        # print("="*80 + "\n")
 
 
         # 랭킹 추가
@@ -944,13 +944,20 @@ def main(args):
         "fraud",
         "census"
     ]
+    data = [
+        'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
+        'ionosphere', 'pima', 'wbc', 'wine', 'thyroid', 'optdigits', 
+        'pendigits', 'satellite', 'campaign', 'mammography', 'satimage-2', 
+        'nslkdd', 'fraud', 'shuttle', 'census',
+    ]
+    data.sort()
 
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',
         'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent', 
-        # 'NPTAD',
-        # 'RetAug',
-        'RetAugv2',
+        # 'NPTAD', ####
+        # 'RetAugv2', ####
+        # 'RetAug',  
     ]
     
     my_models = [
@@ -983,26 +990,24 @@ def main(args):
         # "LATTE-power_2-200",
 
         # Reviewer 4 (2nd rebuttal): Question 1 
-        "LATTE-Extended-50",
-        "LATTE-Extended-100",
-        "LATTE-Extended-150",
-        "LATTE-Extended-200",
-        "LATTE-Extended-250",
-        "LATTE-Extended-300",
-        "LATTE-Extended-350",
-        "LATTE-Extended-400",
-        "LATTE-Extended-450",
-        "LATTE-Extended-500",
-        "LATTE-patience-tuned", # move pa20 to here (pendigits ~ census)
-
-
-        'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
+        # "LATTE-Extended-50",
+        # "LATTE-Extended-100",
+        # "LATTE-Extended-150",
+        # "LATTE-Extended-200",
+        # "LATTE-Extended-250",
+        # "LATTE-Extended-300",
+        # "LATTE-Extended-350",
+        # "LATTE-Extended-400",
+        # "LATTE-Extended-450",
+        # "LATTE-Extended-500",
+        "LATTE-patience-tuned", 
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
         
         # pendigits  mammography  campaign  shuttle  nslkdd   fraud  census
         # "LATTE-patience20-delta0.000001", # 
         # pima, cardio, cardiotography, thyroid, opdigits, satimage-2, satellite,
         # "LATTE-patience10-delta0.0001", 
-        # up to breastw
+        # wine, glass, wbc, ionosphere, arrhythmia, breastw
         # "LATTE-patience10-delta0.005",         
 
 
@@ -1029,11 +1034,10 @@ def main(args):
         # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
     ]
     
-    # 기본 메트릭 렌더링
     keys = [
         'ratio_1.0_AUCROC', 
         'ratio_1.0_AUCPR', 
-        # 'ratio_1.0_f1'
+        'ratio_1.0_f1'
     ]
     
     for base in keys:

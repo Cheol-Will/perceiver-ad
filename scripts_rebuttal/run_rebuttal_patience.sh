@@ -18,13 +18,19 @@ data_list=(
     # shuttle census 
     # breastw pima cardio cardiotocography thyroid "satimage-2"
     # nslkdd
-    pendigits
+    # pendigits
     # census
     # mammography
     # campaign
     # shuttle
     # fraud
+    # optdigits 
+    satellite
     # pendigits  mammography  campaign  shuttle  nslkdd   fraud  census
+    # wine glass wbc ionosphere arrhythmia breastw 
+    # pima cardio cardiotocography 
+    # thyroid "satimage-2"
+
 ) # from MCM
 model_type="MemPAE"
 latent_ratio=1.0
