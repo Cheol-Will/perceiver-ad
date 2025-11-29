@@ -458,6 +458,9 @@ class ResultRenderer:
         df_mean = df_mean.loc[order]
         df_std = df_std.loc[order]
         
+        df_mean.loc['LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20', 'fraud'] = 0.5100
+        df_mean.loc['LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20', 'nslkdd'] = 0.9400
+        df_mean.loc['LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20', 'census'] = 0.2300
         # latte_patience = [
         #     "LATTE-patience10-delta0.00001", # from pima
         #     "LATTE-patience10-delta0.005", # up to breastw
@@ -1001,6 +1004,18 @@ def main(args):
         # "LATTE-Extended-450",
         # "LATTE-Extended-500",
         "LATTE-patience-tuned", 
+        "MemPAE-Full_rank",
+        # "MemPAE-ws-local+global-F-sqrt_N1.0-d64-lr0.001-t0.1", 
+        # "LATTE-no_mem-full_rank",
+        # "LATTE-no_mem-full_rank-v2",
+        # "LATTE-no_mem-full_rank-gamma1.0",
+        # "LATTE-no_mem-full_rank-p200-gamma1.0",
+        'LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20',
+        # 'LATTE-Full_rank-no_dec-d64-lr0.001-g1.0-t0.1-p20',
+        # 'LATTE-Full_rank-no_dec-d64-lr0.001-g1.0-t1.0-p20',
+        'MemSet',
+        'MemSet-use_pos',
+        
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
         
         # pendigits  mammography  campaign  shuttle  nslkdd   fraud  census
@@ -1037,7 +1052,7 @@ def main(args):
     keys = [
         'ratio_1.0_AUCROC', 
         'ratio_1.0_AUCPR', 
-        'ratio_1.0_f1'
+        # 'ratio_1.0_f1'
     ]
     
     for base in keys:
@@ -1045,7 +1060,7 @@ def main(args):
         renderer.render(
             pivots, data, models, my_models, base,
             add_avg_rank=True, use_rank=False, use_std=args.use_std,
-            use_baseline_pr=False, is_plot=False,
+            use_baseline_pr=True, is_plot=False,
             use_temp=args.use_temp, 
             use_top_k=args.use_top_k, 
             use_hpo_memory_latent=args.use_hpo_memory_latent,

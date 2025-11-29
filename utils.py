@@ -39,6 +39,7 @@ def get_parser():
     parser.add_argument('--depth', type=int, default=None)
     parser.add_argument('--hidden_dim', type=int, default=None)
     parser.add_argument('--learning_rate', type=float, default=None)
+    parser.add_argument('--sche_gamma', type=float, default=None)
 
     # Experiment
     parser.add_argument('--mlp_ratio', type=float, default=None)
@@ -77,8 +78,10 @@ def get_parser():
     parser.add_argument('--use_latent_F', action='store_true')
     parser.add_argument('--config_file_name', type=str, default=None)
     parser.add_argument('--not_use_memory', action='store_true')
+    parser.add_argument('--not_use_decoder', action='store_true')
     parser.add_argument('--patience', type=int, default=None)
     parser.add_argument('--min_delta', type=float, default=1e-5)
+    parser.add_argument('--use_pos_embedding', action='store_true')
 
     # VQVAE
     parser.add_argument('--vq_loss_weight', type=float, default=None)
@@ -116,7 +119,7 @@ def load_yaml(args):
         train_config['use_num_embeddings_power_2'] = args.use_num_embeddings_power_2
         train_config['use_num_latents_power_2'] = args.use_num_latents_power_2
 
-    if args.model_type in ['MemPAE']:
+    if args.model_type in ['MemPAE', 'MemSet']:
         train_config['use_num_memories_sqrt_NF'] = args.use_num_memories_sqrt_NF
         train_config['use_num_memories_power_2'] = args.use_num_memories_power_2
         train_config['use_num_latents_power_2'] = args.use_num_latents_power_2
@@ -124,6 +127,12 @@ def load_yaml(args):
         train_config['patience'] = args.patience
         train_config['min_delta'] = args.min_delta
         model_config['not_use_memory'] = args.not_use_memory
+        model_config['not_use_decoder'] = args.not_use_decoder
+    if args.model_type in ['MemSet']:
+        model_config['use_pos_embedding'] = args.use_pos_embedding
+
+    if args.model_type in ['PAE']: 
+        train_config['use_latent_F'] = args.use_latent_F
 
     # Replace hyperparameters with data specific ones. 
     if args.dataname in configs:
@@ -138,6 +147,7 @@ def load_yaml(args):
     train_config['train_ratio'] = args.train_ratio
     train_config['base_path'] = args.base_path    
     train_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else train_config['learning_rate']
+    train_config['sche_gamma'] = args.sche_gamma if args.sche_gamma is not None else train_config['sche_gamma']
     train_config['not_use_power_of_two'] = args.not_use_power_of_two # default False -> use power of two
     train_config['num_memories_not_use_power_of_two'] = args.num_memories_not_use_power_of_two # defualt None
     train_config['num_memories_twice'] = args.num_memories_twice # defualt None
@@ -191,6 +201,8 @@ def build_trainer(model_config, train_config):
         from models.NPTAD.Trainer import Trainer        
     elif model_type == 'RetAug':
         from models.RetAug.Trainer import Trainer        
+    elif model_type == 'MemSet':
+        from models.MemSet.Trainer import Trainer        
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Trainer import Trainer
     else:
@@ -232,7 +244,7 @@ def replace_transformer_config(args, model_config):
     if args.model_type in ['Perceiver', 'RIN']:
         model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
     
-    if args.model_type in ['MCMPAE', 'PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'PDRL']:
+    if args.model_type in ['MCMPAE', 'PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'PDRL', 'MemSet']:
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
         model_config['use_pos_enc_as_query'] = args.use_pos_enc_as_query # default False
         model_config['use_mask_token'] = args.use_mask_token # default False
@@ -241,7 +253,7 @@ def replace_transformer_config(args, model_config):
             model_config['num_latents'] = args.num_latents
 
 
-        if args.model_type in['MemPAE', 'PAE']: 
+        if args.model_type in['MemPAE', 'PAE', 'MemSet']: 
             model_config['global_decoder_query'] = args.global_decoder_query # None
             model_config['mlp_mixer_decoder'] = args.mlp_mixer_decoder # None
             model_config['mlp_mixer_encoder'] = args.mlp_mixer_encoder # None
@@ -249,7 +261,7 @@ def replace_transformer_config(args, model_config):
             model_config['mlp_decoder'] = args.mlp_decoder # None
             
 
-        if args.model_type in ['MemPAE', 'TripletMemPAE', 'PairMemPAE']: 
+        if args.model_type in ['MemPAE', 'TripletMemPAE', 'PairMemPAE', 'MemSet']: 
             model_config['sim_type'] = args.sim_type if args.sim_type is not None else model_config['sim_type']
             model_config['temperature'] = args.temperature if args.temperature is not None else model_config['temperature']
             model_config['shrink_thred'] = args.shrink_thred if args.shrink_thred is not None else model_config['shrink_thred']
@@ -268,7 +280,6 @@ def replace_mlp_config(args, model_config):
     # model_config['depth'] = args.depth if args.depth is not None else model_config['depth']
     # model_config['depth'] = args.depth if args.depth is not None else model_config['depth']
     model_config['hidden_dim'] = args.hidden_dim if args.hidden_dim is not None else model_config['hidden_dim']
-    # model_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else model_config['drop_col_prob']
 
     if args.model_type in ['MemAE', 'MultiMemAE']:
         model_config['sim_type'] = args.sim_type if args.sim_type is not None else model_config['sim_type']

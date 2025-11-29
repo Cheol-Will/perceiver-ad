@@ -117,7 +117,13 @@ class Trainer(object):
                         print(f"Best loss: {best_loss:.4f}")
                         if best_model_state is not None:
                             self.model.load_state_dict(best_model_state)
+
+                        # train_mean, train_std = self.evaluate_train()
+                        # print(f"Train Loss (mean): {train_mean:.6f}")
+
                         return epoch
+        # train_mean, train_std = self.evaluate_train()
+        # print(f"Train Loss (mean): {train_mean:.6f}")
 
         print("Training complete.")
         return self.epochs
@@ -138,6 +144,18 @@ class Trainer(object):
         rauc, ap = aucPerformance(score, test_label)
         f1 = F1Performance(score, test_label)
         return rauc, ap, f1 
+    
+    @torch.no_grad()
+    def evaluate_train(self):
+        model = self.model
+        model.eval()
+        score = []
+        for step, (x_input, y_label) in enumerate(self.train_loader):
+            x_input = x_input.to(self.device)
+            loss = model(x_input)
+            score.append(loss.data.cpu())
+        score = torch.cat(score, axis=0).numpy()
+        return score.mean(), score.std()
 
     def train_test_per_epoch(self, test_per_epochs = 50):
         print(self.model_config)

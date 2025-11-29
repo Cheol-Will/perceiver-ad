@@ -7,6 +7,7 @@ from DataSet.DataLoader import get_dataloader
 from models.PAE.Model import PAE
 from utils import aucPerformance, F1Performance
 import math
+import copy
 
 def nearest_power_of_two(x: int) -> int:
     if x < 1:
@@ -22,6 +23,10 @@ class Trainer(object):
                 model_config['num_latents'] = int(math.sqrt(model_config['num_features'])) # sqrt(F)
             else:
                 model_config['num_latents'] = nearest_power_of_two(int(math.sqrt(model_config['num_features'])))
+        if train_config['use_latent_F']:
+            print("Set num_latents = num_features")
+            model_config['num_latents'] = model_config['num_features'] 
+
         self.device = train_config['device']
         self.model = PAE(
             **model_config
@@ -33,7 +38,12 @@ class Trainer(object):
         self.epochs = train_config['epochs']
         self.model_config = model_config
         self.train_config = train_config
-
+        self.patience = train_config['patience']
+        self.min_delta = train_config['min_delta']
+        print(f"patience={self.patience} with min_delta={self.min_delta}")
+        self.path = os.path.join(train_config['base_path'], str(train_config['run']))
+        os.makedirs(self.path, exist_ok=True)    
+    
     def training(self):
         print(self.model_config)
         print(self.train_config)
@@ -45,6 +55,12 @@ class Trainer(object):
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
         self.model.train()
         print("Training Start.")
+
+        if self.patience is not None:
+            best_loss = float('inf')
+            patience_cnt = 0
+            best_model_state = None
+            min_delta = self.min_delta
 
         for epoch in range(self.epochs):
             running_loss = 0.0
@@ -59,11 +75,27 @@ class Trainer(object):
 
             scheduler.step()
             info = 'Epoch:[{}]\t loss={:.4f}\t'
-            running_loss = running_loss / len(self.train_loader)
+            avg_loss = running_loss / len(self.train_loader)
             self.logger.info(info.format(epoch,loss.cpu()))
-        print("Training complete.")
 
-    
+            if self.patience is not None:
+                if avg_loss < best_loss - min_delta:
+                    best_loss = avg_loss
+                    patience_cnt = 0
+                    best_model_state = copy.deepcopy(self.model.state_dict())
+
+                else:
+                    patience_cnt += 1
+                    if patience_cnt >= self.patience:
+                        print(f"\nEarly Stopping: No Improvement for {self.patience} epochs.")
+                        print(f"Best loss: {best_loss:.4f}")
+                        if best_model_state is not None:
+                            self.model.load_state_dict(best_model_state)
+                        return epoch
+
+        print("Training complete.")
+        return self.epochs
+
     @torch.no_grad()
     def evaluate(self):
         model = self.model

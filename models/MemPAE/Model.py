@@ -449,6 +449,7 @@ class MemPAE(nn.Module):
         mlp_mixer_decoder: bool = False, # 
         global_decoder_query: bool = False,
         not_use_memory: bool = False,
+        not_use_decoder: bool = False,
     ):
         super(MemPAE, self).__init__()
         assert num_latents is not None
@@ -468,6 +469,9 @@ class MemPAE(nn.Module):
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim) # only numerical inputs
         self.memory = MemoryUnit(num_memories, hidden_dim, sim_type, temperature, shrink_thred, top_k, num_heads)
         print("Do not use memory module" if not_use_memory else "Use memory module")
+        print("Do not use decoder" if not_use_decoder else "Use decoder")
+
+        
         
         if is_weight_sharing:
             self.block = SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
@@ -548,6 +552,7 @@ class MemPAE(nn.Module):
         self.mlp_mixer_decoder = mlp_mixer_decoder
         self.global_decoder_query = global_decoder_query
         self.not_use_memory = not_use_memory
+        self.not_use_decoder = not_use_decoder
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -636,7 +641,10 @@ class MemPAE(nn.Module):
                 attn_weight_dec = None
                 output = self.decoder(latents_hat)
             else:
-                output, attn_weight_dec = self.decoder(decoder_query, latents_hat, latents_hat, return_weight=True)
+                if self.not_use_decoder:
+                    output, attn_weight_dec = latents_hat, None
+                else:
+                    output, attn_weight_dec = self.decoder(decoder_query, latents_hat, latents_hat, return_weight=True)
             
             x_hat = self.proj(output)
         loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # keep batch dim
