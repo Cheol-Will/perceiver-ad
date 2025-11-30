@@ -2,10 +2,10 @@
 set -euo pipefail
 
 data_list=(
-    arrhythmia breastw cardio cardiotocography glass census 
+    # arrhythmia breastw cardio cardiotocography glass census 
     # ionosphere pima wbc wine thyroid optdigits pendigits fraud 
-    # satellite "satimage-2" campaign mammography shuttle 
-    # nslkdd 
+    #  "satimage-2" campaign mammography shuttle 
+    satellite nslkdd 
 )
 
 train_ratio=(1.0)

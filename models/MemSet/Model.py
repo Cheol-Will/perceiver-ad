@@ -520,6 +520,10 @@ class MemSet(nn.Module):
         x, 
     ):
         feature_embedding = self.feature_tokenizer(x) # (B, F, D)
+        if self.pos_embedding is not None:
+            batch_size = feature_embedding.shape[0]
+            pos_embedding = self.pos_embedding.expand(batch_size, -1, -1) # (B, F, D)
+            feature_embedding = feature_embedding + pos_embedding
         feature_embedding = self.blocks(feature_embedding)
         feature_embedding_hat, _ = self.memory(feature_embedding)
         x_hat = self.proj(feature_embedding_hat)

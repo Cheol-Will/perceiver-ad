@@ -161,7 +161,7 @@ class NPTAD(nn.Module):
         dropout_prob: float = 0.0,
         train_mask_prob: float = 0.15,
         test_mask_prob: float = 0.15,
-        num_reconstructions: int = 10,
+        num_reconstructions: int = 15,
         max_masked_features: int = None,
     ):
         super(NPTAD, self).__init__()
@@ -192,9 +192,10 @@ class NPTAD(nn.Module):
         if max_masked_features is None:
             max_masked_features = max(1, int(num_features * test_mask_prob))
         self.max_masked_features = max_masked_features
-        self.mask_bank = self._generate_mask_bank(num_features, max_masked_features)
+        # self.mask_bank = self._generate_mask_bank(num_features, max_masked_features)
+        self.mask_bank = None
         
-        print(f"Mask bank: {len(self.mask_bank)} masks, max {max_masked_features} features")
+        # print(f"Mask bank: {len(self.mask_bank)} masks, max {max_masked_features} features")
         
         self.reset_parameters()
 

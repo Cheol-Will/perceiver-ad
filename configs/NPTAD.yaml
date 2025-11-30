@@ -8,6 +8,7 @@ default:
     random_seed: 42
     num_workers: 0
     preprocess: 'standard'
+    use_mask_bank: false
   model_config:
     num_heads: 4
     depth: 2
@@ -17,12 +18,26 @@ default:
     train_mask_prob: 0.15
     test_mask_prob: 0.15
 
+census:
+  hidden_dim: 8
+  batch_size: 128
+  learning_rate: 0.001
+  use_mask_bank: false
+  epochs: 50
+
+nslkdd:
+  batch_size: 512
+  use_mask_bank: false
+  epochs: 50
+
 fraud:
   batch_size: 2048
+  use_mask_bank: false
   epochs: 50
 
 glass:
   num_heads: 4
+  use_mask_bank: true
   depth: 2
   hidden_dim: 16
   dropout_prob: 0.1
@@ -31,6 +46,7 @@ glass:
   test_mask_prob: 0.15
 
 wine:
+  use_mask_bank: true
   num_heads: 4
   depth: 2
   hidden_dim: 8
@@ -43,6 +59,7 @@ breastw :
   num_heads: 4
   depth: 2
   hidden_dim: 16
+  use_mask_bank: true
   dropout_prob: 0.1
   learning_rate: 0.01
   train_mask_prob: 0.15
@@ -56,6 +73,7 @@ pima:
   learning_rate: 0.01
   train_mask_prob: 0.15
   test_mask_prob: 0.15
+  use_mask_bank: true
 
 thyroid:
   num_heads: 4
@@ -65,6 +83,7 @@ thyroid:
   learning_rate: 0.01
   train_mask_prob: 0.1
   test_mask_prob: 0.15
+  use_mask_bank: true
 
 pendigits: 
   num_heads: 4
@@ -74,6 +93,7 @@ pendigits:
   learning_rate: 0.01
   train_mask_prob: 0.25
   test_mask_prob: 0.15
+  use_mask_bank: true
 
 mammography:
   num_heads: 4
@@ -83,6 +103,7 @@ mammography:
   learning_rate: 0.01
   train_mask_prob: 0.25
   test_mask_prob: 0.15
+  use_mask_bank: true
 
 cardio:
   num_heads: 4
@@ -92,6 +113,7 @@ cardio:
   learning_rate: 0.01
   train_mask_prob: 0.15
   test_mask_prob: 0.15
+  use_mask_bank: true
 
 satimage-2:
   num_heads: 4
@@ -101,6 +123,7 @@ satimage-2:
   learning_rate: 0.01
   train_mask_prob: 0.1
   test_mask_prob: 0.1
+  use_mask_bank: true
 
 satellite:
   num_heads: 4
@@ -110,3 +133,4 @@ satellite:
   learning_rate: 0.01
   train_mask_prob: 0.1
   test_mask_prob: 0.1
+  use_mask_bank: true

@@ -1,3 +1,4 @@
+import torch
 from torch.utils.data import DataLoader
 from DataSet.MyDataset import MyDataset, DisentDataset, load_and_preprocess
 
@@ -29,10 +30,33 @@ def get_dataloader(train_config: dict):
     else:
         train_set, test_set = get_dataset(train_config)
 
-    train_loader = DataLoader(train_set, 
-                              batch_size=train_config['batch_size'], 
-                              num_workers=train_config['num_workers'],
-                              shuffle=False)
-    test_loader = DataLoader(test_set, batch_size=train_config['batch_size'], shuffle=False)
+    
+    if train_config['model_type'] == 'NPTAD':
+        train_sampler = torch.utils.data.distributed.DistributedSampler(
+            train_set,
+            shuffle=True
+        )
+        train_loader = DataLoader(
+            train_set,
+            batch_size=train_config['batch_size'],
+            sampler=train_sampler,
+            num_workers=train_config['num_workers'],
+            pin_memory=True
+        )
+    else:
+        train_loader = DataLoader(
+            train_set, 
+            batch_size=train_config['batch_size'], 
+            num_workers=train_config['num_workers'],
+            shuffle=True,
+            pin_memory=True
+        )
+    
+    test_loader = DataLoader(
+        test_set, 
+        batch_size=train_config['batch_size'], 
+        shuffle=False,
+        pin_memory=True
+    )
 
     return train_loader, test_loader

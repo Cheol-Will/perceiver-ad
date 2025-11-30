@@ -5,7 +5,15 @@ set -euo pipefail
 # num_features up to 30 is fine.
 # from cardio ours is faster.
 data_list=(
-    fraud
+    # fraud
+    census
+
+    # arrhythmia
+    # optdigits
+    # pendigits
+    # campaign 
+
+    # nslkdd
 
 
     # shuttle
@@ -27,7 +35,7 @@ data_list=(
 train_ratio=(1.0)
 model="NPTAD"
 for data in "${data_list[@]}"; do
-    python main.py \
+    torchrun --nproc_per_node=6 main.py \
         --dataname "$data" \
-        --model $model
+        --model $model 
 done

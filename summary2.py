@@ -458,46 +458,17 @@ class ResultRenderer:
         df_mean = df_mean.loc[order]
         df_std = df_std.loc[order]
         
-        df_mean.loc['LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20', 'fraud'] = 0.5100
-        df_mean.loc['LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20', 'nslkdd'] = 0.9400
-        df_mean.loc['LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20', 'census'] = 0.2300
-        # latte_patience = [
-        #     "LATTE-patience10-delta0.00001", # from pima
-        #     "LATTE-patience10-delta0.005", # up to breastw
-        # ]
+        # df_mean.loc['NPTAD', 'census'] = 0.2672
+        # df_mean.loc['NPTAD', 'fraud'] = 0.3868
+        # df_mean.loc['LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20', 'fraud'] = 0.5100
         # df_mean.loc['LATTE-patience', :] = df_mean.loc[latte_patience, :].max(axis=0, numeric_only=True)
         # df_mean.loc['LATTE-patience', 'census'] = 0.2474
-        # df_mean.loc['LATTE-patience', 'fraud'] = 0.7240
-        # df_mean.loc['LATTE-patience', 'nslkdd'] = 0.9744
         # df_mean.drop(latte_patience, axis=0, inplace=True)
-
         # df_mean.loc["LATTE-patience-tuned", 'census'] = 0.2474
-        # 평균 계산
+
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
 
-        # print("Best Model per Dataset")
-        # print("="*80)
-        # our_model = models + ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
-        # for col in df_mean.columns:
-        #     # 해당 컬럼의 값들을 내림차순으로 정렬
-        #     sorted_values = df_mean.loc[our_model, col].sort_values(ascending=False)
-            
-        #     # Top 2 추출
-        #     if len(sorted_values) >= 2:
-        #         best1_idx = sorted_values.index[0]
-        #         best1_val = sorted_values.iloc[0]
-        #         best2_idx = sorted_values.index[1]
-        #         best2_val = sorted_values.iloc[1]
-        #         print(f"{col:20s} -> Best 1: {best1_idx:60s} ({best1_val:.4f}) | Best 2: {best2_idx:60s} ({best2_val:.4f})")
-        #     elif len(sorted_values) == 1:
-        #         # 모델이 1개만 있는 경우
-        #         best1_idx = sorted_values.index[0]
-        #         best1_val = sorted_values.iloc[0]
-        #         print(f"{col:20s} -> Best 1: {best1_idx:60s} (score: {best1_val:.4f})")
-        #     else:
-        #         print(f"{col:20s} -> No valid scores")
-        # print("="*80 + "\n")
 
 
         # 랭킹 추가
@@ -958,7 +929,7 @@ def main(args):
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',
         'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent', 
-        # 'NPTAD', ####
+        'NPTAD', ####
         # 'RetAugv2', ####
         # 'RetAug',  
     ]
@@ -1003,18 +974,22 @@ def main(args):
         # "LATTE-Extended-400",
         # "LATTE-Extended-450",
         # "LATTE-Extended-500",
+
+        # 251130
         "LATTE-patience-tuned", 
-        "MemPAE-Full_rank",
+        # "MemPAE-Full_rank",
+        # 'LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20',
+        # 'MemSet',
+        # 'MemSet-use_pos',
+
+
         # "MemPAE-ws-local+global-F-sqrt_N1.0-d64-lr0.001-t0.1", 
         # "LATTE-no_mem-full_rank",
         # "LATTE-no_mem-full_rank-v2",
         # "LATTE-no_mem-full_rank-gamma1.0",
         # "LATTE-no_mem-full_rank-p200-gamma1.0",
-        'LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20',
         # 'LATTE-Full_rank-no_dec-d64-lr0.001-g1.0-t0.1-p20',
         # 'LATTE-Full_rank-no_dec-d64-lr0.001-g1.0-t1.0-p20',
-        'MemSet',
-        'MemSet-use_pos',
         
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
         
@@ -1052,7 +1027,7 @@ def main(args):
     keys = [
         'ratio_1.0_AUCROC', 
         'ratio_1.0_AUCPR', 
-        # 'ratio_1.0_f1'
+        'ratio_1.0_f1'
     ]
     
     for base in keys:
