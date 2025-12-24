@@ -496,13 +496,13 @@ class OELATTE(nn.Module):
             
             # Loss: push shuffled samples' predictions towards the batch mean (uniform prediction)
             loss_oe = F.mse_loss(x_hat_shuf, x_mean, reduction='none').mean(dim=1)  # (B,)
-            if self.oe_lambda_memory != 0:
-                pass
+            
+            if self.oe_lambda_memory != 0 and weight_shuf is not None:
+                loss_memory_entropy = compute_entropy_loss(weight_shuf)
+                loss = loss_rec + self.oe_lambda * loss_oe + self.oe_lambda_memory * loss_memory_entropy
             else:
-                pass
-                # loss_
-            # Total loss with weighted OE loss
-            loss = loss_rec + self.oe_lambda * loss_oe
+                loss = loss_rec + self.oe_lambda * loss_oe
+
         else:
             loss = loss_rec
     

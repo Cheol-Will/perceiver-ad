@@ -86,8 +86,7 @@ def get_parser():
     # Outlier Exposure
     parser.add_argument('--oe_lambda', type=float, default=1.0)
     parser.add_argument('--oe_shuffle_ratio', type=float, default=0.3)
-
-
+    parser.add_argument('--oe_lambda_memory', type=float, default=0.0)
 
     # VQVAE
     parser.add_argument('--vq_loss_weight', type=float, default=None)
@@ -257,6 +256,7 @@ def replace_transformer_config(args, model_config):
     if args.model_type == 'OELATTE':
         model_config['oe_lambda'] = args.oe_lambda # 
         model_config['oe_shuffle_ratio'] = args.oe_shuffle_ratio # 
+        model_config['oe_lambda_memory'] = args.oe_lambda_memory # 
 
     if args.model_type in ['OELATTE', 'MCMPAE', 'PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'PDRL', 'MemSet']:
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
