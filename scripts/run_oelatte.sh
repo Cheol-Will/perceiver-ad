@@ -2,13 +2,9 @@
 set -euo pipefail
 
 data_list=(
-    
-    
-    wine glass wbc ionosphere arrhythmia breastw pima cardio cardiotocography thyroid 
-    
-    # optdigits satellite "satimage-2" pendigits mammography campaign shuttle fraud 
- 
- 
+    # wine glass wbc ionosphere arrhythmia breastw pima cardio cardiotocography thyroid 
+    # optdigits satellite "satimage-2" pendigits mammography campaign shuttle 
+
     # longer training
     # nslkdd  # done
     # fraud
