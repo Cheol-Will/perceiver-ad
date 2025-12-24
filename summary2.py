@@ -1001,7 +1001,11 @@ def main(args):
         "OELATTE-d16-oe_lam1.0-oe_rat0.3",
         "OELATTE-d8-oe_lam1.0-oe_rat0.3",
 
+        "OELATTE-d64-oe_lam0.1-oe_rat0.3",
+        "OELATTE-d32-oe_lam0.1-oe_rat0.3",
         "OELATTE-d16-oe_lam0.1-oe_rat0.3",
+        "OELATTE-d8-oe_lam0.1-oe_rat0.3",
+
 
         
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # Ours

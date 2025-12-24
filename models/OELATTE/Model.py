@@ -7,6 +7,18 @@ def hard_shrink_relu(input, lambd=0, epsilon=1e-12):
     output = (F.relu(input-lambd) * input) / (torch.abs(input - lambd) + epsilon)
     return output
         
+def compute_entropy_loss(weight):
+    """
+    Entropy loss so that memory weight becomes uniform.
+    """
+    eps = 1e-8
+    weight = weight + eps
+    
+    entropy = -(weight * torch.log(weight)).sum(dim=-1)  # (B, N)
+    entropy_loss = -entropy.mean()
+    
+    return entropy_loss
+
 class MemoryUnit(nn.Module):
     def __init__(
         self,
@@ -314,6 +326,7 @@ class OELATTE(nn.Module):
         use_oe: bool = False,
         oe_lambda: float = 1.0,
         oe_shuffle_ratio: float = 0.3,
+        oe_lambda_memory: float = 0.0,
     ):
         super(OELATTE, self).__init__()
         assert num_latents is not None
@@ -372,6 +385,7 @@ class OELATTE(nn.Module):
         self.use_oe = use_oe
         self.oe_lambda = oe_lambda
         self.oe_shuffle_ratio = oe_shuffle_ratio
+        self.oe_lambda_memory = oe_lambda_memory
         
         self.reset_parameters()
 
@@ -465,7 +479,7 @@ class OELATTE(nn.Module):
                     latents_shuf, _ = block(latents_shuf, return_weight=True)
             
             if not self.not_use_memory:
-                latents_hat_shuf, _ = self.memory(latents_shuf)
+                latents_hat_shuf, weight_shuf = self.memory(latents_shuf)
             else:
                 latents_hat_shuf = latents_shuf
             
@@ -482,7 +496,11 @@ class OELATTE(nn.Module):
             
             # Loss: push shuffled samples' predictions towards the batch mean (uniform prediction)
             loss_oe = F.mse_loss(x_hat_shuf, x_mean, reduction='none').mean(dim=1)  # (B,)
-            
+            if self.oe_lambda_memory != 0:
+                pass
+            else:
+                pass
+                # loss_
             # Total loss with weighted OE loss
             loss = loss_rec + self.oe_lambda * loss_oe
         else:

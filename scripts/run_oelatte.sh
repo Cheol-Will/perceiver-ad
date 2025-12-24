@@ -2,9 +2,11 @@
 set -euo pipefail
 
 data_list=(
+    
+    
     # wine glass wbc ionosphere arrhythmia breastw pima cardio cardiotocography thyroid 
-    # optdigits satellite "satimage-2" pendigits mammography campaign shuttle 
-
+    optdigits satellite "satimage-2" pendigits mammography campaign shuttle 
+ 
     # longer training
     # nslkdd  # done
     # fraud
@@ -13,7 +15,7 @@ data_list=(
 ) 
 
 model_type="OELATTE"
-hidden_dim=32
+hidden_dim=64
 oe_lambda=0.1 # default 1.0
 oe_shuffle_ratio=0.3 # default 0.3
 for data in "${data_list[@]}"; do
