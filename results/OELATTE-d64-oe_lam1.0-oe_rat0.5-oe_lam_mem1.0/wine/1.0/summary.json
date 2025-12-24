@@ -1,0 +1,140 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "num_latents": 3,
+        "num_memories": 7,
+        "depth": 4,
+        "hidden_dim": 64,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.1,
+        "sim_type": "cos",
+        "use_oe": true,
+        "oe_lambda": 1.0,
+        "oe_shuffle_ratio": 0.5,
+        "oe_lambda_memory": 1.0,
+        "is_weight_sharing": false,
+        "use_pos_enc_as_query": false,
+        "use_mask_token": false,
+        "num_features": 13
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "model_type": "OELATTE",
+        "dataset_name": "wine",
+        "train_ratio": 1.0,
+        "base_path": "results/OELATTE-d64-oe_lam1.0-oe_rat0.5-oe_lam_mem1.0/wine/1.0",
+        "not_use_power_of_two": false,
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.873,
+        "AUC-PR": 0.5520191957426579,
+        "f1": 0.5700000000000001
+    },
+    "total_time": 17.09705901145935,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.7949999999999999,
+            "AUC-PR": 0.3963058043166402,
+            "f1": 0.3,
+            "train_time": 2.1225717067718506,
+            "test_time": 0.01790928840637207,
+            "epochs": 20
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.935,
+            "AUC-PR": 0.7553557744937055,
+            "f1": 0.7,
+            "train_time": 1.2291572093963623,
+            "test_time": 0.018424034118652344,
+            "epochs": 20
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.8816666666666667,
+            "AUC-PR": 0.5956951871657754,
+            "f1": 0.6,
+            "train_time": 1.2205302715301514,
+            "test_time": 0.017477035522460938,
+            "epochs": 20
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9133333333333333,
+            "AUC-PR": 0.5435792709705753,
+            "f1": 0.6,
+            "train_time": 1.6514673233032227,
+            "test_time": 0.018345355987548828,
+            "epochs": 29
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.8383333333333334,
+            "AUC-PR": 0.4688582087402414,
+            "f1": 0.5,
+            "train_time": 1.2380998134613037,
+            "test_time": 0.0068051815032958984,
+            "epochs": 20
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9233333333333333,
+            "AUC-PR": 0.5627688539530645,
+            "f1": 0.6,
+            "train_time": 1.584258794784546,
+            "test_time": 0.018959760665893555,
+            "epochs": 28
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9266666666666667,
+            "AUC-PR": 0.7222116963496273,
+            "f1": 0.7,
+            "train_time": 1.6726315021514893,
+            "test_time": 0.02186107635498047,
+            "epochs": 29
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9166666666666667,
+            "AUC-PR": 0.5729954103867148,
+            "f1": 0.6,
+            "train_time": 1.2625923156738281,
+            "test_time": 0.016851186752319336,
+            "epochs": 20
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.7083333333333334,
+            "AUC-PR": 0.27221380471380474,
+            "f1": 0.4,
+            "train_time": 1.233330249786377,
+            "test_time": 0.018325090408325195,
+            "epochs": 20
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.8916666666666667,
+            "AUC-PR": 0.6302079463364292,
+            "f1": 0.7,
+            "train_time": 1.6048810482025146,
+            "test_time": 0.015793800354003906,
+            "epochs": 28
+        }
+    ]
+}

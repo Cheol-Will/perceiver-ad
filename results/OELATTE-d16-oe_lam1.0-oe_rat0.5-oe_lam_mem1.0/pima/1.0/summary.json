@@ -1,0 +1,140 @@
+{
+    "model_config": {
+        "num_heads": 4,
+        "num_latents": 2,
+        "num_memories": 15,
+        "depth": 4,
+        "hidden_dim": 16,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.1,
+        "sim_type": "cos",
+        "use_oe": true,
+        "oe_lambda": 1.0,
+        "oe_shuffle_ratio": 0.5,
+        "oe_lambda_memory": 1.0,
+        "is_weight_sharing": false,
+        "use_pos_enc_as_query": false,
+        "use_mask_token": false,
+        "num_features": 8
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "model_type": "OELATTE",
+        "dataset_name": "pima",
+        "train_ratio": 1.0,
+        "base_path": "results/OELATTE-d16-oe_lam1.0-oe_rat0.5-oe_lam_mem1.0/pima/1.0",
+        "not_use_power_of_two": false,
+        "num_memories_not_use_power_of_two": false,
+        "num_memories_twice": false,
+        "contamination_ratio": null,
+        "latent_ratio": null,
+        "memory_ratio": null,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.7162731343283582,
+        "AUC-PR": 0.6945893929085085,
+        "f1": 0.6880597014925373
+    },
+    "total_time": 19.923423290252686,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.7097313432835821,
+            "AUC-PR": 0.6803932791655495,
+            "f1": 0.6791044776119403,
+            "train_time": 2.5205299854278564,
+            "test_time": 0.02610611915588379,
+            "epochs": 29
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.6941791044776119,
+            "AUC-PR": 0.6577545850852518,
+            "f1": 0.6828358208955224,
+            "train_time": 1.6490492820739746,
+            "test_time": 0.010703325271606445,
+            "epochs": 29
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.7128358208955226,
+            "AUC-PR": 0.6991934035022295,
+            "f1": 0.6828358208955224,
+            "train_time": 1.6838321685791016,
+            "test_time": 0.025346755981445312,
+            "epochs": 29
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.7264477611940299,
+            "AUC-PR": 0.70644427161209,
+            "f1": 0.6902985074626866,
+            "train_time": 1.6509075164794922,
+            "test_time": 0.0260772705078125,
+            "epochs": 29
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.714223880597015,
+            "AUC-PR": 0.6886648430537142,
+            "f1": 0.6902985074626866,
+            "train_time": 1.6806232929229736,
+            "test_time": 0.024241924285888672,
+            "epochs": 29
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.7250149253731344,
+            "AUC-PR": 0.7204857304391207,
+            "f1": 0.6865671641791045,
+            "train_time": 1.6983795166015625,
+            "test_time": 0.14216399192810059,
+            "epochs": 29
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.7272388059701491,
+            "AUC-PR": 0.6987921534628196,
+            "f1": 0.7014925373134329,
+            "train_time": 1.688129186630249,
+            "test_time": 0.024277687072753906,
+            "epochs": 29
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.6927313432835821,
+            "AUC-PR": 0.6700218121949073,
+            "f1": 0.6716417910447762,
+            "train_time": 1.6998217105865479,
+            "test_time": 0.012652158737182617,
+            "epochs": 29
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.7244925373134328,
+            "AUC-PR": 0.7075999661166135,
+            "f1": 0.6902985074626866,
+            "train_time": 1.6736085414886475,
+            "test_time": 0.02601766586303711,
+            "epochs": 29
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.7358358208955225,
+            "AUC-PR": 0.7165438844527889,
+            "f1": 0.7052238805970149,
+            "train_time": 1.6832928657531738,
+            "test_time": 0.02566075325012207,
+            "epochs": 29
+        }
+    ]
+}
