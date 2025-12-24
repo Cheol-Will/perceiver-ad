@@ -62,7 +62,13 @@ class Trainer(object):
         self.train_config = train_config
         self.patience = train_config['patience']
         self.min_delta = train_config['min_delta']
+        self.writer = train_config.get('writer', None)
+        self.run = train_config['run']
+        self.dataname = train_config.get('dataname', 'unknown')  # ✅ dataname 추가
+        self.eval_interval = train_config.get('eval_interval', 10)
+        
         print(f"patience={self.patience} with min_delta={self.min_delta}")
+        print(f"eval_interval={self.eval_interval}")
         self.path = os.path.join(train_config['base_path'], str(train_config['run']))
         os.makedirs(self.path, exist_ok=True)
         
@@ -74,8 +80,8 @@ class Trainer(object):
         print(self.model_config)
         print(self.train_config)
 
-        self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
-        self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
+        self.logger.info(self.train_loader.dataset.data[0])
+        self.logger.info(self.test_loader.dataset.data[0])
 
         optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
@@ -92,7 +98,7 @@ class Trainer(object):
             running_loss = 0.0
             for step, (x_input, y_label) in enumerate(self.train_loader):
                 x_input = x_input.to(self.device)
-                loss = self.model(x_input).mean() # (B) -> scalar
+                loss = self.model(x_input).mean()
 
                 running_loss += loss.item()
                 optimizer.zero_grad()
@@ -100,16 +106,27 @@ class Trainer(object):
                 optimizer.step()
 
             scheduler.step()
-            info = 'Epoch:[{}]\t loss={:.4f}\t'
             avg_loss = running_loss / len(self.train_loader)
-            self.logger.info(info.format(epoch,loss.cpu()))
+            
+            # Log training
+            info = 'Epoch:[{}]\t loss={:.4f}\t'
+            self.logger.info(info.format(epoch, avg_loss))
+            self._log_training(epoch, avg_loss)
+            
+            # Evaluate periodically
+            if (epoch + 1) % self.eval_interval == 0:
+                print(f"\n{'='*80}")
+                print(f"[Evaluation at Epoch {epoch+1}]")
+                metrics = self.evaluate()
+                self.logger.info(f"[Epoch {epoch+1}] AUC-ROC: {metrics['rauc']:.4f} | AUC-PR: {metrics['ap']:.4f} | F1: {metrics['f1']:.4f}")
+                self._log_evaluation(epoch, metrics)
+                print(f"{'='*80}\n")
 
             if self.patience is not None:
                 if avg_loss < best_loss - min_delta:
                     best_loss = avg_loss
                     patience_cnt = 0
                     best_model_state = copy.deepcopy(self.model.state_dict())
-
                 else:
                     patience_cnt += 1
                     if patience_cnt >= self.patience:
@@ -117,14 +134,8 @@ class Trainer(object):
                         print(f"Best loss: {best_loss:.4f}")
                         if best_model_state is not None:
                             self.model.load_state_dict(best_model_state)
-
-                        # train_mean, train_std = self.evaluate_train()
-                        # print(f"Train Loss (mean): {train_mean:.6f}")
-
                         return epoch
-        # train_mean, train_std = self.evaluate_train()
-        # print(f"Train Loss (mean): {train_mean:.6f}")
-
+        
         print("Training complete.")
         return self.epochs
 
@@ -143,7 +154,17 @@ class Trainer(object):
         test_label = torch.cat(test_label, axis=0).numpy()
         rauc, ap = aucPerformance(score, test_label)
         f1 = F1Performance(score, test_label)
-        return rauc, ap, f1 
+        avg_normal_score = score[test_label == 0].mean()
+        avg_abnormal_score = score[test_label == 1].mean()
+        
+        metric_dict = {
+            'rauc': float(rauc),
+            'ap': float(ap),
+            'f1': float(f1),
+            'avg_normal_score': float(avg_normal_score), 
+            'avg_abnormal_score': float(avg_abnormal_score)
+        } 
+        return metric_dict
     
     @torch.no_grad()
     def evaluate_train(self):
@@ -161,8 +182,8 @@ class Trainer(object):
         print(self.model_config)
         print(self.train_config)
   
-        self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
-        self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split
+        self.logger.info(self.train_loader.dataset.data[0])
+        self.logger.info(self.test_loader.dataset.data[0])
 
         optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
@@ -177,7 +198,7 @@ class Trainer(object):
             running_loss = 0.0
             for step, (x_input, y_label) in enumerate(self.train_loader):
                 x_input = x_input.to(self.device)
-                loss = self.model(x_input).mean() # (B) -> scalar
+                loss = self.model(x_input).mean()
 
                 running_loss += loss.item()
                 optimizer.zero_grad()
@@ -185,19 +206,50 @@ class Trainer(object):
                 optimizer.step()
 
             scheduler.step()
+            avg_loss = running_loss / len(self.train_loader)
+            
+            # Log training
             info = 'Epoch:[{}]\t loss={:.4f}\t'
-            running_loss = running_loss / len(self.train_loader)
-            self.logger.info(info.format(epoch,loss.cpu()))
+            self.logger.info(info.format(epoch, avg_loss))
+            self._log_training(epoch, avg_loss)
+            
             if (epoch+1) % test_per_epochs == 0:
-                rauc, ap, f1 = self.evaluate()
-                metrics['rauc'].append(rauc)
-                metrics['ap'].append(ap)
-                metrics['f1'].append(f1)
+                metric_dict = self.evaluate()
+                metrics['rauc'].append(metric_dict['rauc'])
+                metrics['ap'].append(metric_dict['ap'])
+                metrics['f1'].append(metric_dict['f1'])
+                metrics['avg_normal_score'].append(metric_dict['avg_normal_score'])
+                metrics['avg_abnormal_score'].append(metric_dict['avg_abnormal_score'])
 
                 print(f"Evaluate on test epoch={epoch+1}")
-                self.logger.info(f"[Epoch {epoch+1}] AUC-ROC: {rauc:.4f} | AUC-PR: {ap:.4f} | F1: {f1:.4f}")
+                self.logger.info(f"[Epoch {epoch+1}] AUC-ROC: {metric_dict['rauc']:.4f} | AUC-PR: {metric_dict['ap']:.4f} | F1: {metric_dict['f1']:.4f}")
+                
+                # Log evaluation
+                self._log_evaluation(epoch, metric_dict)
+                
                 cur_path = os.path.join(self.path, f"model_{epoch+1}.pth")
                 torch.save(self.model, cur_path)
 
         print("Training complete.")
         return metrics
+    
+    def _log_training(self, epoch, avg_loss):
+        """Log training metrics to tensorboard"""
+        if self.writer:
+            self.writer.add_scalar(f"{self.dataname}/Run_{self.run}/Train/Loss", avg_loss, epoch)
+    
+    def _log_evaluation(self, epoch, metrics):
+        """Log evaluation metrics to tensorboard"""
+        if self.writer:
+            self.writer.add_scalars(f"{self.dataname}/Run_{self.run}/Eval/Metrics", 
+                {
+                    'RAUC': metrics['rauc'],
+                    'AP': metrics['ap'],
+                    'F1': metrics['f1']
+                }, epoch)
+
+            self.writer.add_scalars(f"{self.dataname}/Run_{self.run}/Eval/Scores", 
+                {
+                    'Avg_Normal_Score': metrics['avg_normal_score'],
+                    'Avg_Abnormal_Score': metrics['avg_abnormal_score']
+                }, epoch)

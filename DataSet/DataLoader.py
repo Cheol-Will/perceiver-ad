@@ -1,6 +1,19 @@
 import torch
 from torch.utils.data import DataLoader
 from DataSet.MyDataset import MyDataset, DisentDataset, load_and_preprocess
+from utils import get_input_dim
+dataset_name_list = [
+    "arrhythmia", "breastw", "campaign", "cardio", "cardiotocography", 
+    "census", "fraud", "glass", "ionosphere", "mammography", 
+    "nslkdd", "optdigits", "pendigits", "pima", "satellite", 
+    "satimage-2", "shuttle", "thyroid", "wbc", "wine",
+]
+num_features_list = [
+    274, 9, 62, 21, 21,
+    500, 29, 9, 33, 6,
+    122, 64, 16, 8, 36,
+    36, 9, 6, 30, 13,
+]
 
 def get_dataset(train_config: dict):
     dataset_name = train_config['dataset_name']
@@ -60,3 +73,31 @@ def get_dataloader(train_config: dict):
     )
 
     return train_loader, test_loader
+
+def get_multitask_dataloader(train_config: dict):
+
+    contamination_ratio = train_config['contamination_ratio'] if 'contamination_ratio' in train_config else None
+    train_ratio =  train_config['train_ratio']
+    train_loader_list, test_loader_list = [], []
+    for dataset_name in dataset_name_list:
+        train_data, train_label, test_data, test_label = load_and_preprocess(train_config['data_dir'], dataset_name, train_config['preprocess'], contamination_ratio, train_ratio)
+        train_set = MyDataset(train_data, train_label)
+        test_set = MyDataset(test_data, test_label)
+        train_loader = DataLoader(
+            train_set, 
+            batch_size=train_config['batch_size'], 
+            num_workers=train_config['num_workers'],
+            shuffle=True,
+            pin_memory=True
+        )
+        test_loader = DataLoader(
+            test_set, 
+            batch_size=train_config['batch_size'], 
+            shuffle=False,
+            pin_memory=True
+        )
+
+        train_loader_list.append(train_loader)
+        test_loader_list.append(test_loader)
+
+    return train_loader_list, test_loader_list, num_features_list

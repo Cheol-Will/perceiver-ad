@@ -887,15 +887,7 @@ def main(args):
     renderer = ResultRenderer(config)
     specialized = SpecializedAnalysis(config, renderer)
     
-    # 기본 데이터셋 및 모델 정의
-    data = [
-        'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
-        'ionosphere', 'pima', 'wbc', 'wine', 'thyroid', 'optdigits', 
-        'pendigits', 'satellite', 'campaign', 'mammography', 'satimage-2', 
-        'nslkdd', 'fraud', 'shuttle', 'census',
-    ]
-    #  data.sort()
-        
+    # 기본 데이터셋 및 모델 정의        
     data = [
         "wine",
         "glass",
@@ -918,13 +910,36 @@ def main(args):
         "fraud",
         "census"
     ]
-    data = [
-        'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
-        'ionosphere', 'pima', 'wbc', 'wine', 'thyroid', 'optdigits', 
-        'pendigits', 'satellite', 'campaign', 'mammography', 'satimage-2', 
-        'nslkdd', 'fraud', 'shuttle', 'census',
+    datasets = [
+        "wine",
+        "glass",
+        "pima",
+        "breastw",
+        "wbc",
+        "ionosphere",
+        "thyroid",
+        "cardio",
+        "cardiotocography",
+        "mammography",
+        "pendigits",
+        "arrhythmia",
+        "satimage-2",
+        "satellite",
+        "optdigits",
+        "shuttle",
+        "campaign",
+        "fraud",
+        "nslkdd",
+        "census",
     ]
-    data.sort()
+
+    # data = [
+    #     'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
+    #     'ionosphere', 'pima', 'wbc', 'wine', 'thyroid', 'optdigits', 
+    #     'pendigits', 'satellite', 'campaign', 'mammography', 'satimage-2', 
+    #     'nslkdd', 'fraud', 'shuttle', 'census',
+    # ]
+    # data.sort()
 
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',
@@ -976,7 +991,71 @@ def main(args):
         # "LATTE-Extended-500",
 
         # 251130
+        
+        
         "LATTE-patience-tuned", 
+        "MemPAE-ws-pos_query-d16-lr0.05-t0.1",
+        "MemPAE-ws-pos_query-d32-lr0.05-t0.1",
+        "OELATTE-d64-oe_lam1.0-oe_rat0.3",
+        "OELATTE-d32-oe_lam1.0-oe_rat0.3",
+        "OELATTE-d16-oe_lam1.0-oe_rat0.3",
+        "OELATTE-d8-oe_lam1.0-oe_rat0.3",
+
+        "OELATTE-d16-oe_lam0.1-oe_rat0.3",
+
+        
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # Ours
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
+        # 'MemPAE-ws-pos_query+token-d64-lr0.001', # Ours
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.1", # cardio - thyroid
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.5", 
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t1.0", 
+
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1", 
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.5", 
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t1.0", 
+
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t0.1", 
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t0.5", 
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t1.0", # - pima
+
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t0.1", 
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t0.5", 
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t1.0", 
+        
+        
+        # "MemPAE-ws-l2-d64-lr0.001",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d16-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d16-lr0.001-t1.0",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d32-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d32-lr0.001-t1.0",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t1.0",
+
+
+        # 251224
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top1-d32-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top1-d32-lr0.001-t1.0",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t1.0",
+
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top3-d32-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top3-d32-lr0.001-t1.0",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top3-d64-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top3-d64-lr0.001-t1.0",
+
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d32-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d32-lr0.001-t1.0",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t1.0",
+
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top10-d32-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top10-d32-lr0.001-t1.0",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t0.1",
+        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t1.0",
+
+
+        # "MemPAE-ws-use_ent_score-ent0.0001-L4-d64-lr0.001",
         # "MemPAE-Full_rank",
         # 'LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20',
         # 'MemSet',

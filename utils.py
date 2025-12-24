@@ -83,6 +83,12 @@ def get_parser():
     parser.add_argument('--min_delta', type=float, default=1e-5)
     parser.add_argument('--use_pos_embedding', action='store_true')
 
+    # Outlier Exposure
+    parser.add_argument('--oe_lambda', type=float, default=1.0)
+    parser.add_argument('--oe_shuffle_ratio', type=float, default=0.3)
+
+
+
     # VQVAE
     parser.add_argument('--vq_loss_weight', type=float, default=None)
     parser.add_argument('--use_num_embeddings_sqrt_NF', action='store_true')
@@ -107,7 +113,7 @@ def load_yaml(args):
     model_config = configs['default']['model_config']
     train_config = configs['default']['train_config']
 
-    if args.model_type in ['Perceiver', 'RIN', 'MCMPAE', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE']:
+    if args.model_type in ['OELATTE', 'Perceiver', 'RIN', 'MCMPAE', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE']:
         model_config = replace_transformer_config(args, model_config)
     elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
         model_config = replace_mlp_config(args, model_config)
@@ -140,6 +146,8 @@ def load_yaml(args):
             if k in model_config:
                 model_config[k] = v
             if k in train_config:
+                train_config[k] = v
+            if k in ['patience', 'min_delta']:
                 train_config[k] = v
 
     train_config['model_type'] = args.model_type
@@ -203,6 +211,8 @@ def build_trainer(model_config, train_config):
         from models.RetAug.Trainer import Trainer        
     elif model_type == 'MemSet':
         from models.MemSet.Trainer import Trainer        
+    elif model_type == 'OELATTE':
+        from models.OELATTE.Trainer import Trainer        
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Trainer import Trainer
     else:
@@ -244,7 +254,11 @@ def replace_transformer_config(args, model_config):
     if args.model_type in ['Perceiver', 'RIN']:
         model_config['drop_col_prob'] = args.drop_col_prob if args.drop_col_prob is not None else model_config['drop_col_prob']
     
-    if args.model_type in ['MCMPAE', 'PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'PDRL', 'MemSet']:
+    if args.model_type == 'OELATTE':
+        model_config['oe_lambda'] = args.oe_lambda # 
+        model_config['oe_shuffle_ratio'] = args.oe_shuffle_ratio # 
+
+    if args.model_type in ['OELATTE', 'MCMPAE', 'PAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'PDRL', 'MemSet']:
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
         model_config['use_pos_enc_as_query'] = args.use_pos_enc_as_query # default False
         model_config['use_mask_token'] = args.use_mask_token # default False
@@ -321,3 +335,40 @@ def get_logger(filename, verbosity=1, name=None):
     sh.setFormatter(formatter)
     logger.addHandler(sh)
     return logger
+
+def load_yaml_multitask(args):
+    dict_to_import = args.model_type + '.yaml'
+    with open(f'configs/{dict_to_import}', 'r') as f:
+        configs = yaml.safe_load(f)
+
+    model_config = configs['default']['model_config']
+    train_config = configs['default']['train_config']
+    train_config['model_type'] = args.model_type
+    train_config['train_ratio'] = args.train_ratio
+    train_config['base_path'] = args.base_path
+    
+    # Override model_config with command-line arguments if provided
+    if args.num_heads is not None:
+        model_config['num_heads'] = args.num_heads
+    if args.depth is not None:
+        model_config['depth'] = args.depth
+    if args.hidden_dim is not None:
+        model_config['hidden_dim'] = args.hidden_dim
+    if args.num_latents is not None:
+        model_config['num_latents'] = args.num_latents
+    if args.num_memories is not None:
+        model_config['num_memories'] = args.num_memories
+    if args.is_weight_sharing:
+        model_config['is_weight_sharing'] = args.is_weight_sharing
+    if args.temperature is not None:
+        model_config['temperature'] = args.temperature
+    if args.sim_type is not None:
+        model_config['sim_type'] = args.sim_type
+    
+    # Override train_config with command-line arguments if provided
+    if args.learning_rate is not None:
+        train_config['learning_rate'] = args.learning_rate
+    if args.sche_gamma is not None:
+        train_config['sche_gamma'] = args.sche_gamma
+
+    return model_config, train_config

@@ -4,6 +4,7 @@ import argparse
 import os
 import json
 import time
+from torch.utils.tensorboard import SummaryWriter
 from utils import get_parser, get_logger, build_trainer, load_yaml
 
 def train_test_npt(model_config, train_config, run):
@@ -51,7 +52,8 @@ def train_test(model_config, train_config, run):
     train_time = end_train - start_train
     
     start_test = time.time()    
-    mse_rauc, mse_ap, mse_f1 = trainer.evaluate()
+    metrics = trainer.evaluate()
+    mse_rauc, mse_ap, mse_f1 = metrics['rauc'], metrics['ap'], metrics['f1']
     end_test = time.time()    
     test_time = end_test - start_test
     
@@ -68,14 +70,12 @@ def train_test(model_config, train_config, run):
     return results_dict
 
 def main(args):
-    # NPTAD는 무조건 DDP
     is_nptad = args.model_type == 'NPTAD'
     local_rank = int(os.environ.get("LOCAL_RANK", 0)) if is_nptad else 0
     
     os.makedirs(args.base_path, exist_ok=True)
     summary_path = os.path.join(args.base_path, 'summary.json')
     
-    # rank 0에서만 체크
     if local_rank == 0 and os.path.exists(summary_path):
         print(f"summary.json already exists at {summary_path}. Skipping execution.")
         return
@@ -84,6 +84,21 @@ def main(args):
     model_config, train_config = load_yaml(args)
     train_config['logger'] = logger
     train_config['device'] = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    writer = None
+    if local_rank == 0:
+        # 공통 tensorboard 경로: exp_name/train_ratio 수준
+        if args.contamination_ratio is not None:
+            tensorboard_dir = f"results/{args.exp_name}/tensorboard_contam{args.contamination_ratio}/{args.train_ratio}"
+        else:
+            tensorboard_dir = f"results/{args.exp_name}/tensorboard/{args.train_ratio}"
+        
+        os.makedirs(tensorboard_dir, exist_ok=True)
+        # dataname을 포함한 writer 생성
+        writer = SummaryWriter(log_dir=os.path.join(tensorboard_dir, args.dataname))
+        print(f"TensorBoard logs will be saved to: {tensorboard_dir}/{args.dataname}")
+    
+    train_config['writer'] = writer
     
     if train_config['num_workers'] > 0:
         torch.multiprocessing.set_start_method('spawn', force=True)
@@ -106,14 +121,16 @@ def main(args):
             all_results.append(result)
         else:
             result = train_test_npt(model_config, train_config, seed)
-            # rank 0에서만 결과 저장
             if local_rank == 0 and result is not None:
                 all_results.append(result)
             
     end = time.time()
     total_time = end - start
     
-    # rank 0에서만 summary 저장
+    # Close TensorBoard writer
+    if writer is not None:
+        writer.close()
+    
     if local_rank == 0 and len(all_results) > 0:
         mean_metrics = {
             'AUC-ROC': float(np.mean([r['AUC-ROC'] for r in all_results])),
@@ -122,6 +139,7 @@ def main(args):
         }
         train_config.pop('device')
         train_config.pop('logger')
+        train_config.pop('writer')  # 
         
         summary = {
             'model_config': model_config,
