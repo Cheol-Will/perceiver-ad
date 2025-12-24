@@ -12,10 +12,10 @@ data_list=(
 ) 
 
 model_type="OELATTE"
-hidden_dim=16
-oe_lambda=1.0 # default 1.0
+hidden_dim=64
+oe_lambda=0.1 # default 1.0
 oe_shuffle_ratio=0.1 # default 0.3
-oe_lambda_memory=0.1
+oe_lambda_memory=1.0
 for data in "${data_list[@]}"; do
     exp_name="$model_type-d$hidden_dim-oe_lam$oe_lambda-oe_rat$oe_shuffle_ratio-oe_lam_mem$oe_lambda_memory"
     echo "Running $exp_name on $data."
