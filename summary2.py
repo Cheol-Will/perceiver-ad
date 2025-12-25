@@ -996,27 +996,8 @@ def main(args):
         "LATTE-patience-tuned", 
         "MemPAE-ws-pos_query-d16-lr0.05-t0.1",
         "MemPAE-ws-pos_query-d32-lr0.05-t0.1",
-        "OELATTE-d64-oe_lam1.0-oe_rat0.3",
-        "OELATTE-d32-oe_lam1.0-oe_rat0.3",
-        "OELATTE-d16-oe_lam1.0-oe_rat0.3",
-        "OELATTE-d8-oe_lam1.0-oe_rat0.3",
+  
 
-        "OELATTE-d64-oe_lam0.1-oe_rat0.3",
-        "OELATTE-d32-oe_lam0.1-oe_rat0.3",
-        "OELATTE-d16-oe_lam0.1-oe_rat0.3",
-        "OELATTE-d8-oe_lam0.1-oe_rat0.3",
-
-
-        "OELATTE-d64-oe_lam1.0-oe_rat0.3-oe_lam_mem0.1",
-        "OELATTE-d32-oe_lam1.0-oe_rat0.3-oe_lam_mem0.1",
-        "OELATTE-d16-oe_lam1.0-oe_rat0.3-oe_lam_mem0.1",
-
-        "OELATTE-d64-oe_lam0.1-oe_rat0.3-oe_lam_mem0.1",
-        "OELATTE-d32-oe_lam0.1-oe_rat0.3-oe_lam_mem0.1",
-        "OELATTE-d16-oe_lam0.1-oe_rat0.3-oe_lam_mem0.1",
-
-
-        
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # Ours
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
         # 'MemPAE-ws-pos_query+token-d64-lr0.001', # Ours
@@ -1116,6 +1097,22 @@ def main(args):
         # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
     ]
     
+    hidden_dim_list = [64, 32, 16]
+    oe_lambda_list = [0.1, 1.0]
+    oe_shuffle_ratio_list = [0.1, 0.3, 0.5]
+    for hidden_dim in hidden_dim_list:
+        for oe_lambda in oe_lambda_list:
+            for e_shuffle_ratio in oe_shuffle_ratio_list:
+                my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}")
+
+    oe_lam_mem_list = [0.1, 1.0]
+    for hidden_dim in hidden_dim_list:
+        for oe_lambda in oe_lambda_list:
+            for oe_lam_mem in oe_lam_mem_list:
+                for e_shuffle_ratio in oe_shuffle_ratio_list:
+                    my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-oe_lam_mem{oe_lam_mem}")
+
+
     keys = [
         'ratio_1.0_AUCROC', 
         'ratio_1.0_AUCPR', 
