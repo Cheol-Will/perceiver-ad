@@ -889,19 +889,19 @@ def main(args):
     
     # 기본 데이터셋 및 모델 정의        
     data = [
-        # "wine",
-        # "glass",
-        # "wbc",
-        # "ionosphere",
-        # "arrhythmia",
-        # "breastw",
-        # "pima",
-        # "cardio",
-        # "cardiotocography",
-        # "thyroid",
-        # "optdigits",
-        # "satimage-2",
-        # "satellite",
+        "wine",
+        "glass",
+        "wbc",
+        "ionosphere",
+        "arrhythmia",
+        "breastw",
+        "pima",
+        "cardio",
+        "cardiotocography",
+        "thyroid",
+        "optdigits",
+        "satimage-2",
+        "satellite", 
         "pendigits",
         "mammography",
         "campaign",
@@ -994,8 +994,9 @@ def main(args):
         
         
         "LATTE-patience-tuned", 
-        "MemPAE-ws-pos_query-d16-lr0.05-t0.1",
-        "MemPAE-ws-pos_query-d32-lr0.05-t0.1",
+        "OELATTE-temp",
+        # "MemPAE-ws-pos_query-d16-lr0.05-t0.1",
+        # "MemPAE-ws-pos_query-d32-lr0.05-t0.1",
   
 
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # Ours
@@ -1109,17 +1110,17 @@ def main(args):
     hidden_dim_list = [64, 32, 16]
     oe_lambda_list = [0.1, 1.0]
     oe_shuffle_ratio_list = [0.1, 0.3, 0.5]
-    for hidden_dim in hidden_dim_list:
-        for oe_lambda in oe_lambda_list:
-            for e_shuffle_ratio in oe_shuffle_ratio_list:
-                my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}")
+    # for hidden_dim in hidden_dim_list:
+    #     for oe_lambda in oe_lambda_list:
+    #         for e_shuffle_ratio in oe_shuffle_ratio_list:
+    #             my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}")
 
-    oe_lam_mem_list = [0.01, 0.1, 1.0]
-    for hidden_dim in hidden_dim_list:
-        for oe_lambda in oe_lambda_list:
-            for oe_lam_mem in oe_lam_mem_list:
-                for e_shuffle_ratio in oe_shuffle_ratio_list:
-                    my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-oe_lam_mem{oe_lam_mem}")
+    # oe_lam_mem_list = [0.01, 0.1, 1.0]
+    # for hidden_dim in hidden_dim_list:
+    #     for oe_lambda in oe_lambda_list:
+    #         for oe_lam_mem in oe_lam_mem_list:
+    #             for e_shuffle_ratio in oe_shuffle_ratio_list:
+    #                 my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-oe_lam_mem{oe_lam_mem}")
 
 
     keys = [
