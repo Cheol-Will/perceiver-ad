@@ -902,13 +902,13 @@ def main(args):
         # "optdigits",
         # "satimage-2",
         # "satellite",
-        # "pendigits",
-        # "mammography",
-        # "campaign",
-        # "shuttle",
-        # "nslkdd",
-        # "fraud",
-        # "census"
+        "pendigits",
+        "mammography",
+        "campaign",
+        "shuttle",
+        "nslkdd",
+        "fraud",
+        "census"
     ]
     datasets = [
         "wine",
@@ -1097,6 +1097,15 @@ def main(args):
         # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
     ]
     
+    # OELATTE-d64-oe_lam1.0-oe_rat0.5-oe_lam_mem1.0 - 0.8612 cardio
+    # OELATTE-d64-oe_lam1.0-oe_rat0.1-oe_lam_mem1.0 - 0.7446 cardiotocography
+    # OELATTE-d64-oe_lam0.1-oe_rat0.5-oe_lam_mem1.0 - 0.8019 thyroid
+    # OELATTE-d16-oe_lam0.1-oe_rat0.5 - 0.3485
+    # OELATTE-d64-oe_lam0.1-oe_rat0.3-oe_lam_mem1.0 - 0.9641
+    # OELATTE-d32-oe_lam0.1-oe_rat0.1-oe_lam_mem0.01 - 0.8551 sat
+
+
+
     hidden_dim_list = [64, 32, 16]
     oe_lambda_list = [0.1, 1.0]
     oe_shuffle_ratio_list = [0.1, 0.3, 0.5]
@@ -1105,7 +1114,7 @@ def main(args):
             for e_shuffle_ratio in oe_shuffle_ratio_list:
                 my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}")
 
-    oe_lam_mem_list = [0.1, 1.0]
+    oe_lam_mem_list = [0.01, 0.1, 1.0]
     for hidden_dim in hidden_dim_list:
         for oe_lambda in oe_lambda_list:
             for oe_lam_mem in oe_lam_mem_list:
