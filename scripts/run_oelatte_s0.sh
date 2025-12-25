@@ -15,10 +15,10 @@ data_list=(
 model_type="OELATTE"
 # hidden_dim_list=(64)
 # hidden_dim_list=(32)
-hidden_dim_list=(16)
+# hidden_dim_list=(16)
 oe_lambda_list=(0.1 1.0) # default 1.0
 oe_shuffle_ratio_list=(0.1 0.3 0.5) # default 0.3
-oe_lambda_memory=0.1
+oe_lambda_memory=0.01
 
 for data in "${data_list[@]}"; do
     for hidden_dim in "${hidden_dim_list[@]}"; do
