@@ -1,0 +1,38 @@
+default: 
+  train_config:
+    data_dir: 'Data/'
+    epochs: 250
+    learning_rate: 0.01
+    sche_gamma: 0.95
+    batch_size: 512
+    random_seed: 42
+    num_workers: 0
+    preprocess: 'standard'
+  model_config:
+    num_heads: 4
+    depth: 4
+    hidden_dim: 16
+    mlp_ratio: 4.0
+    dropout_prob: 0.0
+    temperature: 0.1
+   
+census:
+  batch_size: 2048
+  learning_rate: 0.001
+  sche_gamma: 0.98
+  patience: 50
+  min_delta: 0.00001
+
+fraud:
+  batch_size: 2048
+  learning_rate: 0.001
+  sche_gamma: 0.98
+  patience: 50
+  min_delta: 0.00001
+
+nslkdd:
+  batch_size: 2048
+  learning_rate: 0.001
+  sche_gamma: 0.98
+  patience: 50
+  min_delta: 0.00001

@@ -38,8 +38,8 @@ class Trainer(object):
         self.epochs = train_config['epochs']
         self.model_config = model_config
         self.train_config = train_config
-        self.patience = train_config.get('patience', 20)
-        self.min_delta = train_config.get('min_delta', 0.005)
+        self.patience = train_config.get('patience', 5)
+        self.min_delta = train_config.get('min_delta', 0.0)
         self.writer = train_config.get('writer', None)
         self.run = train_config['run']
         self.dataname = train_config.get('dataset_name', 'unknown')  # 

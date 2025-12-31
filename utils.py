@@ -40,6 +40,7 @@ def get_parser():
     parser.add_argument('--hidden_dim', type=int, default=None)
     parser.add_argument('--learning_rate', type=float, default=None)
     parser.add_argument('--sche_gamma', type=float, default=None)
+    parser.add_argument('--epochs', type=int, default=None)
 
     # Experiment
     parser.add_argument('--mlp_ratio', type=float, default=None)
@@ -88,6 +89,12 @@ def get_parser():
     parser.add_argument('--oe_shuffle_ratio', type=float, default=0.3)
     parser.add_argument('--oe_lambda_memory', type=float, default=0.0)
 
+    # MQ
+    parser.add_argument('--queue_size', type=int, default=1024)
+    parser.add_argument('--momentum', type=float, default=0.999)
+    parser.add_argument('--commitment_cost', type=float, default=0.25)
+    parser.add_argument('--reconstruction_weight', type=float, default=1.0)
+
     # VQVAE
     parser.add_argument('--vq_loss_weight', type=float, default=None)
     parser.add_argument('--use_num_embeddings_sqrt_NF', action='store_true')
@@ -112,7 +119,7 @@ def load_yaml(args):
     model_config = configs['default']['model_config']
     train_config = configs['default']['train_config']
 
-    if args.model_type in ['OELATTE', 'Perceiver', 'RIN', 'MCMPAE', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE']:
+    if args.model_type in ['MBT', 'MQ', 'OELATTE', 'Perceiver', 'RIN', 'MCMPAE', 'PAE', 'PAEKNN', 'PVAE', 'PVQVAE', 'MemPAE', 'TripletMemPAE', 'PairMemPAE']:
         model_config = replace_transformer_config(args, model_config)
     elif args.model_type in ['MemAE', 'MultiMemAE', 'RINMLP']:
         model_config = replace_mlp_config(args, model_config)
@@ -133,11 +140,23 @@ def load_yaml(args):
         train_config['min_delta'] = args.min_delta
         model_config['not_use_memory'] = args.not_use_memory
         model_config['not_use_decoder'] = args.not_use_decoder
+        
     if args.model_type in ['MemSet']:
         model_config['use_pos_embedding'] = args.use_pos_embedding
 
     if args.model_type in ['PAE']: 
         train_config['use_latent_F'] = args.use_latent_F
+
+    if args.model_type == 'MQ':
+        model_config['queue_size'] = args.queue_size
+        model_config['momentum'] = args.momentum
+        model_config['commitment_cost'] = args.commitment_cost
+        model_config['reconstruction_weight'] = args.reconstruction_weight
+        
+    if args.model_type == 'MBT':
+        model_config['temperature'] = args.temperature if args.temperature is not None else model_config['temperature']
+        model_config['top_k'] = args.top_k # None
+
 
     # Replace hyperparameters with data specific ones. 
     if args.dataname in configs:
@@ -155,6 +174,7 @@ def load_yaml(args):
     train_config['base_path'] = args.base_path    
     train_config['learning_rate'] = args.learning_rate if args.learning_rate is not None else train_config['learning_rate']
     train_config['sche_gamma'] = args.sche_gamma if args.sche_gamma is not None else train_config['sche_gamma']
+    train_config['epochs'] = args.epochs if args.epochs is not None else train_config['epochs']
     train_config['not_use_power_of_two'] = args.not_use_power_of_two # default False -> use power of two
     train_config['num_memories_not_use_power_of_two'] = args.num_memories_not_use_power_of_two # defualt None
     train_config['num_memories_twice'] = args.num_memories_twice # defualt None
@@ -212,6 +232,10 @@ def build_trainer(model_config, train_config):
         from models.MemSet.Trainer import Trainer        
     elif model_type == 'OELATTE':
         from models.OELATTE.Trainer import Trainer        
+    elif model_type == 'MQ':
+        from models.MQ.Trainer import Trainer
+    elif model_type == 'MBT':
+        from models.MBT.Trainer import Trainer
     elif model_type in BASELINE_MODELS:
         from models.Baselines.Trainer import Trainer
     else:
@@ -262,7 +286,9 @@ def replace_transformer_config(args, model_config):
         model_config['is_weight_sharing'] = args.is_weight_sharing # default False
         model_config['use_pos_enc_as_query'] = args.use_pos_enc_as_query # default False
         model_config['use_mask_token'] = args.use_mask_token # default False
-            
+        model_config['latent_loss_weight'] = args.latent_loss_weight # defualt None
+        model_config['entropy_loss_weight'] = args.entropy_loss_weight # defualt None
+
         if args.num_latents is not None:
             model_config['num_latents'] = args.num_latents
 

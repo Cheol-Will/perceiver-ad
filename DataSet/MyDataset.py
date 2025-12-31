@@ -34,6 +34,23 @@ class MyDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
+    
+class MQDataset(Dataset):
+    """
+    Dataset for MQ model that returns sample indices along with data.
+    This enables the model to exclude self-samples from the queue during training.
+    """
+    def __init__(self, data, label):
+        self.data = torch.tensor(data, dtype=torch.float32)
+        self.label = torch.tensor(label, dtype=torch.long)
+        self.num_samples = len(data)
+    
+    def __len__(self):
+        return self.num_samples
+    
+    def __getitem__(self, idx):
+        # Returns: (data, label, global_index)
+        return self.data[idx], self.label[idx], idx
 
 class DisentDataset(Dataset):
     def __init__(self, data, label, patch_size, overlap):

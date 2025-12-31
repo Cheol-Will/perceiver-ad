@@ -574,7 +574,6 @@ class MemPAE(nn.Module):
     
         batch_size, num_features = x.shape # (B, F)
 
-
         if self.mlp_encoder:
             latents = self.encoder(x) # (B, F) -> (B, 1, D)
 

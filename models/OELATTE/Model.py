@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from models.layers import FeatureTokenizer, SelfAttention, CrossAttention, MultiHeadAttention, OutputProjection
 
 # relu based hard shrinkage function, only works for positive values
 def hard_shrink_relu(input, lambd=0, epsilon=1e-12):
@@ -15,7 +16,7 @@ def compute_entropy_loss(weight):
     weight = weight + eps
     
     entropy = -(weight * torch.log(weight)).sum(dim=-1)  # (B, N)
-    entropy_loss = -entropy.mean()
+    entropy_loss = -entropy.mean(dim=1) # (B, )
     
     return entropy_loss
 
@@ -97,209 +98,72 @@ class MemoryUnit(nn.Module):
                 weight = hard_shrink_relu(weight, lambd=self.shrink_thres)
                 weight = F.normalize(weight, p=1, dim=-1)
 
-        read = weight @ self.memories # (B, N, M) @ (M, D) = (B, N, D)                           
-        return read, weight  
+        read = weight @ self.memories # (B, N, M) @ (M, D) = (B, N, D)
+        return read, weight
 
-class MLP(nn.Module):
-    """A dense module following attention in Transformer block."""
-    def __init__(
-        self,
-        dim: int,
-        dim_multiplier: float = 2.0,
-        drop: float = 0.0,
-    ):
-        super(MLP, self).__init__()
-        hidden_dim = int(dim * dim_multiplier)
 
-        self.fc1 = nn.Linear(dim, hidden_dim)
-        self.act = nn.GELU()
-        self.drop1 = nn.Dropout(drop)
-        self.norm = nn.LayerNorm(hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, dim)
-        self.drop2 = nn.Dropout(drop)
-
-        self.reset_parameters()
-
-    def reset_parameters(self):
-       for module in self.modules():
-            if isinstance(module, nn.Linear):
-                nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.zeros_(module.bias)
-
-    def forward(self, x):
-        x = self.drop1(self.act(self.fc1(x)))
-        x = self.norm(x)
-        x = self.drop2(self.fc2(x))
-        return x        
-
-class MultiHeadAttention(nn.Module):
+class OutlierExposureModule(nn.Module):
     """
-        Multihead attention module
+    Outlier Exposure module that generates pseudo-outliers by shuffling features
+    and encourages uniform predictions for these outliers.
     """
     def __init__(
         self,
-        dim: int,
-        num_heads: int = 1,
-        qkv_bias: bool = False,
-        qk_norm: bool = True,
-        scale_norm: bool = True,
-        proj_bias: bool = False,
-        attn_drop: float = 0.0,
-        proj_drop: float = 0.0,
-        normalization: str = 'LayerNorm',
+        shuffle_ratio: float = 0.3,
+        oe_lambda: float = 1.0,
+        oe_lambda_memory: float = 0.0,
     ):
         super().__init__()
-        assert dim % num_heads == 0
-
-        self.num_heads = num_heads
-        self.head_dim = dim // num_heads
-        self.scale = self.head_dim ** -0.5
+        self.shuffle_ratio = shuffle_ratio
+        self.oe_lambda = oe_lambda
+        self.oe_lambda_memory = oe_lambda_memory
         
-        self.q = nn.Linear(dim, dim, bias=qkv_bias) 
-        self.k = nn.Linear(dim, dim, bias=qkv_bias) 
-        self.v = nn.Linear(dim, dim, bias=qkv_bias) 
-        
-        self.q_norm = getattr(nn, normalization)(self.head_dim) if qk_norm else nn.Identity()
-        self.k_norm = getattr(nn, normalization)(self.head_dim) if qk_norm else nn.Identity()
-        self.attn_drop = nn.Dropout(attn_drop)
-        self.norm = getattr(nn, normalization)(dim) if scale_norm else nn.Identity()
-        self.proj = nn.Linear(dim, dim, bias=proj_bias)
-        self.proj_drop = nn.Dropout(proj_drop)
-
-        self.reset_parameters()
-
-    def reset_parameters(self,):
-        for module in self.modules():
-            if isinstance(module, nn.Linear):
-                nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.zeros_(module.bias)
-                    
-    def forward(self, x_q, x_k, x_v, return_weight = False):
-        """
-            x_q: (B, S, D)
-            x_k: (B, F, D)
-            x_v: (B, F, D)
-        """
-        assert x_q.ndim == 3
-        q = self.q(x_q) # (B, S, D)
-        k = self.k(x_k) # (B, F, D)
-        v = self.v(x_v) # (B, F, D)
-        B, S, D = q.shape
-        _, F, D = k.shape
-
-        q = q.reshape(B, S, self.num_heads, self.head_dim).permute(0, 2, 1, 3) # (B, H, S, D_H)
-        k = k.reshape(B, F, self.num_heads, self.head_dim).permute(0, 2, 1, 3) # (B, H, F, D_H)
-        v = v.reshape(B, F, self.num_heads, self.head_dim).permute(0, 2, 1, 3) # (B, H, F, D_H)
-
-        q, k = self.q_norm(q), self.k_norm(k)
-        q = q * self.scale 
-        attn = torch.einsum('bhsd,bhfd->bhsf', q, k) # (B, H, S, F)
-        attn = attn.softmax(dim=-1) # (B, H, S, F)
-        attn = self.attn_drop(attn)  
-        x = torch.einsum('bhsf,bhfd->bhsd', attn, v)
-        x = x.transpose(1, 2).reshape(B, S, -1)
-
-        x = self.norm(x)
-        x = self.proj(x)
-        x = self.proj_drop(x)
-
-        if return_weight:
-            return x, attn 
-        else:
-            return x # (B, S ,D)
-
-class CrossAttention(nn.Module):
-    def __init__(
-        self,
-        hidden_dim: int,
-        num_heads: int,
-        mlp_ratio: float,
-        dropout_prob: float = 0.0,
-    ):
-        super(CrossAttention, self).__init__()
-        self.attention = MultiHeadAttention(
-            dim=hidden_dim,
-            num_heads=num_heads,
-        )     
-        self.mlp = MLP(hidden_dim, mlp_ratio, dropout_prob)    
-
-    def forward(self, x_q, x_k, x_v, return_weight = False):
-        if return_weight:
-            x_attn, attn = self.attention(x_q, x_k, x_v, return_weight)
-            x_q = x_q + x_attn
-            x_q = x_q + self.mlp(x_q)
-            return x_q, attn
-        else: 
-            x_q = x_q + self.attention(x_q, x_k, x_v, return_weight)
-            x_q = x_q + self.mlp(x_q)
-            return x_q
+        print(f"Init OutlierExposureModule: lambda={oe_lambda}, "
+              f"shuffle_ratio={shuffle_ratio}, lambda_memory={oe_lambda_memory}")
     
-class SelfAttention(nn.Module):
-    def __init__(
-        self,
-        hidden_dim: int,
-        num_heads: int,
-        mlp_ratio: float,
-        dropout_prob: float = 0.0,
-    ):
-        super(SelfAttention, self).__init__()
-
-        self.attention = MultiHeadAttention(
-            dim=hidden_dim,
-            num_heads=num_heads,
-        )     
-        self.mlp = MLP(hidden_dim, mlp_ratio, dropout_prob)    
-
-    def forward(self, x, return_weight = False):
-        if return_weight:
-            x_attn, attn = self.attention(x, x, x, return_weight)
-            x = x + x_attn
-            x = x + self.mlp(x)
-            return x, attn
-        else: 
-            x = x + self.attention(x, x, x, return_weight)
-            x = x + self.mlp(x)
-            return x    
-
-class FeatureTokenizer(nn.Module):
-    def __init__(self, num_features, hidden_dim):
-        super(FeatureTokenizer, self).__init__()
-        self.embedding_matrix = nn.Parameter(torch.empty(1, num_features, hidden_dim))
-        self.reset_parameters()
-        
-    def reset_parameters(self):
-        nn.init.xavier_uniform_(self.embedding_matrix)
-        
-    def forward(self, x):
+    def shuffle_features(self, x):
         """
-        x: (batch_size, num_features)
-        return: (batch_size, num_features, hidden_dim)
+        Shuffle a subset of features to break inter-column dependencies
+        Args:
+            x: (B, F) input features
+        Returns:
+            x_shuffled: (B, F) with some features shuffled
         """
-        x_embedded = x.unsqueeze(-1) * self.embedding_matrix  # (batch_size, num_features, hidden_dim)
-        return x_embedded
-
-
-class OutputProjection(nn.Module):
-    def __init__(self, num_features, hidden_dim):
-        super(OutputProjection, self).__init__()
-        self.embedding_matrix = nn.Parameter(torch.empty(1, num_features, hidden_dim))
-        self.reset_parameters()
+        batch_size, num_features = x.shape
+        x_shuffled = x.clone()
         
-    def reset_parameters(self):
-        nn.init.xavier_uniform_(self.embedding_matrix)
+        # Select features to shuffle
+        num_shuffle = max(1, int(num_features * self.shuffle_ratio))
+        shuffle_indices = torch.randperm(num_features, device=x.device)[:num_shuffle]
         
-    def forward(self, x):
+        # Shuffle selected features across batch
+        for idx in shuffle_indices:
+            perm = torch.randperm(batch_size, device=x.device)
+            x_shuffled[:, idx] = x[perm, idx]
+        
+        return x_shuffled
+    
+    def compute_oe_loss(self, x, x_hat_shuf, weight_shuf=None):
         """
-        x: (batch_size, num_features, hidden_dim)
-        return: (batch_size, num_features)
+        Compute outlier exposure loss
+        Args:
+            x: (B, F) original input features (before shuffling)
+            x_hat_shuf: (B, F) reconstructed shuffled features
+            weight_shuf: (B, N, M) optional memory weights for shuffled data
+        Returns:
+            loss_oe: scalar tensor, total OE loss
         """
-        x = x * self.embedding_matrix  # (batch_size, num_features, hidden_dim)
-        x = x.sum(dim=-1)  # (batch_size, num_features)
+        # Push shuffled reconstruction toward original (pre-shuffle) samples
+        loss_oe = F.mse_loss(x_hat_shuf, x, reduction='none').mean(dim=1)  # (B,)
         
-        return x
-
+        # Add memory entropy loss if applicable
+        if self.oe_lambda_memory != 0 and weight_shuf is not None:
+            loss_memory_entropy = compute_entropy_loss(weight_shuf)
+            total_loss = self.oe_lambda * loss_oe + self.oe_lambda_memory * loss_memory_entropy
+        else:
+            total_loss = self.oe_lambda * loss_oe
+        
+        return total_loss
 
 class OELATTE(nn.Module):
     def __init__(
@@ -327,6 +191,8 @@ class OELATTE(nn.Module):
         oe_lambda: float = 1.0,
         oe_shuffle_ratio: float = 0.3,
         oe_lambda_memory: float = 0.0,
+        entropy_loss_weight: float = 0.0,
+        latent_loss_weight: float = 0.0,
     ):
         super(OELATTE, self).__init__()
         assert num_latents is not None
@@ -337,8 +203,6 @@ class OELATTE(nn.Module):
             top_k = min(top_k, num_memories)
 
         print("Init MemPAE with weight_sharing" if is_weight_sharing else "Init MemPAE without weight sharing")
-        if use_oe:
-            print(f"Using Outlier Exposure with uniform prediction: lambda={oe_lambda}, shuffle_ratio={oe_shuffle_ratio}")
 
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim)
         self.memory = MemoryUnit(num_memories, hidden_dim, sim_type, temperature, shrink_thred, top_k, num_heads)
@@ -380,12 +244,19 @@ class OELATTE(nn.Module):
         self.global_decoder_query = global_decoder_query
         self.not_use_memory = not_use_memory
         self.not_use_decoder = not_use_decoder
+        self.entropy_loss_weight = entropy_loss_weight
+        self.latent_loss_weight = latent_loss_weight
         
-        # OE parameters
+        # OE module
         self.use_oe = use_oe
-        self.oe_lambda = oe_lambda
-        self.oe_shuffle_ratio = oe_shuffle_ratio
-        self.oe_lambda_memory = oe_lambda_memory
+        if use_oe:
+            self.oe_module = OutlierExposureModule(
+                shuffle_ratio=oe_shuffle_ratio,
+                oe_lambda=oe_lambda,
+                oe_lambda_memory=oe_lambda_memory
+            )
+        else:
+            self.oe_module = None
         
         self.reset_parameters()
 
@@ -395,36 +266,11 @@ class OELATTE(nn.Module):
         nn.init.trunc_normal_(self.latents_query, std=0.02)
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
-    def shuffle_features(self, x):
-        """
-        Shuffle a subset of features to break inter-column dependencies
-        Args:
-            x: (B, F) input features
-        Returns:
-            x_shuffled: (B, F) with some features shuffled
-        """
-        batch_size, num_features = x.shape
-        x_shuffled = x.clone()
+    def _process_latents(self, feature_embedding, batch_size):
+        """Process feature embeddings through encoder and self-attention blocks"""
+        latents_query = self.latents_query.expand(batch_size, -1, -1)
+        latents, _ = self.encoder(latents_query, feature_embedding, feature_embedding, return_weight=True)
         
-        # Select features to shuffle
-        num_shuffle = max(1, int(num_features * self.oe_shuffle_ratio))
-        shuffle_indices = torch.randperm(num_features, device=x.device)[:num_shuffle]
-        
-        # Shuffle selected features across batch
-        for idx in shuffle_indices:
-            perm = torch.randperm(batch_size, device=x.device)
-            x_shuffled[:, idx] = x[perm, idx]
-        
-        return x_shuffled
-
-    def forward(self, x):
-        batch_size, num_features = x.shape # (B, F)
-
-        feature_embedding = self.feature_tokenizer(x) # (B, F, D)
-        feature_embedding = feature_embedding + self.pos_encoding
-        latents_query = self.latents_query.expand(batch_size, -1, -1) # (B, N, D)
-        latents, _ = self.encoder(latents_query, feature_embedding, feature_embedding, return_weight=True) 
-
         if self.is_weight_sharing:
             for _ in range(self.depth):
                 latents, _ = self.block(latents, return_weight=True)
@@ -433,77 +279,90 @@ class OELATTE(nn.Module):
         else:
             for block in self.block:
                 latents, _ = block(latents, return_weight=True)
-
-        # memory addressing
-        if self.not_use_memory:
-            latents_hat = latents
-        else:
-            latents_hat, _ = self.memory(latents) # (B, N, D), (B, N, M) 
-
-        # decoder
-        if self.use_pos_enc_as_query:
-            if self.use_mask_token:
-                decoder_query = self.decoder_query.expand(batch_size, num_features, -1) # (1, 1, D) -> (B, F, D)
-                decoder_query = decoder_query + self.pos_encoding
-            else:
-                decoder_query = self.pos_encoding.expand(batch_size, -1, -1)
-        else:
-            decoder_query = self.decoder_query.expand(batch_size, -1, -1) # (B, F, D)
-
+        
+        return latents
+    
+    def _decode_latents(self, latents_hat, decoder_query):
+        """Decode latents to reconstruction"""
         if self.not_use_decoder:
             output = latents_hat
         else:
             output, _ = self.decoder(decoder_query, latents_hat, latents_hat, return_weight=True)
-            
-        x_hat = self.proj(output)
-        loss_rec = F.mse_loss(x_hat, x, reduction='none').mean(dim=1) # (B,) keep batch dim
         
-        # Outlier Exposure: only during training
+        x_hat = self.proj(output)
+        return x_hat
+    
+    def _get_decoder_query(self, batch_size):
+        """Get decoder query based on configuration"""
+        if self.use_pos_enc_as_query:
+            if self.use_mask_token:
+                decoder_query = self.decoder_query.expand(batch_size, self.num_features, -1)
+                decoder_query = decoder_query + self.pos_encoding
+            else:
+                decoder_query = self.pos_encoding.expand(batch_size, -1, -1)
+        else:
+            decoder_query = self.decoder_query.expand(batch_size, -1, -1)
+        
+        return decoder_query
+
+    def forward(self, x):
+        batch_size, num_features = x.shape
+
+        # Main forward pass
+        feature_embedding = self.feature_tokenizer(x)
+        feature_embedding = feature_embedding + self.pos_encoding
+        latents = self._process_latents(feature_embedding, batch_size) # (B, N, D)
+
+        # Memory addressing
+        if self.not_use_memory:
+            latents_hat = latents 
+            memory_weight = None
+        else:
+            latents_hat, memory_weight = self.memory(latents)
+
+        # Decode
+        decoder_query = self._get_decoder_query(batch_size)
+        x_hat = self._decode_latents(latents_hat, decoder_query)
+        
+        loss_rec = F.mse_loss(x_hat, x, reduction='none').mean(dim=1)
+
+        if self.entropy_loss_weight > 0: 
+            loss_memory_entropy = memory_weight * torch.log(memory_weight + 1e-12)
+            loss_memory_entropy = -1.0 * loss_memory_entropy.sum(dim=-1)
+            loss_memory_entropy = loss_memory_entropy.mean(dim=-1) * self.entropy_loss_weight
+
+        if self.latent_loss_weight > 0:
+            loss_latent_rec = F.mse_loss(latents, latents_hat, reduction='none').mean(dim=[1, 2])
+            loss_latent_rec = self.latent_loss_weight * loss_latent_rec
+        # print(loss_rec.shape)
+        # print(loss_memory_entropy.shape)
+        # print(loss_latent_rec.shape)
+        anomaly_score = loss_rec + loss_memory_entropy + loss_latent_rec
+
+        # Outlier Exposure (only during training)
         if self.training and self.use_oe:
-            # Generate shuffled samples (dependency breaking)
-            x_shuffled = self.shuffle_features(x)
+            # Generate shuffled samples
+            x_shuffled = self.oe_module.shuffle_features(x)
             
             # Forward pass on shuffled samples
             feature_embedding_shuf = self.feature_tokenizer(x_shuffled)
             feature_embedding_shuf = feature_embedding_shuf + self.pos_encoding
-            latents_query_shuf = self.latents_query.expand(batch_size, -1, -1)
-            latents_shuf, _ = self.encoder(latents_query_shuf, feature_embedding_shuf, feature_embedding_shuf, return_weight=True)
+            latents_shuf = self._process_latents(feature_embedding_shuf, batch_size)
             
-            if self.is_weight_sharing:
-                for _ in range(self.depth):
-                    latents_shuf, _ = self.block(latents_shuf, return_weight=True)
-                    if self.is_recurrent:
-                        latents_shuf, _ = self.memory(latents_shuf)
-            else:
-                for block in self.block:
-                    latents_shuf, _ = block(latents_shuf, return_weight=True)
-            
+            # Memory addressing for shuffled samples
             if not self.not_use_memory:
                 latents_hat_shuf, weight_shuf = self.memory(latents_shuf)
             else:
                 latents_hat_shuf = latents_shuf
+                weight_shuf = None
             
-            if not self.not_use_decoder:
-                output_shuf, _ = self.decoder(decoder_query, latents_hat_shuf, latents_hat_shuf, return_weight=True)
-            else:
-                output_shuf = latents_hat_shuf
-                
-            x_hat_shuf = self.proj(output_shuf)
+            # Decode shuffled samples
+            x_hat_shuf = self._decode_latents(latents_hat_shuf, decoder_query)
             
-            # Uniform prediction loss: encourage uniform (mean) predictions for outliers
-            # Compute the mean of the input features across the batch
-            x_mean = x.mean(dim=0, keepdim=True).expand(batch_size, -1)  # (B, F)
-            
-            # Loss: push shuffled samples' predictions towards the batch mean (uniform prediction)
-            loss_oe = F.mse_loss(x_hat_shuf, x_mean, reduction='none').mean(dim=1)  # (B,)
-            
-            if self.oe_lambda_memory != 0 and weight_shuf is not None:
-                loss_memory_entropy = compute_entropy_loss(weight_shuf)
-                loss = loss_rec + self.oe_lambda * loss_oe + self.oe_lambda_memory * loss_memory_entropy
-            else:
-                loss = loss_rec + self.oe_lambda * loss_oe
-
+            # Compute OE loss
+            loss_oe = self.oe_module.compute_oe_loss(x, x_hat_shuf, weight_shuf)
+            output = anomaly_score + loss_oe
         else:
-            loss = loss_rec
+            output = anomaly_score
     
-        return loss
+        return output

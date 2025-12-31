@@ -325,6 +325,7 @@ class ResultAnalyzer:
         return df
 
 
+
 # ============================================================================
 # 시각화 클래스
 # ============================================================================
@@ -469,8 +470,6 @@ class ResultRenderer:
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
 
-
-
         # 랭킹 추가
         if add_avg_rank:
             plot_name = f'synthetic_{synthetic_type}_{base}' if is_synthetic else base
@@ -485,7 +484,7 @@ class ResultRenderer:
             )
         
         df_render = df_mean.copy()
-        
+
         if use_rank:
             df_render.loc[:, data] = df_render.loc[:, data].round(0)
         
@@ -513,6 +512,8 @@ class ResultRenderer:
             c.replace("MemPAE-ws-cross_attn", "MPCA") if "MemPAE-ws-cross_attn" in c else c
             for c in df_render.index
         ]
+        
+        df_render = self.rename_cols_with_alias(df_render)
         
         # 저장
         os.makedirs('metrics', exist_ok=True)
@@ -702,6 +703,30 @@ class ResultRenderer:
             columns=df_mean.columns
         )
     
+    @staticmethod
+    def rename_cols_with_alias(df):
+        alias = {
+            "wine": "win",
+            "glass": "gla",
+            "wbc": "wbc",
+            "ionosphere": "ion",
+            "arrhythmia": "arr",
+            "breastw": "bre",
+            "pima": "pim",
+            "cardio": "car",
+            "cardiotocography": "ctg",
+            "thyroid": "thy",
+            "optdigits": "opt",
+            "satimage-2": "sa2",
+            "satellite": "sat",
+            "pendigits": "pen",
+            "mammography": "mam",
+            "campaign": "cmp",
+            "shuttle": "shu",
+        }
+        df_return = df.rename(columns=alias)
+        return df_return
+
     @staticmethod
     def _apply_aliases(df_render: pd.DataFrame) -> pd.DataFrame:
         """컬럼 이름에 별칭 적용"""
@@ -906,9 +931,9 @@ def main(args):
         "mammography",
         "campaign",
         "shuttle",
-        "nslkdd",
         "fraud",
-        "census"
+        # "nslkdd",
+        # "census"
     ]
     datasets = [
         "wine",
@@ -995,6 +1020,9 @@ def main(args):
         
         "LATTE-patience-tuned", 
         "OELATTE-temp",
+        
+        # "OELATTE-d16-oe_lam1.0-oe_rat0.1",
+
         # "MemPAE-ws-pos_query-d16-lr0.05-t0.1",
         # "MemPAE-ws-pos_query-d32-lr0.05-t0.1",
   
@@ -1002,11 +1030,11 @@ def main(args):
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # Ours
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
         # 'MemPAE-ws-pos_query+token-d64-lr0.001', # Ours
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.1", # cardio - thyroid
+        "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.1", # cardio - thyroid
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.5", 
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t1.0", 
 
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1", 
+        "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1", 
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.5", 
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t1.0", 
 
@@ -1106,15 +1134,39 @@ def main(args):
     # OELATTE-d32-oe_lam0.1-oe_rat0.1-oe_lam_mem0.01 - 0.8551 sat
 
 
+    # f_list = [0.5, 1.0, 2.0, 4.0]
+    # n_list = [0.5, 1.0, 2.0, 4.0]
+    # for f in f_list:
+    #     for n in n_list:
+    #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d64-lr0.001-t0.1")
+    #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d32-lr0.001-t0.1")
 
-    hidden_dim_list = [64, 32, 16]
-    oe_lambda_list = [0.1, 1.0]
+    my_models.append("MQ-d64-qs1024-mo0.999-com0.25")
+    my_models.append("MQ-d32-qs1024-mo0.999-com0.25")
+    my_models.append("MQ-d16-qs1024-mo0.999-com0.25")
+    my_models.append("OELATTE-d16-oe_lam0.1-oe_rat0.1")
+    my_models.append("MBT-d128-top_k5-temp0.1-epoch40")
+    my_models.append("MBT-d128-top_k5-temp0.1-epoch50")
+    hidden_dim = 16
+    oe_lambda = 0.1
     oe_shuffle_ratio_list = [0.1, 0.3, 0.5]
-    # for hidden_dim in hidden_dim_list:
-    #     for oe_lambda in oe_lambda_list:
-    #         for e_shuffle_ratio in oe_shuffle_ratio_list:
-    #             my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}")
-
+    latent_loss_list = [0.1, 1.0]
+    entropy_loss_list = [0.1, 1.0]
+    for e_shuffle_ratio in oe_shuffle_ratio_list:
+        for latent_loss in latent_loss_list:
+            for entropy_loss in entropy_loss_list:
+                my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-lat_lam{latent_loss}-mem_ent_lam{entropy_loss}")
+                pass
+    
+    
+    hidden_dim_list = [64, 32, 16]
+    oe_lambda_list = [0.1, 0.2, 0.5, 1.0]
+    oe_shuffle_ratio_list = [0.1, 0.3, 0.5]
+    for hidden_dim in hidden_dim_list:
+        for oe_lambda in oe_lambda_list:
+            for e_shuffle_ratio in oe_shuffle_ratio_list:
+                # my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}")
+                pass
     # oe_lam_mem_list = [0.01, 0.1, 1.0]
     # for hidden_dim in hidden_dim_list:
     #     for oe_lambda in oe_lambda_list:
@@ -1122,11 +1174,18 @@ def main(args):
     #             for e_shuffle_ratio in oe_shuffle_ratio_list:
     #                 my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-oe_lam_mem{oe_lam_mem}")
 
-
+    hidden_dim_list = [128, 64, 32]
+    top_k_list = [5, 10, 16, 32, 0]
+    temperature_list = [0.1, 1.0]
+    for top_k in top_k_list:
+        for temperature in temperature_list:
+            for hidden_dim in hidden_dim_list:
+                my_models.append(f"MBT-d{hidden_dim}-top_k{top_k}-temp{temperature}")
+             
     keys = [
-        'ratio_1.0_AUCROC', 
+        # 'ratio_1.0_AUCROC', 
         'ratio_1.0_AUCPR', 
-        'ratio_1.0_f1'
+        # 'ratio_1.0_f1'
     ]
     
     for base in keys:
