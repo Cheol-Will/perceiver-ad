@@ -192,11 +192,11 @@ class MQ(nn.Module):
         num_heads=4,
         mlp_ratio=4.0,
         dropout_prob=0.0,
+        use_distance_score=False,
         queue_size=1024,
         momentum=0.999,
         top_k=5, 
         temperature=1.0,
-        use_distance_score=False,
     ):
         super(MQ, self).__init__()
 
@@ -214,7 +214,6 @@ class MQ(nn.Module):
             param_k.data.copy_(param_q.data)
             param_k.requires_grad = False
 
-        # Evaluation memory bank (separate from training queue)
         self.momentum = momentum
         self.hidden_dim = hidden_dim
         self.temperature = temperature

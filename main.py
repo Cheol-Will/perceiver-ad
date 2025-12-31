@@ -81,7 +81,8 @@ def main(args):
         return
 
     logger = get_logger(os.path.join(args.base_path, 'log.log'))
-    model_config, train_config = load_yaml(args)
+    model_config, train_config = load_yaml(args, parser)
+
     train_config['logger'] = logger
     train_config['device'] = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     

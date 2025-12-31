@@ -4,26 +4,29 @@ set -euo pipefail
 data_list=(    
     wine glass wbc ionosphere arrhythmia breastw pima cardio cardiotocography thyroid 
     optdigits satellite "satimage-2" pendigits mammography campaign shuttle 
-    fraud nslkdd census
-    # longer training
-    # nslkdd  # done
-    # fraud
-    # census
     # fraud nslkdd census
 ) 
 
 model_type="MQ"
-hidden_dim_list=(16)
-queue_size_list=(1024)
-momentum_list=(0.999)
-commitment_cost_list=(0.25)
+hidden_dim_list=(128)
+hidden_dim_list=(64)
+hidden_dim_list=(32)
+queue_size_list=(16384) # 2048 * 8
+momentum=0.999
+top_k_list=(0)
+top_k_list=(5)
+top_k_list=(10)
+top_k_list=(16)
+top_k_list=(32)
+# temperature_list=(0.1 1.0) 
+temperature_list=(0.1) 
 
 for data in "${data_list[@]}"; do
     for hidden_dim in "${hidden_dim_list[@]}"; do
         for queue_size in "${queue_size_list[@]}"; do
-            for momentum in "${momentum_list[@]}"; do
-                for commitment_cost in "${commitment_cost_list[@]}"; do
-                    exp_name="$model_type-d$hidden_dim-qs$queue_size-mo$momentum-com$commitment_cost"
+            for top_k in "${top_k_list[@]}"; do
+                for temperature in "${temperature_list[@]}"; do
+                    exp_name="$model_type-d$hidden_dim-qs$queue_size-mo$momentum-top_k$top_k-temp$temperature"
                     echo "Running $exp_name on $data."
                     python main.py \
                         --dataname "$data" \
@@ -32,7 +35,8 @@ for data in "${data_list[@]}"; do
                         --hidden_dim "$hidden_dim" \
                         --queue_size "$queue_size" \
                         --momentum "$momentum" \
-                        --commitment_cost "$commitment_cost"
+                        --top_k "$top_k" \
+                        --temperature "$temperature"
                 done
             done
         done
