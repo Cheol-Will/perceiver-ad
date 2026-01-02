@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.optim as optim
+from torch.cuda.amp import GradScaler, autocast
 from DataSet.DataLoader import get_mq_dataloader
 from models.MQ.Model import MQ
 from utils import aucPerformance, F1Performance
@@ -21,26 +22,29 @@ class Trainer(object):
         # Compute optimal queue size
         original_queue_size = model_config.get('queue_size', 1024)
         actual_queue_size = min(original_queue_size, self.num_train)
-        
+
+        self.use_amp = train_config.get('use_amp', False)
+        self.scaler = GradScaler() if self.use_amp else None
+
         print(f"="*60)
         print(f"MQ Model Configuration:")
         print(f"  - Number of training samples: {self.num_train}")
         print(f"  - Batch size: {batch_size}")
         print(f"  - Original queue size: {original_queue_size}")
         print(f"  - Actual queue size: {actual_queue_size}")
+        print(f"  - Use AMP: {self.use_amp}")
         print(f"="*60)
         
         # Update model config with actual queue size and num_train
-        model_config_updated = model_config.copy()
-        model_config_updated['queue_size'] = actual_queue_size
+        model_config['queue_size'] = actual_queue_size
         
-        self.model = MQ(**model_config_updated).to(self.device)
+        self.model = MQ(**model_config).to(self.device)
         
         self.sche_gamma = train_config['sche_gamma']
         self.learning_rate = train_config['learning_rate']
         self.logger = train_config['logger']
         self.epochs = train_config['epochs']
-        self.model_config = model_config_updated
+        self.model_config = model_config
         self.train_config = train_config
         self.patience = train_config.get('patience', 20)
         self.min_delta = train_config.get('min_delta', 0.005)
@@ -82,23 +86,30 @@ class Trainer(object):
             
             for step, (x_input, y_label, sample_indices) in enumerate(self.train_loader):
                 x_input = x_input.to(self.device)
+                optimizer.zero_grad()
                 
-                # Pass sample indices to model for self-exclusion
-                output = self.model(x_input, return_dict=True)
-                loss = output['loss'].mean()
+                # AMP forward pass
+                if self.use_amp:
+                    with autocast():
+                        output = self.model(x_input, return_dict=True)
+                        loss = output['loss'].mean()
+                    self.scaler.scale(loss).backward()
+                    self.scaler.step(optimizer)
+                    self.scaler.update()
+                else:
+                    output = self.model(x_input, return_dict=True)
+                    loss = output['loss'].mean()
+                    loss.backward()
+                    optimizer.step()
+                
                 recon_loss = output['reconstruction_loss'].mean()
 
                 running_loss += loss.item()
                 running_recon_loss += recon_loss.item()
                 
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-
             scheduler.step()
             avg_loss = running_loss / len(self.train_loader)
             avg_recon_loss = running_recon_loss / len(self.train_loader)
-            
             
             info = 'Epoch:[{}]\t loss={:.4f}\t recon={:.4f}'
             self.logger.info(info.format(

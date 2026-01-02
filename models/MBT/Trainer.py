@@ -18,8 +18,7 @@ class Trainer(object):
         # Get number of training samples
         self.num_train = len(self.train_loader.dataset)
         batch_size = train_config['batch_size']
-        
-        # AMP 설정
+
         self.use_amp = train_config.get('use_amp', False)
         self.scaler = GradScaler() if self.use_amp else None
         
@@ -120,19 +119,15 @@ class Trainer(object):
             avg_recon_loss = running_recon_loss / len(self.train_loader)
             avg_dist_loss = running_dist_loss / len(self.train_loader)
             
-            # Get memory bank size
-            memory_bank_size = self.model.get_memory_bank_size()
-            
-            info = 'Epoch:[{}]\t loss={:.4f}\t recon={:.4f}\t dist={:.4f}\t mem_size={}'
+            info = 'Epoch:[{}]\t loss={:.4f}\t recon={:.4f}\t dist={:.4f}'
             self.logger.info(info.format(
-                epoch, avg_loss, avg_recon_loss, avg_dist_loss, memory_bank_size
+                epoch, avg_loss, avg_recon_loss, avg_dist_loss
             ))
             
             loss_dict = {
                 'total_loss': avg_loss,
                 'reconstruction_loss': avg_recon_loss,
                 'distance_loss': avg_dist_loss,
-                'memory_bank_size': memory_bank_size
             }
             self._log_training(epoch, loss_dict)
             
@@ -220,7 +215,6 @@ class Trainer(object):
             'avg_abnormal_score': float(avg_abnormal_score)
         } 
         
-        print(f"[Eval] Memory bank size: {model.get_memory_bank_size()}")
         return metric_dict
     
     @torch.no_grad()
@@ -316,18 +310,16 @@ class Trainer(object):
             avg_recon_loss = running_recon_loss / len(self.train_loader)
             avg_dist_loss = running_dist_loss / len(self.train_loader)
             
-            memory_bank_size = self.model.get_memory_bank_size()
             
-            info = 'Epoch:[{}]\t loss={:.4f}\t recon={:.4f}\t dist={:.4f}\t mem_size={}'
+            info = 'Epoch:[{}]\t loss={:.4f}\t recon={:.4f}\t dist={:.4f}'
             self.logger.info(info.format(
-                epoch, avg_loss, avg_recon_loss, avg_dist_loss, memory_bank_size
+                epoch, avg_loss, avg_recon_loss, avg_dist_loss
             ))
             
             loss_dict = {
                 'total_loss': avg_loss,
                 'reconstruction_loss': avg_recon_loss,
                 'distance_loss': avg_dist_loss,
-                'memory_bank_size': memory_bank_size
             }
             self._log_training(epoch, loss_dict)
             
@@ -364,9 +356,6 @@ class Trainer(object):
             
             self.writer.add_scalars(f"{self.dataname}/Loss/Distance", 
                 {f'Run_{self.run}': loss_dict['distance_loss']}, epoch)
-            
-            self.writer.add_scalars(f"{self.dataname}/Memory/BankSize", 
-                {f'Run_{self.run}': loss_dict['memory_bank_size']}, epoch)
             
             self.writer.flush()
 

@@ -8,6 +8,8 @@ default:
     random_seed: 42
     num_workers: 0
     preprocess: 'standard'
+    patience: 20
+    use_amp: flase
   model_config:
     hidden_dim: 16
     depth: 4
@@ -19,13 +21,62 @@ default:
     momentum: 0.999
     top_k: 5
     temperature: 0.1
-   
+    use_flash_attn: false
+
+wine:
+  batch_size: 16
+  queue_size: 32
+  patience: 5
+
+glass:
+  batch_size: 16
+  queue_size: 32
+  patience: 5
+
+wbc:
+  batch_size: 16
+  queue_size: 32
+  patience: 5
+
+ionosphere:
+  batch_size: 32
+  queue_size: 128
+  patience: 5
+
+arrhythmia:  
+  batch_size: 32
+  queue_size: 128
+
+breastw: 
+  batch_size: 64
+  queue_size: 256
+
+pima: 
+  batch_size: 64
+  queue_size: 256
+  queue_size: 2048
+
+cardio: 
+  batch_size: 256
+  queue_size: 512
+
+cardiotocography: 
+  batch_size: 256
+  queue_size: 512
+
+thyroid:
+  batch_size: 256
+  queue_size: 1024
+
 census:
   batch_size: 1024
   learning_rate: 0.001
   sche_gamma: 0.98
   patience: 50
   min_delta: 0.00001
+  queue_size: 16384
+  use_amp: true
+  use_flash_attn: true
 
 fraud:
   batch_size: 2048
@@ -33,16 +84,20 @@ fraud:
   sche_gamma: 0.98
   patience: 50
   min_delta: 0.00001
+  queue_size: 16384
 
 nslkdd:
-  batch_size: 2048
+  batch_size: 1024
   learning_rate: 0.001
   sche_gamma: 0.98
   patience: 50
   min_delta: 0.00001
+  queue_size: 16384
+  use_amp: true
+  use_flash_attn: true
 
 shuttle:
-  queue_size: 4096
+  queue_size: 8192
 
 campaign:
   queue_size: 4096
@@ -62,35 +117,3 @@ satimage-2:
 optdigits:
   queue_size: 2048
 
-wine:
-  queue_size: 2048
-
-glass:
-  queue_size: 2048
-
-wbc:
-  queue_size: 2048
-
-ionosphere:
-  queue_size: 2048
-
-arrhythmia:  
-  queue_size: 2048
-
-breastw: 
-  queue_size: 2048
-
-pima: 
-  queue_size: 2048
-
-cardio: 
-  batch_size: 256
-  queue_size: 512
-  
-cardiotocography: 
-  batch_size: 256
-  queue_size: 512
-
-thyroid:
-  batch_size: 256
-  queue_size: 1024

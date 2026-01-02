@@ -3,12 +3,13 @@ set -euo pipefail
 
 data_list=(
     # overfitting
-    wine glass wbc ionosphere arrhythmia breastw pima cardio 
-    cardiotocography thyroid 
-    optdigits satellite "satimage-2" pendigits
+    # wine glass wbc ionosphere arrhythmia breastw pima cardio 
+    # cardiotocography thyroid 
+    # optdigits satellite "satimage-2" pendigits
     # mammography campaign shuttle 
     
-    # fraud nslkdd census
+    fraud 
+    # nslkdd census
     # longer training
     # nslkdd  # done
     # fraud
@@ -34,7 +35,7 @@ top_k_list=(5)
 # temperature_list=(0.1 1.0) # default 0.3
 temperature_list=(0.1) # default 0.3
 epochs=30
-# learning_rate=0.01
+learning_rate=0.01
 # patience=5
 # patience=10
 patience=15
@@ -43,7 +44,7 @@ for data in "${data_list[@]}"; do
     for hidden_dim in "${hidden_dim_list[@]}"; do
         for top_k in "${top_k_list[@]}"; do
             for temperature in "${temperature_list[@]}"; do
-                exp_name="$model_type-d$hidden_dim-top_k$top_k-temp$temperature-p$patience"
+                exp_name="$model_type-d$hidden_dim-top_k$top_k-temp$temperature-lr$learning_rate"
                 # exp_name="$model_type-d$hidden_dim-top_k$top_k-temp$temperature"
                 echo "Running $exp_name on $data."
                 python main.py \
@@ -53,9 +54,9 @@ for data in "${data_list[@]}"; do
                     --hidden_dim "$hidden_dim" \
                     --top_k "$top_k" \
                     --temperature "$temperature" \
-                    --patience "$patience"
+                    --learning_rate "$learning_rate"
                     # --epochs "$epochs"
-                    # --learning_rate "$learning_rate"
+                    # --patience "$patience"
             done
         done
     done

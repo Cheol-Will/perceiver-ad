@@ -5,7 +5,7 @@ from torch.cuda.amp import autocast
 import numpy as np
 import math
 import random
-from models.layers import FeatureTokenizer, OutputProjection, SelfAttention 
+from models.layers import BaseDecoder, BaseEncoder
 
 
 class MemoryBank(nn.Module):
@@ -57,15 +57,6 @@ class MemoryBank(nn.Module):
     def retrieve(self, query, exclude_indices=None):
         """
         Retrieve closest vectors from memory bank with top-k and temperature.
-        
-        Args:
-            query: (B, D) - query vectors
-            exclude_indices: (B,) - sample indices to exclude (self-samples during training)
-            
-        Returns:
-            retrieved: (B, D) - weighted combination of top-k closest vectors
-            distances: (B,) - distance to closest vector (for anomaly scoring)
-            weights: (B, K) - attention weights over top-k
         """
         if not self.is_built():
             raise RuntimeError("Memory bank not built. Call build() first.")
@@ -115,76 +106,12 @@ class MemoryBank(nn.Module):
         return self.retrieve(query, exclude_indices)
 
 
-class BaseEncoder(nn.Module):
-    def __init__(self, 
-        num_features,
-        hidden_dim,
-        depth,
-        num_heads=4,
-        mlp_ratio=4.0,
-        dropout_prob=0.0,
-        use_flash_attn=False,
-    ):
-        super(BaseEncoder, self).__init__()
-        self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim)
-        self.encoder = nn.Sequential(*[
-            SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob, use_flash_attn) 
-            for _ in range(depth)
-        ])
-        self.cls_token = nn.Parameter(torch.empty(1, 1, hidden_dim))
-        self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
-        self.reset_parameters()
-        
-    def reset_parameters(self):
-        nn.init.trunc_normal_(self.cls_token, std=0.02)
-        nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
-    def forward(self, x):
-        batch_size = x.shape[0]
-        embedding = self.feature_tokenizer(x) + self.pos_encoding.expand(batch_size, -1, -1)
-        cls_token = self.cls_token.expand(batch_size, -1, -1)
-        embedding = torch.cat([cls_token, embedding], dim=1) 
-        embedding = self.encoder(embedding)
-        cls_token = embedding[:, 0, :]  # (B, D)
-        return cls_token
-
-
-class BaseDecoder(nn.Module):
-    def __init__(self, 
-        num_features,
-        hidden_dim,
-        num_heads=8,
-        mlp_ratio=4.0,
-        dropout_prob=0.0,
-        use_flash_attn=False,
-    ):
-        super(BaseDecoder, self).__init__()
-        self.decoder = SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob, use_flash_attn)
-        self.output_projection = OutputProjection(num_features, hidden_dim)
-
-    def forward(self, cls_token, pos_encoding):
-        """
-        cls_token: (B, D)
-        pos_encoding: (1, F, D)
-        """
-        batch_size = cls_token.shape[0]
-        cls_token = cls_token.unsqueeze(1)  # (B, 1, D)
-        embedding_dec = torch.cat([cls_token, pos_encoding.expand(batch_size, -1, -1)], dim=1)
-        embedding_dec = self.decoder(embedding_dec)
-        embedding_dec = embedding_dec[:, 1:, :]  # Remove cls token
-        x_hat = self.output_projection(embedding_dec)
-        return x_hat
 
 
 class MBT(nn.Module):
     """
     Memory Bank Transformer for Tabular Anomaly Detection.
-    
-    Key features:
-    - Memory bank rebuilt at the start of each epoch with all training samples
-    - Self-exclusion during training retrieval (prevents retrieving itself)
-    - Top-k retrieval with temperature scaling (top_k=0 uses all memory)
-    - Simple reconstruction loss
     """
     def __init__(self, 
         num_features,
@@ -206,13 +133,8 @@ class MBT(nn.Module):
         self.top_k = top_k
         self.distance_weight = distance_weight
         
-        # Single encoder
         self.encoder = BaseEncoder(num_features, hidden_dim, depth, num_heads, mlp_ratio, dropout_prob, use_flash_attn)
-        
-        # Memory bank with top-k and temperature
         self.memory_bank = MemoryBank(hidden_dim, temperature, top_k)
-        
-        # Decoder
         self.decoder = BaseDecoder(num_features, hidden_dim, num_heads, mlp_ratio, dropout_prob)
         
         self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
@@ -286,11 +208,6 @@ class MBT(nn.Module):
     def forward(self, x, sample_indices=None, return_dict=False):
         """
         Forward pass.
-        
-        Args:
-            x: (B, F) - input features
-            sample_indices: (B,) - original dataset indices for self-exclusion during training
-            return_dict: whether to return detailed output dictionary
         """
         batch_size = x.shape[0]
         device = x.device
@@ -359,13 +276,6 @@ class MBT(nn.Module):
     def compute_anomaly_scores(self, x, return_components=False):
         """
         Compute anomaly scores for evaluation.
-        
-        Args:
-            x: (B, F) - input features
-            return_components: if True, return individual score components
-            
-        Returns:
-            anomaly_score or dict with components
         """
         was_training = self.training
         self.eval()

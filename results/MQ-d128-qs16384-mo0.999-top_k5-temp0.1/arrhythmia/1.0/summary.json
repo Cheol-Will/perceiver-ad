@@ -1,0 +1,133 @@
+{
+    "model_config": {
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_distance_score": false,
+        "queue_size": 128,
+        "momentum": 0.999,
+        "top_k": 5,
+        "temperature": 0.1,
+        "use_flash_attn": false,
+        "num_features": 274
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 32,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "use_amp": "flase",
+        "model_type": "MQ",
+        "dataset_name": "arrhythmia",
+        "base_path": "results/MQ-d128-qs16384-mo0.999-top_k5-temp0.1/arrhythmia/1.0",
+        "exp_name": "MQ-d128-qs16384-mo0.999-top_k5-temp0.1",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.8012482336316534,
+        "AUC-PR": 0.6127340810178217,
+        "f1": 0.5636363636363637
+    },
+    "total_time": 134.50541305541992,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.808761186999529,
+            "AUC-PR": 0.6067144866774453,
+            "f1": 0.5606060606060606,
+            "train_time": 25.16043186187744,
+            "test_time": 0.1146693229675293,
+            "epochs": 110
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.7950227665253572,
+            "AUC-PR": 0.5928142393025198,
+            "f1": 0.5454545454545454,
+            "train_time": 7.9124755859375,
+            "test_time": 0.10949277877807617,
+            "epochs": 34
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.7802637776731042,
+            "AUC-PR": 0.6022092683718487,
+            "f1": 0.5151515151515151,
+            "train_time": 5.79379415512085,
+            "test_time": 0.1024177074432373,
+            "epochs": 27
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.8246192494897158,
+            "AUC-PR": 0.6871220298276627,
+            "f1": 0.6060606060606061,
+            "train_time": 14.295994758605957,
+            "test_time": 0.10814905166625977,
+            "epochs": 68
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.8049144292667609,
+            "AUC-PR": 0.6059818242973896,
+            "f1": 0.5757575757575758,
+            "train_time": 12.335219383239746,
+            "test_time": 0.10512948036193848,
+            "epochs": 55
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.7856806406029204,
+            "AUC-PR": 0.5868430831892582,
+            "f1": 0.5606060606060606,
+            "train_time": 11.066878080368042,
+            "test_time": 0.06666731834411621,
+            "epochs": 49
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.8073480923221856,
+            "AUC-PR": 0.6218955123356356,
+            "f1": 0.5757575757575758,
+            "train_time": 5.354855298995972,
+            "test_time": 0.10823702812194824,
+            "epochs": 24
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.8050714397864657,
+            "AUC-PR": 0.6217398023846045,
+            "f1": 0.5606060606060606,
+            "train_time": 19.826246976852417,
+            "test_time": 0.06614398956298828,
+            "epochs": 89
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.8088396922593813,
+            "AUC-PR": 0.5926219147707313,
+            "f1": 0.6060606060606061,
+            "train_time": 7.407555341720581,
+            "test_time": 0.11555099487304688,
+            "epochs": 34
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.7919610613911132,
+            "AUC-PR": 0.6093986490211201,
+            "f1": 0.5303030303030303,
+            "train_time": 22.266314268112183,
+            "test_time": 0.11558938026428223,
+            "epochs": 104
+        }
+    ]
+}

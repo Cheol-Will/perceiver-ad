@@ -723,6 +723,9 @@ class ResultRenderer:
             "mammography": "mam",
             "campaign": "cmp",
             "shuttle": "shu",
+            "fraud": "fra",
+            "nslkdd": "nsl",
+            "census": "cen",
         }
         df_return = df.rename(columns=alias)
         return df_return
@@ -931,7 +934,7 @@ def main(args):
         "mammography",
         "campaign",
         "shuttle",
-        "fraud",
+        # "fraud",
         "nslkdd",
         # "census"
     ]
@@ -1030,19 +1033,19 @@ def main(args):
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # Ours
         # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
         # 'MemPAE-ws-pos_query+token-d64-lr0.001', # Ours
-        "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.1", # cardio - thyroid
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.1", # cardio - thyroid
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.5", 
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t1.0", 
 
-        "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1", 
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.5", 
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t1.0", 
+        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1", 
+        # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N4.0-d64-lr0.001-t0.1",
+        # "MemPAE-ws-local+global-sqrt_F4.0-sqrt_N1.0-d64-lr0.001-t0.1",
+        # "MemPAE-ws-local+global-sqrt_F4.0-sqrt_N4.0-d64-lr0.001-t0.1",
 
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t0.1", 
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t0.5", 
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t1.0", # - pima
 
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t0.1", 
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t0.5", 
         # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t1.0", 
         
@@ -1147,17 +1150,19 @@ def main(args):
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch40")
     
     my_models.append("MBT-d128-top_k5-temp0.1")
-    my_models.append("MBT-d128-top_k5-temp0.1-epoch30")
-    my_models.append("MBT-d128-top_k5-temp0.1-epoch50")
-    my_models.append("MBT-d128-top_k5-temp0.1-epoch100")
-
-
-    my_models.append("MBT-d128-top_k5-temp0.1-p5")
-    my_models.append("MBT-d128-top_k5-temp0.1-p10")
-    my_models.append("MBT-d128-top_k5-temp0.1-p15")
-
     my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
-    my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
+    # my_models.append("MBT-d128-top_k5-temp0.1-epoch30")
+    # my_models.append("MBT-d128-top_k5-temp0.1-epoch50")
+    # my_models.append("MBT-d128-top_k5-temp0.1-epoch100")
+
+    # my_models.append("MBT-d128-top_k5-temp0.1-p5")
+    # my_models.append("MBT-d128-top_k5-temp0.1-p10")
+    # my_models.append("MBT-d128-top_k5-temp0.1-p15")
+
+
+    # MBT-d128-top_k5-temp0.1-lr0.01
+
+    # my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
 
     for hidden_dim in hidden_dim_list:
         for temperature in temperature_list:
@@ -1166,15 +1171,15 @@ def main(args):
                 pass
              
 
-    my_models.append("MQ-d64-qs1024-mo0.999-com0.25")
-    my_models.append("MQ-d32-qs1024-mo0.999-com0.25")
-    my_models.append("MQ-d16-qs1024-mo0.999-com0.25")
-    my_models.append("MQ-d128-qs16384-mo0.999-top_k0-temp0.1")
-    my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
-    my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
-    my_models.append("MQ-d128-qs16384-mo0.999-top_k16-temp0.1")
-    my_models.append("MQ-d128-qs16384-mo0.999-top_k32-temp0.1")
-    my_models.append("OELATTE-d16-oe_lam0.1-oe_rat0.1")
+    # my_models.append("MQ-d64-qs1024-mo0.999-com0.25")
+    # my_models.append("MQ-d32-qs1024-mo0.999-com0.25")
+    # my_models.append("MQ-d16-qs1024-mo0.999-com0.25")
+    # my_models.append("MQ-d128-qs16384-mo0.999-top_k0-temp0.1")
+    # my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
+    # my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
+    # my_models.append("MQ-d128-qs16384-mo0.999-top_k16-temp0.1")
+    # my_models.append("MQ-d128-qs16384-mo0.999-top_k32-temp0.1")
+    # my_models.append("OELATTE-d16-oe_lam0.1-oe_rat0.1")
     hidden_dim = 16
     oe_lambda = 0.1
     oe_shuffle_ratio_list = [0.1, 0.3, 0.5]
@@ -1195,13 +1200,14 @@ def main(args):
             for e_shuffle_ratio in oe_shuffle_ratio_list:
                 # my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}")
                 pass
-    # oe_lam_mem_list = [0.01, 0.1, 1.0]
-    # for hidden_dim in hidden_dim_list:
-    #     for oe_lambda in oe_lambda_list:
-    #         for oe_lam_mem in oe_lam_mem_list:
-    #             for e_shuffle_ratio in oe_shuffle_ratio_list:
-    #                 my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-oe_lam_mem{oe_lam_mem}")
 
+    oe_lam_mem_list = [0.01, 0.1, 1.0]
+    for hidden_dim in hidden_dim_list:
+        for oe_lambda in oe_lambda_list:
+            for oe_lam_mem in oe_lam_mem_list:
+                for e_shuffle_ratio in oe_shuffle_ratio_list:
+                    # my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-oe_lam_mem{oe_lam_mem}")
+                    pass
 
     keys = [
         # 'ratio_1.0_AUCROC', 

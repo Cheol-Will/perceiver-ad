@@ -18,28 +18,13 @@ class Trainer(object):
         self.train_loader, self.test_loader = get_dataloader(train_config)
         if model_config['num_latents'] is None:
             model_config['num_latents'] = int(math.sqrt(model_config['num_features']))
-
-            if train_config['use_num_latents_power_2']:
-                model_config['num_latents'] = nearest_power_of_two(model_config['num_latents'])
-
             if train_config['latent_ratio'] is not None:
                 model_config['num_latents'] *= train_config['latent_ratio']
                 model_config['num_latents'] = int(model_config['num_latents'])
 
         if model_config['num_memories'] is None:
             num_train = self.get_num_train()
-
-            if train_config['use_num_memories_sqrt_NF']:
-                # M = sqrt(NF)
-                model_config['num_memories'] = int(math.sqrt(num_train * model_config['num_features']))
-            else:
-                # default: M = sqrt(N) 
-                model_config['num_memories'] = int(math.sqrt(num_train))
-
-            if train_config['use_num_memories_power_2']:
-                # use power of 2
-                model_config['num_memories'] = nearest_power_of_two(model_config['num_memories'])        
-
+            model_config['num_memories'] = int(math.sqrt(num_train))
             if train_config['memory_ratio'] is not None:
                 model_config['num_memories'] *= train_config['memory_ratio']
                 model_config['num_memories'] = int(model_config['num_memories'])
@@ -64,7 +49,7 @@ class Trainer(object):
         self.min_delta = train_config['min_delta']
         self.writer = train_config.get('writer', None)
         self.run = train_config['run']
-        self.dataname = train_config.get('dataname', 'unknown')  # ✅ dataname 추가
+        self.dataname = train_config.get('dataname', 'unknown')
         self.eval_interval = train_config.get('eval_interval', 10)
         
         print(f"patience={self.patience} with min_delta={self.min_delta}")
@@ -193,6 +178,8 @@ class Trainer(object):
             'rauc': [],
             'ap': [],
             'f1': [],
+            'avg_normal_score': [],
+            'avg_abnormal_score': []
         }
         for epoch in range(self.epochs):
             running_loss = 0.0
@@ -234,22 +221,29 @@ class Trainer(object):
         return metrics
     
     def _log_training(self, epoch, avg_loss):
-        """Log training metrics to tensorboard"""
+        """Log training metrics to tensorboard (MQ style)"""
         if self.writer:
-            self.writer.add_scalar(f"{self.dataname}/Run_{self.run}/Train/Loss", avg_loss, epoch)
+            self.writer.add_scalars(f"{self.dataname}/Loss/Total", 
+                {f'Run_{self.run}': avg_loss}, epoch)
+            
+            self.writer.flush()
     
     def _log_evaluation(self, epoch, metrics):
-        """Log evaluation metrics to tensorboard"""
+        """Log evaluation metrics to tensorboard (MQ style)"""
         if self.writer:
-            self.writer.add_scalars(f"{self.dataname}/Run_{self.run}/Eval/Metrics", 
-                {
-                    'RAUC': metrics['rauc'],
-                    'AP': metrics['ap'],
-                    'F1': metrics['f1']
-                }, epoch)
-
-            self.writer.add_scalars(f"{self.dataname}/Run_{self.run}/Eval/Scores", 
-                {
-                    'Avg_Normal_Score': metrics['avg_normal_score'],
-                    'Avg_Abnormal_Score': metrics['avg_abnormal_score']
-                }, epoch)
+            self.writer.add_scalars(f"{self.dataname}/Metrics/RAUC", 
+                {f'Run_{self.run}': metrics['rauc']}, epoch)
+            
+            self.writer.add_scalars(f"{self.dataname}/Metrics/AP", 
+                {f'Run_{self.run}': metrics['ap']}, epoch)
+            
+            self.writer.add_scalars(f"{self.dataname}/Metrics/F1", 
+                {f'Run_{self.run}': metrics['f1']}, epoch)
+            
+            self.writer.add_scalars(f"{self.dataname}/Scores/Normal", 
+                {f'Run_{self.run}': metrics['avg_normal_score']}, epoch)
+            
+            self.writer.add_scalars(f"{self.dataname}/Scores/Abnormal", 
+                {f'Run_{self.run}': metrics['avg_abnormal_score']}, epoch)
+            
+            self.writer.flush()
