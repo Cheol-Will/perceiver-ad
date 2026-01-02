@@ -9,15 +9,19 @@ default:
     num_workers: 0
     preprocess: 'standard'
   model_config:
-    num_heads: 4
-    depth: 4
     hidden_dim: 16
+    depth: 4
+    num_heads: 4
     mlp_ratio: 4.0
     dropout_prob: 0.0
+    use_distance_score: false
+    queue_size: 1024
+    momentum: 0.999
+    top_k: 5
     temperature: 0.1
    
 census:
-  batch_size: 2048
+  batch_size: 1024
   learning_rate: 0.001
   sche_gamma: 0.98
   patience: 50
@@ -36,3 +40,57 @@ nslkdd:
   sche_gamma: 0.98
   patience: 50
   min_delta: 0.00001
+
+shuttle:
+  queue_size: 4096
+
+campaign:
+  queue_size: 4096
+
+mammography:
+  queue_size: 4096
+
+pendigits:
+  queue_size: 2048
+
+satellite:
+  queue_size: 2048
+
+satimage-2:
+  queue_size: 2048
+
+optdigits:
+  queue_size: 2048
+
+wine:
+  queue_size: 2048
+
+glass:
+  queue_size: 2048
+
+wbc:
+  queue_size: 2048
+
+ionosphere:
+  queue_size: 2048
+
+arrhythmia:  
+  queue_size: 2048
+
+breastw: 
+  queue_size: 2048
+
+pima: 
+  queue_size: 2048
+
+cardio: 
+  batch_size: 256
+  queue_size: 512
+  
+cardiotocography: 
+  batch_size: 256
+  queue_size: 512
+
+thyroid:
+  batch_size: 256
+  queue_size: 1024

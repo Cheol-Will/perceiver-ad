@@ -2,22 +2,26 @@
 set -euo pipefail
 
 data_list=(    
-    wine glass wbc ionosphere arrhythmia breastw pima cardio cardiotocography thyroid 
-    optdigits satellite "satimage-2" pendigits mammography campaign shuttle 
-    # fraud nslkdd census
+    # wine glass wbc ionosphere arrhythmia breastw pima  # too small-scale datset
+    cardio cardiotocography thyroid 
+    # optdigits satellite "satimage-2" pendigits mammography campaign shuttle 
+    # fraud nslkdd 
+    # census
 ) 
 
 model_type="MQ"
-hidden_dim_list=(128)
-hidden_dim_list=(64)
 hidden_dim_list=(32)
+hidden_dim_list=(64)
+hidden_dim_list=(128)
+# hidden_dim_list=(256)
 queue_size_list=(16384) # 2048 * 8
 momentum=0.999
-top_k_list=(0)
+# top_k_list=(0)
 top_k_list=(5)
 top_k_list=(10)
-top_k_list=(16)
-top_k_list=(32)
+# top_k_list=(16)
+# top_k_list=(32)
+# top_k_list=(128)
 # temperature_list=(0.1 1.0) 
 temperature_list=(0.1) 
 

@@ -156,6 +156,9 @@ def load_yaml(args, parser):
     train_config['model_type'] = args.model_type
     train_config['dataset_name'] = args.dataname
     train_config['base_path'] = args.base_path
+    train_config['exp_name'] = args.exp_name
+    train_config['runs'] = args.runs
+    train_config['train_ratio'] = args.train_ratio
     model_config['num_features'] = get_input_dim(args, train_config)
 
     return model_config, train_config

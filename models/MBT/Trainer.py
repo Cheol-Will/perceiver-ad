@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.optim as optim
+from torch.cuda.amp import GradScaler, autocast
 from DataSet.DataLoader import get_mq_dataloader
 from models.MBT.Model import MBT
 from utils import aucPerformance, F1Performance
@@ -18,6 +19,10 @@ class Trainer(object):
         self.num_train = len(self.train_loader.dataset)
         batch_size = train_config['batch_size']
         
+        # AMP 설정
+        self.use_amp = train_config.get('use_amp', False)
+        self.scaler = GradScaler() if self.use_amp else None
+        
         print(f"="*60)
         print(f"MBT Model Configuration (Memory Bank):")
         print(f"  - Number of training samples: {self.num_train}")
@@ -25,6 +30,7 @@ class Trainer(object):
         print(f"  - Temperature: {model_config.get('temperature', 0.1)}")
         print(f"  - Top-k: {model_config.get('top_k', 5)}")
         print(f"  - Distance weight: {model_config.get('distance_weight', 0.0)}")
+        print(f"  - Use AMP: {self.use_amp}")
         print(f"="*60)
         
         # Create model
@@ -71,10 +77,8 @@ class Trainer(object):
             min_delta = self.min_delta
 
         for epoch in range(self.epochs):
-            # ============================================================
-            # Build memory bank at the start of each epoch
-            # ============================================================
-            self.model.build_memory_bank(self.train_loader, self.device)
+            # Build memory bank (with AMP if enabled)
+            self.model.build_memory_bank(self.train_loader, self.device, use_amp=self.use_amp)
             
             # Training loop
             self.model.train()
@@ -86,19 +90,30 @@ class Trainer(object):
                 x_input = x_input.to(self.device)
                 sample_indices = sample_indices.to(self.device)
                 
-                # Pass sample indices to model for self-exclusion
-                output = self.model(x_input, sample_indices=sample_indices, return_dict=True)
-                loss = output['loss']
+                optimizer.zero_grad()
+                
+                # AMP forward pass
+                if self.use_amp:
+                    with autocast():
+                        output = self.model(x_input, sample_indices=sample_indices, return_dict=True)
+                        loss = output['loss']
+                    
+                    # AMP backward pass
+                    self.scaler.scale(loss).backward()
+                    self.scaler.step(optimizer)
+                    self.scaler.update()
+                else:
+                    output = self.model(x_input, sample_indices=sample_indices, return_dict=True)
+                    loss = output['loss']
+                    loss.backward()
+                    optimizer.step()
+                
                 recon_loss = output['reconstruction_loss']
                 dist_loss = output['distance_loss']
 
                 running_loss += loss.item()
                 running_recon_loss += recon_loss.item()
                 running_dist_loss += dist_loss.item()
-                
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
 
             scheduler.step()
             avg_loss = running_loss / len(self.train_loader)
@@ -163,7 +178,7 @@ class Trainer(object):
         model.eval()
         
         # Rebuild memory bank with latest encoder weights
-        model.build_memory_bank(self.train_loader, self.device)
+        model.build_memory_bank(self.train_loader, self.device, use_amp=self.use_amp)
         
         score, test_label = [], []
         
@@ -176,8 +191,13 @@ class Trainer(object):
                 
             x_input = x_input.to(self.device)
             
-            # Get anomaly score (no self-exclusion for test data)
-            output = model(x_input, sample_indices=None, return_dict=True)
+            # AMP inference
+            if self.use_amp:
+                with autocast():
+                    output = model(x_input, sample_indices=None, return_dict=True)
+            else:
+                output = model(x_input, sample_indices=None, return_dict=True)
+                
             anomaly_score = output['anomaly_score']
             anomaly_score = anomaly_score.data.cpu()
             score.append(anomaly_score)
@@ -210,7 +230,7 @@ class Trainer(object):
         model.eval()
         
         # Rebuild memory bank
-        model.build_memory_bank(self.train_loader, self.device)
+        model.build_memory_bank(self.train_loader, self.device, use_amp=self.use_amp)
         
         score = []
         
@@ -221,7 +241,13 @@ class Trainer(object):
                 x_input, y_label = batch
                 
             x_input = x_input.to(self.device)
-            output = model(x_input, sample_indices=None, return_dict=True)
+            
+            if self.use_amp:
+                with autocast():
+                    output = model(x_input, sample_indices=None, return_dict=True)
+            else:
+                output = model(x_input, sample_indices=None, return_dict=True)
+                
             loss = output['reconstruction_loss']
             score.append(loss.data.cpu())
         
@@ -250,7 +276,7 @@ class Trainer(object):
         
         for epoch in range(self.epochs):
             # Build memory bank at the start of each epoch
-            self.model.build_memory_bank(self.train_loader, self.device)
+            self.model.build_memory_bank(self.train_loader, self.device, use_amp=self.use_amp)
             
             # Training loop
             self.model.train()
@@ -262,18 +288,28 @@ class Trainer(object):
                 x_input = x_input.to(self.device)
                 sample_indices = sample_indices.to(self.device)
                 
-                output = self.model(x_input, sample_indices=sample_indices, return_dict=True)
-                loss = output['loss']
+                optimizer.zero_grad()
+                
+                if self.use_amp:
+                    with autocast():
+                        output = self.model(x_input, sample_indices=sample_indices, return_dict=True)
+                        loss = output['loss']
+                    
+                    self.scaler.scale(loss).backward()
+                    self.scaler.step(optimizer)
+                    self.scaler.update()
+                else:
+                    output = self.model(x_input, sample_indices=sample_indices, return_dict=True)
+                    loss = output['loss']
+                    loss.backward()
+                    optimizer.step()
+                
                 recon_loss = output['reconstruction_loss']
                 dist_loss = output['distance_loss']
 
                 running_loss += loss.item()
                 running_recon_loss += recon_loss.item()
                 running_dist_loss += dist_loss.item()
-                
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
 
             scheduler.step()
             avg_loss = running_loss / len(self.train_loader)

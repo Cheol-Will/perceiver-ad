@@ -8,6 +8,8 @@ default:
     random_seed: 42
     num_workers: 0
     preprocess: 'standard'
+    patience: 20
+    use_amp: false
   model_config:
     num_heads: 4
     depth: 4
@@ -15,24 +17,29 @@ default:
     mlp_ratio: 4.0
     dropout_prob: 0.0
     temperature: 0.1
-   
+    use_flash_attn: false
+
 census:
-  batch_size: 2048
+  batch_size: 512
   learning_rate: 0.001
   sche_gamma: 0.98
   patience: 50
   min_delta: 0.00001
+  use_amp: true
+  use_flash_attn: true
 
 fraud:
-  batch_size: 2048
+  batch_size: 1024
   learning_rate: 0.001
   sche_gamma: 0.98
   patience: 50
   min_delta: 0.00001
+  use_amp: true
 
 nslkdd:
-  batch_size: 2048
+  batch_size: 1024
   learning_rate: 0.001
   sche_gamma: 0.98
   patience: 50
   min_delta: 0.00001
+  use_amp: true

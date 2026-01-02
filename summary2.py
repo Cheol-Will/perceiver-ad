@@ -932,7 +932,7 @@ def main(args):
         "campaign",
         "shuttle",
         "fraud",
-        # "nslkdd",
+        "nslkdd",
         # "census"
     ]
     datasets = [
@@ -1141,12 +1141,40 @@ def main(args):
     #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d64-lr0.001-t0.1")
     #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d32-lr0.001-t0.1")
 
+    hidden_dim_list = [128, 64, 32]
+    top_k_list = [5, 10, 16, 32, 0]
+    temperature_list = [0.1, 1.0]
+    # my_models.append("MBT-d128-top_k5-temp0.1-epoch40")
+    
+    my_models.append("MBT-d128-top_k5-temp0.1")
+    my_models.append("MBT-d128-top_k5-temp0.1-epoch30")
+    my_models.append("MBT-d128-top_k5-temp0.1-epoch50")
+    my_models.append("MBT-d128-top_k5-temp0.1-epoch100")
+
+
+    my_models.append("MBT-d128-top_k5-temp0.1-p5")
+    my_models.append("MBT-d128-top_k5-temp0.1-p10")
+    my_models.append("MBT-d128-top_k5-temp0.1-p15")
+
+    my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
+    my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
+
+    for hidden_dim in hidden_dim_list:
+        for temperature in temperature_list:
+            for top_k in top_k_list:
+                # my_models.append(f"MBT-d{hidden_dim}-top_k{top_k}-temp{temperature}")
+                pass
+             
+
     my_models.append("MQ-d64-qs1024-mo0.999-com0.25")
     my_models.append("MQ-d32-qs1024-mo0.999-com0.25")
     my_models.append("MQ-d16-qs1024-mo0.999-com0.25")
+    my_models.append("MQ-d128-qs16384-mo0.999-top_k0-temp0.1")
+    my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
+    my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
+    my_models.append("MQ-d128-qs16384-mo0.999-top_k16-temp0.1")
+    my_models.append("MQ-d128-qs16384-mo0.999-top_k32-temp0.1")
     my_models.append("OELATTE-d16-oe_lam0.1-oe_rat0.1")
-    my_models.append("MBT-d128-top_k5-temp0.1-epoch40")
-    my_models.append("MBT-d128-top_k5-temp0.1-epoch50")
     hidden_dim = 16
     oe_lambda = 0.1
     oe_shuffle_ratio_list = [0.1, 0.3, 0.5]
@@ -1155,7 +1183,7 @@ def main(args):
     for e_shuffle_ratio in oe_shuffle_ratio_list:
         for latent_loss in latent_loss_list:
             for entropy_loss in entropy_loss_list:
-                my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-lat_lam{latent_loss}-mem_ent_lam{entropy_loss}")
+                # my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-lat_lam{latent_loss}-mem_ent_lam{entropy_loss}")
                 pass
     
     
@@ -1174,14 +1202,7 @@ def main(args):
     #             for e_shuffle_ratio in oe_shuffle_ratio_list:
     #                 my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-oe_lam_mem{oe_lam_mem}")
 
-    hidden_dim_list = [128, 64, 32]
-    top_k_list = [5, 10, 16, 32, 0]
-    temperature_list = [0.1, 1.0]
-    for top_k in top_k_list:
-        for temperature in temperature_list:
-            for hidden_dim in hidden_dim_list:
-                my_models.append(f"MBT-d{hidden_dim}-top_k{top_k}-temp{temperature}")
-             
+
     keys = [
         # 'ratio_1.0_AUCROC', 
         'ratio_1.0_AUCPR', 

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.cuda.amp import autocast
 import numpy as np
 import math
 import random
@@ -122,11 +123,12 @@ class BaseEncoder(nn.Module):
         num_heads=4,
         mlp_ratio=4.0,
         dropout_prob=0.0,
+        use_flash_attn=False,
     ):
         super(BaseEncoder, self).__init__()
         self.feature_tokenizer = FeatureTokenizer(num_features, hidden_dim)
         self.encoder = nn.Sequential(*[
-            SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob) 
+            SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob, use_flash_attn) 
             for _ in range(depth)
         ])
         self.cls_token = nn.Parameter(torch.empty(1, 1, hidden_dim))
@@ -154,9 +156,10 @@ class BaseDecoder(nn.Module):
         num_heads=8,
         mlp_ratio=4.0,
         dropout_prob=0.0,
+        use_flash_attn=False,
     ):
         super(BaseDecoder, self).__init__()
-        self.decoder = SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob)
+        self.decoder = SelfAttention(hidden_dim, num_heads, mlp_ratio, dropout_prob, use_flash_attn)
         self.output_projection = OutputProjection(num_features, hidden_dim)
 
     def forward(self, cls_token, pos_encoding):
@@ -186,14 +189,15 @@ class MBT(nn.Module):
     def __init__(self, 
         num_features,
         hidden_dim,
-        depth=4,
-        num_heads=4,
-        mlp_ratio=4.0,
-        dropout_prob=0.0,
-        use_distance_score=False,
-        temperature=0.1,
-        top_k=5,  # 0 means use all memory
-        distance_weight=0.0,
+        depth: int = 4,
+        num_heads: int = 4,
+        mlp_ratio: float = 4.0,
+        dropout_prob: float = 0.0,
+        use_distance_score: bool = False,
+        temperature: float = 0.1,
+        top_k: int = 5,  # 0 means use all memory
+        distance_weight: float = 0.0,
+        use_flash_attn: bool = False,
     ):
         super(MBT, self).__init__()
         self.use_distance_score = use_distance_score
@@ -203,7 +207,7 @@ class MBT(nn.Module):
         self.distance_weight = distance_weight
         
         # Single encoder
-        self.encoder = BaseEncoder(num_features, hidden_dim, depth, num_heads, mlp_ratio, dropout_prob)
+        self.encoder = BaseEncoder(num_features, hidden_dim, depth, num_heads, mlp_ratio, dropout_prob, use_flash_attn)
         
         # Memory bank with top-k and temperature
         self.memory_bank = MemoryBank(hidden_dim, temperature, top_k)
@@ -239,15 +243,7 @@ class MBT(nn.Module):
         return self.memory_bank.get_size()
 
     @torch.no_grad()
-    def build_memory_bank(self, train_loader, device):
-        """
-        Build memory bank from all training samples.
-        Should be called at the start of each epoch.
-        
-        Args:
-            train_loader: DataLoader for training data (must provide indices)
-            device: Device to use
-        """
+    def build_memory_bank(self, train_loader, device, use_amp=False):
         was_training = self.training
         self.eval()
         
@@ -263,20 +259,27 @@ class MBT(nn.Module):
                 raise ValueError("DataLoader must provide (x, label, index) or (x, index)")
             
             x_input = x_input.to(device)
-            indices = indices.to(device)
             
-            # Encode samples
-            key = self.encoder(x_input)
-            all_keys.append(key)
+            if use_amp:
+                with autocast():
+                    key = self.encoder(x_input)
+                key = key.float()
+            else:
+                key = self.encoder(x_input)
+            
+            # Move to cpu
+            all_keys.append(key.cpu())
             all_indices.append(indices)
         
-        # Concatenate all
-        all_keys = torch.cat(all_keys, dim=0)
-        all_indices = torch.cat(all_indices, dim=0)
+        # concat and cpu
+        all_keys = torch.cat(all_keys, dim=0).to(device)
+        all_indices = torch.cat(all_indices, dim=0).to(device)
         
-        # Build memory bank
         self.memory_bank.build(all_keys, all_indices)
         
+        del all_keys, all_indices
+        torch.cuda.empty_cache()
+
         if was_training:
             self.train()
 
