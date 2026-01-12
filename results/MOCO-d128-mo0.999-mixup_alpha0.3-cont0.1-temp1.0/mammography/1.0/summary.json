@@ -1,0 +1,133 @@
+{
+    "model_config": {
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "queue_size": 4096,
+        "momentum": 0.999,
+        "temperature": 1.0,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.3,
+        "contrastive_loss_weight": 0.1,
+        "num_features": 6
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "use_amp": false,
+        "model_type": "MOCO",
+        "dataset_name": "mammography",
+        "base_path": "results/MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp1.0/mammography/1.0",
+        "exp_name": "MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp1.0",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.8424836281441006,
+        "AUC-PR": 0.3331281263257141,
+        "f1": 0.35692307692307695
+    },
+    "total_time": 468.03280305862427,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.8622031940962736,
+            "AUC-PR": 0.34808096236594527,
+            "f1": 0.35,
+            "train_time": 53.25999999046326,
+            "test_time": 0.13124680519104004,
+            "epochs": 94
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.8609237247556545,
+            "AUC-PR": 0.4496513947804101,
+            "f1": 0.4153846153846154,
+            "train_time": 38.32625412940979,
+            "test_time": 0.13139605522155762,
+            "epochs": 68
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.8362529222882574,
+            "AUC-PR": 0.300177479364488,
+            "f1": 0.3230769230769231,
+            "train_time": 74.79870653152466,
+            "test_time": 0.13176655769348145,
+            "epochs": 134
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.7741979551023856,
+            "AUC-PR": 0.26469203964341775,
+            "f1": 0.26153846153846155,
+            "train_time": 79.75901174545288,
+            "test_time": 0.13039231300354004,
+            "epochs": 143
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.820619384277385,
+            "AUC-PR": 0.2212017389249209,
+            "f1": 0.2846153846153846,
+            "train_time": 33.55594563484192,
+            "test_time": 0.23313093185424805,
+            "epochs": 59
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.8735973016364815,
+            "AUC-PR": 0.3528617910987149,
+            "f1": 0.38076923076923075,
+            "train_time": 14.238759517669678,
+            "test_time": 0.1292123794555664,
+            "epochs": 25
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.8078289158662648,
+            "AUC-PR": 0.2665448618493734,
+            "f1": 0.3230769230769231,
+            "train_time": 24.79884696006775,
+            "test_time": 0.12904739379882812,
+            "epochs": 44
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.8607899332450779,
+            "AUC-PR": 0.4181863265082425,
+            "f1": 0.4,
+            "train_time": 38.698997259140015,
+            "test_time": 0.24442219734191895,
+            "epochs": 108
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.8421971382700054,
+            "AUC-PR": 0.2504043925964596,
+            "f1": 0.3230769230769231,
+            "train_time": 33.79532599449158,
+            "test_time": 0.1298050880432129,
+            "epochs": 98
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.8862258119032195,
+            "AUC-PR": 0.45948027612516806,
+            "f1": 0.5076923076923077,
+            "train_time": 73.19749212265015,
+            "test_time": 0.13428950309753418,
+            "epochs": 132
+        }
+    ]
+}

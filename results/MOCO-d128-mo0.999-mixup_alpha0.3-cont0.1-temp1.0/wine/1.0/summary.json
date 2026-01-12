@@ -1,0 +1,133 @@
+{
+    "model_config": {
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "queue_size": 32,
+        "momentum": 0.999,
+        "temperature": 1.0,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.3,
+        "contrastive_loss_weight": 0.1,
+        "num_features": 13
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 16,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 5,
+        "use_amp": false,
+        "model_type": "MOCO",
+        "dataset_name": "wine",
+        "base_path": "results/MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp1.0/wine/1.0",
+        "exp_name": "MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp1.0",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9470000000000001,
+        "AUC-PR": 0.7226426790919824,
+        "f1": 0.6799999999999999
+    },
+    "total_time": 67.36136293411255,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.98,
+            "AUC-PR": 0.886024531024531,
+            "f1": 0.8,
+            "train_time": 9.909925937652588,
+            "test_time": 0.05149269104003906,
+            "epochs": 50
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9633333333333334,
+            "AUC-PR": 0.8088768094650447,
+            "f1": 0.7,
+            "train_time": 5.533435583114624,
+            "test_time": 0.05197548866271973,
+            "epochs": 30
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9616666666666667,
+            "AUC-PR": 0.7700198412698412,
+            "f1": 0.8,
+            "train_time": 3.8494677543640137,
+            "test_time": 0.052291154861450195,
+            "epochs": 21
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9466666666666667,
+            "AUC-PR": 0.6809776334776334,
+            "f1": 0.6,
+            "train_time": 4.882906436920166,
+            "test_time": 0.05335736274719238,
+            "epochs": 26
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9666666666666666,
+            "AUC-PR": 0.7544122544122543,
+            "f1": 0.7,
+            "train_time": 8.462984561920166,
+            "test_time": 0.051069021224975586,
+            "epochs": 45
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9433333333333334,
+            "AUC-PR": 0.6333982683982684,
+            "f1": 0.6,
+            "train_time": 8.741880893707275,
+            "test_time": 0.05827808380126953,
+            "epochs": 46
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9583333333333334,
+            "AUC-PR": 0.7644642857142857,
+            "f1": 0.8,
+            "train_time": 8.40237021446228,
+            "test_time": 0.05404019355773926,
+            "epochs": 44
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9400000000000001,
+            "AUC-PR": 0.652813714063714,
+            "f1": 0.6,
+            "train_time": 10.602078437805176,
+            "test_time": 0.052690744400024414,
+            "epochs": 56
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.8750000000000001,
+            "AUC-PR": 0.553786982757571,
+            "f1": 0.5,
+            "train_time": 2.255824089050293,
+            "test_time": 0.051950693130493164,
+            "epochs": 11
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.935,
+            "AUC-PR": 0.7216524703366808,
+            "f1": 0.7,
+            "train_time": 2.216937303543091,
+            "test_time": 0.050469398498535156,
+            "epochs": 11
+        }
+    ]
+}

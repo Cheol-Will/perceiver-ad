@@ -5,7 +5,7 @@ data_list=(
     # wine 
     # glass # 0.3057
     # wbc # 0.7887
-    ionosphere # 0.9795
+    # ionosphere # 0.9795
     
     # arrhythmia 
     # breastw 
@@ -15,9 +15,9 @@ data_list=(
     # mammography 
     # campaign 
     # shuttle 
-    # fraud 
-    # nslkdd 
-    # census
+    fraud 
+    nslkdd 
+    census
 ) 
 
 model_type="MQ"
@@ -29,8 +29,8 @@ queue_size_list=(16384) # 2048 * 8
 momentum=0.999
 # top_k_list=(0)
 top_k_list=(5)
-# top_k_list=(10)
-# top_k_list=(16)
+top_k_list=(10)
+top_k_list=(16)
 # top_k_list=(32)
 # top_k_list=(128)
 # temperature_list=(0.1 1.0) 

@@ -29,9 +29,10 @@ class Config:
         if self.METRIC_ALIAS is None:
             self.METRIC_ALIAS = {
                 "AUC-ROC": "AUC-ROC", "AUROC": "AUC-ROC", "AUCROC": "AUC-ROC",
-                "AUC_ROC": "AUC-ROC", "auc_roc": "AUC-ROC",
+                "AUC_ROC": "AUC-ROC", "auc_roc": "AUC-ROC", "rauc": "AUC-ROC",
                 "AUC-PR": "AUC-PR", "AUCPR": "AUC-PR", "AUC_PR": "AUC-PR",
-                "auc_pr": "AUC-PR", 'f1': 'f1'
+                "ap": "AUC-PR",
+                "auc_pr": "AUC-PR", 'f1': 'f1',
             }
     
     def canon_metric_name(self, name: str) -> str:
@@ -466,6 +467,11 @@ class ResultRenderer:
         # df_mean.loc['LATTE-patience', 'census'] = 0.2474
         # df_mean.drop(latte_patience, axis=0, inplace=True)
         # df_mean.loc["LATTE-patience-tuned", 'census'] = 0.2474
+        # df_mean.loc["MBT-d64-top_k5-temp0.1", 'fraud'] = 0.3549
+        # df_mean.loc["MBT-d64-top_k5-temp0.1", 'nslkdd'] = 0.9693
+        # df_mean.loc["MBT-d32-top_k5-temp0.1", 'fraud'] = 0.3549
+        # df_mean.loc["MBT-d32-top_k5-temp0.1", 'nslkdd'] = 0.9693
+        
 
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
@@ -934,7 +940,7 @@ def main(args):
         "mammography",
         "campaign",
         "shuttle",
-        # "fraud",
+        "fraud",
         "nslkdd",
         # "census"
     ]
@@ -1026,115 +1032,8 @@ def main(args):
         
         # "OELATTE-d16-oe_lam1.0-oe_rat0.1",
 
-        # "MemPAE-ws-pos_query-d16-lr0.05-t0.1",
-        # "MemPAE-ws-pos_query-d32-lr0.05-t0.1",
-  
-
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01', # Ours
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Ours
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001', # Ours
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.1", # cardio - thyroid
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.5", 
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t1.0", 
-
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1", 
-        # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N4.0-d64-lr0.001-t0.1",
-        # "MemPAE-ws-local+global-sqrt_F4.0-sqrt_N1.0-d64-lr0.001-t0.1",
-        # "MemPAE-ws-local+global-sqrt_F4.0-sqrt_N4.0-d64-lr0.001-t0.1",
-
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t0.1", 
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t0.5", 
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t1.0", # - pima
-
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t0.5", 
-        # "MemPAE-ws-local+global-sqrt_F-sqrt_N-top15-d64-lr0.001-t1.0", 
-        
-        
-        # "MemPAE-ws-l2-d64-lr0.001",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d16-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d16-lr0.001-t1.0",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d32-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d32-lr0.001-t1.0",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t1.0",
-
-
-        # 251224
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top1-d32-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top1-d32-lr0.001-t1.0",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top1-d64-lr0.001-t1.0",
-
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top3-d32-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top3-d32-lr0.001-t1.0",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top3-d64-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top3-d64-lr0.001-t1.0",
-
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d32-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d32-lr0.001-t1.0",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top5-d64-lr0.001-t1.0",
-
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top10-d32-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top10-d32-lr0.001-t1.0",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t0.1",
-        # "MemPAE-ws-l2-local+global-sqrt_F-sqrt_N-top10-d64-lr0.001-t1.0",
-
-
-        # "MemPAE-ws-use_ent_score-ent0.0001-L4-d64-lr0.001",
-        # "MemPAE-Full_rank",
-        # 'LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20',
-        # 'MemSet',
-        # 'MemSet-use_pos',
-
-
-        # "MemPAE-ws-local+global-F-sqrt_N1.0-d64-lr0.001-t0.1", 
-        # "LATTE-no_mem-full_rank",
-        # "LATTE-no_mem-full_rank-v2",
-        # "LATTE-no_mem-full_rank-gamma1.0",
-        # "LATTE-no_mem-full_rank-p200-gamma1.0",
-        # 'LATTE-Full_rank-no_dec-d64-lr0.001-g1.0-t0.1-p20',
-        # 'LATTE-Full_rank-no_dec-d64-lr0.001-g1.0-t1.0-p20',
-        
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
-        
-        # pendigits  mammography  campaign  shuttle  nslkdd   fraud  census
-        # "LATTE-patience20-delta0.000001", # 
-        # pima, cardio, cardiotography, thyroid, opdigits, satimage-2, satellite,
-        # "LATTE-patience10-delta0.0001", 
-        # wine, glass, wbc, ionosphere, arrhythmia, breastw
-        # "LATTE-patience10-delta0.005",         
-
-
-        # "MemPAE-mlp-mlp-v3-no_mem", # MLP-MLP-X
-        # "MemPAE-mlp-mlp-v3", # MLP-MLP-O
-        # "MemPAE-attn-mlp-no_mem", # Attn-MLP-X
-        # "MemPAE-attn-mlp", # Attn-MLP-O
-        # "MemPAE-mlp-attn-no_mem",
-        # 'MemPAE-mlp-attn',
-        # "MemPAE-attn-attn-no_mem", # Attn-Attn-X
-        # 'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
-        # "MemPAE-attn-mlp-no_mem-v2", # Attn-MLP-X
-        # "MemPAE-attn-mlp-no_mem-lr0.01",
-        # "MemPAE-attn-mlp-no_mem-ws-lr0.01",
-        # "MemPAE-attn-mlp-ws-lr0.01",
-
-
-        # "PAE-ws-pos_query+token-d64-lr0.001", # Attn-Attn-X
-        # "MemPAE-attn-attn-no_mem-v2", # Attn-Attn-X
-
-
-        
-        # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_mixer-d64-lr0.001-t0.1",
-        # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
+        #64-lr0.001-t0.1",
     ]
-    
-    # OELATTE-d64-oe_lam1.0-oe_rat0.5-oe_lam_mem1.0 - 0.8612 cardio
-    # OELATTE-d64-oe_lam1.0-oe_rat0.1-oe_lam_mem1.0 - 0.7446 cardiotocography
-    # OELATTE-d64-oe_lam0.1-oe_rat0.5-oe_lam_mem1.0 - 0.8019 thyroid
-    # OELATTE-d16-oe_lam0.1-oe_rat0.5 - 0.3485
-    # OELATTE-d64-oe_lam0.1-oe_rat0.3-oe_lam_mem1.0 - 0.9641
-    # OELATTE-d32-oe_lam0.1-oe_rat0.1-oe_lam_mem0.01 - 0.8551 sat
 
 
     # f_list = [0.5, 1.0, 2.0, 4.0]
@@ -1144,13 +1043,44 @@ def main(args):
     #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d64-lr0.001-t0.1")
     #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d32-lr0.001-t0.1")
 
-    hidden_dim_list = [128, 64, 32]
+    hidden_dim_list = [256, 128, 64, 32]
     top_k_list = [5, 10, 16, 32, 0]
     temperature_list = [0.1, 1.0]
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch40")
     
     my_models.append("MBT-d128-top_k5-temp0.1")
     my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont1.0-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont1.0-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont1.0-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont1.0-temp0.1")
+
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont0.1-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont0.1-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp0.1")
+    
+    my_models.append("ProtoAD-d64-proto5-eps0.05-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d64-proto10-eps0.05-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d64-proto16-eps0.05-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d64-proto32-eps0.05-contra0.1-temp0.1")
+
+    my_models.append("ProtoAD-d32-proto5-eps0.05-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d32-proto10-eps0.05-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d32-proto16-eps0.05-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d32-proto32-eps0.05-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d32-proto64-eps0.05-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d32-proto128-eps0.05-contra0.1-temp0.1")
+
+    my_models.append("ProtoAD-d32-proto5-eps0.1-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d32-proto10-eps0.1-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d32-proto16-eps0.1-contra0.1-temp0.1")
+    my_models.append("ProtoAD-d32-proto32-eps0.1-contra0.1-temp0.1")
+    
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch30")
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch50")
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch100")
@@ -1191,7 +1121,6 @@ def main(args):
                 # my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-lat_lam{latent_loss}-mem_ent_lam{entropy_loss}")
                 pass
     
-    
     hidden_dim_list = [64, 32, 16]
     oe_lambda_list = [0.1, 0.2, 0.5, 1.0]
     oe_shuffle_ratio_list = [0.1, 0.3, 0.5]
@@ -1210,7 +1139,7 @@ def main(args):
                     pass
 
     keys = [
-        # 'ratio_1.0_AUCROC', 
+        'ratio_1.0_AUCROC', 
         'ratio_1.0_AUCPR', 
         # 'ratio_1.0_f1'
     ]

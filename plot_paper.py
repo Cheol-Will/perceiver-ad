@@ -52,6 +52,19 @@ def plot_hp_sen():
         [6, 0.7070],
     ]
 
+    aucpr_vs_top_k_mbt = [
+        [5, 0.7245],
+        [10, 0.7253],
+        [16, 0.7258],
+        [32, 0.7246],
+        ['soft-knn', 0.7079],
+    ]
+
+    aucpr_vs_hidden_dim_mbt = [
+        [32, 0.7076],
+        [64, 0.7180],
+        [128, 0.7245],
+    ]
 
     def _plot_hp_vs_aucpr(metrics, xlabel, color, y_label = ' '):
         fig, ax = plt.subplots(1, 1, figsize=(4, 3))
@@ -88,6 +101,9 @@ def plot_hp_sen():
     _plot_hp_vs_aucpr(aucpr_vs_memory, 'Memory size (scale)', color='C1')
     _plot_hp_vs_aucpr(aucpr_vs_temperature, 'Temperature', color='C2')
     _plot_hp_vs_aucpr(aucpr_vs_depth, 'Depth', color='C3')
+    _plot_hp_vs_aucpr(aucpr_vs_top_k_mbt, 'Top-k', color='C4')
+    _plot_hp_vs_aucpr(aucpr_vs_hidden_dim_mbt, 'Hidden Dim', color='C4')
+
 
 
     def plot_hp_sen_1x4():

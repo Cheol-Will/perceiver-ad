@@ -1,0 +1,133 @@
+{
+    "model_config": {
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "queue_size": 2048,
+        "momentum": 0.999,
+        "temperature": 1.0,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.2,
+        "contrastive_loss_weight": 1.0,
+        "num_features": 16
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "use_amp": false,
+        "model_type": "MOCO",
+        "dataset_name": "pendigits",
+        "base_path": "results/MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp1.0/pendigits/1.0",
+        "exp_name": "MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp1.0",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9383152692804166,
+        "AUC-PR": 0.41445014679411774,
+        "f1": 0.4480769230769231
+    },
+    "total_time": 307.43427181243896,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9571771193755109,
+            "AUC-PR": 0.5867184933979873,
+            "f1": 0.6282051282051282,
+            "train_time": 44.275747776031494,
+            "test_time": 0.09430909156799316,
+            "epochs": 126
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9400659166074715,
+            "AUC-PR": 0.3725164305746187,
+            "f1": 0.4358974358974359,
+            "train_time": 11.30604600906372,
+            "test_time": 0.09288191795349121,
+            "epochs": 30
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9270907327207595,
+            "AUC-PR": 0.5208759059122308,
+            "f1": 0.5705128205128205,
+            "train_time": 48.98285102844238,
+            "test_time": 0.09294843673706055,
+            "epochs": 134
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9608987725609709,
+            "AUC-PR": 0.48176360263868695,
+            "f1": 0.48717948717948717,
+            "train_time": 39.03175592422485,
+            "test_time": 0.05025935173034668,
+            "epochs": 125
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9488878959388342,
+            "AUC-PR": 0.4757818888924221,
+            "f1": 0.5576923076923077,
+            "train_time": 19.08187246322632,
+            "test_time": 0.09535098075866699,
+            "epochs": 60
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9345722294783957,
+            "AUC-PR": 0.3285825491334189,
+            "f1": 0.36538461538461536,
+            "train_time": 37.393887519836426,
+            "test_time": 0.0974884033203125,
+            "epochs": 108
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9675076189821499,
+            "AUC-PR": 0.5342026845364004,
+            "f1": 0.42948717948717946,
+            "train_time": 37.441428422927856,
+            "test_time": 0.05043435096740723,
+            "epochs": 116
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9351546328758125,
+            "AUC-PR": 0.3260988309027279,
+            "f1": 0.40384615384615385,
+            "train_time": 4.585142612457275,
+            "test_time": 0.0923469066619873,
+            "epochs": 24
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.9356301031904249,
+            "AUC-PR": 0.33628196093440155,
+            "f1": 0.41025641025641024,
+            "train_time": 10.238307237625122,
+            "test_time": 0.09413743019104004,
+            "epochs": 28
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.8761676710738372,
+            "AUC-PR": 0.18167912101828326,
+            "f1": 0.19230769230769232,
+            "train_time": 52.10905146598816,
+            "test_time": 0.0939338207244873,
+            "epochs": 144
+        }
+    ]
+}

@@ -1,0 +1,133 @@
+{
+    "model_config": {
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "queue_size": 512,
+        "momentum": 0.999,
+        "temperature": 1.0,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.2,
+        "contrastive_loss_weight": 0.1,
+        "num_features": 21
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 256,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "use_amp": false,
+        "model_type": "MOCO",
+        "dataset_name": "cardiotocography",
+        "base_path": "results/MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp1.0/cardiotocography/1.0",
+        "exp_name": "MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp1.0",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.752562997416559,
+        "AUC-PR": 0.6811893316766602,
+        "f1": 0.5927038626609442
+    },
+    "total_time": 155.2777922153473,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.6544074753114714,
+            "AUC-PR": 0.59778546568487,
+            "f1": 0.4957081545064378,
+            "train_time": 19.49158501625061,
+            "test_time": 0.06900644302368164,
+            "epochs": 96
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.708287324471853,
+            "AUC-PR": 0.6578862526932389,
+            "f1": 0.575107296137339,
+            "train_time": 22.187106609344482,
+            "test_time": 0.07127261161804199,
+            "epochs": 113
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.6631422142589274,
+            "AUC-PR": 0.5922418052219387,
+            "f1": 0.4957081545064378,
+            "train_time": 24.23022723197937,
+            "test_time": 0.07026124000549316,
+            "epochs": 120
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.8241723613483894,
+            "AUC-PR": 0.7329769276735524,
+            "f1": 0.6330472103004292,
+            "train_time": 17.55724859237671,
+            "test_time": 0.07085895538330078,
+            "epochs": 90
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.7511354639776656,
+            "AUC-PR": 0.6769441913577547,
+            "f1": 0.6051502145922747,
+            "train_time": 7.340396404266357,
+            "test_time": 0.07242298126220703,
+            "epochs": 37
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.7984264969373724,
+            "AUC-PR": 0.7313864241928685,
+            "f1": 0.6437768240343348,
+            "train_time": 11.08113980293274,
+            "test_time": 0.071533203125,
+            "epochs": 55
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.7326880807533647,
+            "AUC-PR": 0.6838850598759287,
+            "f1": 0.6008583690987125,
+            "train_time": 17.53617835044861,
+            "test_time": 0.05816817283630371,
+            "epochs": 89
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.7955982540939206,
+            "AUC-PR": 0.725924982817832,
+            "f1": 0.6351931330472103,
+            "train_time": 13.556861162185669,
+            "test_time": 0.06940841674804688,
+            "epochs": 68
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.8070101879244969,
+            "AUC-PR": 0.7004384008325175,
+            "f1": 0.6180257510729614,
+            "train_time": 6.330662250518799,
+            "test_time": 0.06969428062438965,
+            "epochs": 32
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.7907621150881287,
+            "AUC-PR": 0.7124238064161006,
+            "f1": 0.6244635193133047,
+            "train_time": 13.187012434005737,
+            "test_time": 0.05126476287841797,
+            "epochs": 67
+        }
+    ]
+}

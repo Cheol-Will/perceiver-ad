@@ -8,8 +8,9 @@ data_list=(
     # optdigits satellite "satimage-2" pendigits
     # mammography campaign shuttle 
     
-    fraud 
-    # nslkdd census
+    # fraud 
+    nslkdd 
+    # census
     # longer training
     # nslkdd  # done
     # fraud
@@ -19,7 +20,7 @@ data_list=(
 model_type="MBT"
 # hidden_dim_list=(256)
 hidden_dim_list=(128)
-# hidden_dim_list=(64)
+hidden_dim_list=(64)
 # hidden_dim_list=(32)
 # hidden_dim_list=(32 64 128)
 # oe_lambda_list=(1.0)
@@ -44,8 +45,8 @@ for data in "${data_list[@]}"; do
     for hidden_dim in "${hidden_dim_list[@]}"; do
         for top_k in "${top_k_list[@]}"; do
             for temperature in "${temperature_list[@]}"; do
-                exp_name="$model_type-d$hidden_dim-top_k$top_k-temp$temperature-lr$learning_rate"
-                # exp_name="$model_type-d$hidden_dim-top_k$top_k-temp$temperature"
+                # exp_name="$model_type-d$hidden_dim-top_k$top_k-temp$temperature-lr$learning_rate"
+                exp_name="$model_type-d$hidden_dim-top_k$top_k-temp$temperature"
                 echo "Running $exp_name on $data."
                 python main.py \
                     --dataname "$data" \
@@ -53,8 +54,8 @@ for data in "${data_list[@]}"; do
                     --exp_name "$exp_name" \
                     --hidden_dim "$hidden_dim" \
                     --top_k "$top_k" \
-                    --temperature "$temperature" \
-                    --learning_rate "$learning_rate"
+                    --temperature "$temperature"
+                    # --learning_rate "$learning_rate"
                     # --epochs "$epochs"
                     # --patience "$patience"
             done

@@ -46,7 +46,6 @@ def main(args):
     train_config.pop('device')
     train_config.pop('logger')
     
-    # 50, 100, 150, ... 
     full_epochs = train_config['epochs']
     epochs = list(range(50, full_epochs+1, 50))
     for idx, epoch in enumerate(epochs):

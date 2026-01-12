@@ -1,0 +1,133 @@
+{
+    "model_config": {
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "queue_size": 16384,
+        "momentum": 0.999,
+        "temperature": 1.0,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.3,
+        "contrastive_loss_weight": 0.1,
+        "num_features": 29
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 2048,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 50,
+        "use_amp": false,
+        "model_type": "MOCO",
+        "dataset_name": "fraud",
+        "base_path": "results/MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp1.0/fraud/1.0",
+        "exp_name": "MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp1.0",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9606401698407943,
+        "AUC-PR": 0.6978300664531358,
+        "f1": 0.7247967479674796
+    },
+    "total_time": 8781.261890411377,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9638197284665625,
+            "AUC-PR": 0.7139189502227401,
+            "f1": 0.7357723577235772,
+            "train_time": 861.885181427002,
+            "test_time": 3.1979403495788574,
+            "epochs": 111
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9610635057728623,
+            "AUC-PR": 0.6570891129919889,
+            "f1": 0.6646341463414634,
+            "train_time": 997.6842331886292,
+            "test_time": 3.06357741355896,
+            "epochs": 129
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.963855050723934,
+            "AUC-PR": 0.703536177158595,
+            "f1": 0.7113821138211383,
+            "train_time": 902.6268916130066,
+            "test_time": 3.1227524280548096,
+            "epochs": 117
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9582298471973871,
+            "AUC-PR": 0.7185248686171913,
+            "f1": 0.7621951219512195,
+            "train_time": 652.6768114566803,
+            "test_time": 3.4179201126098633,
+            "epochs": 84
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9584723633396803,
+            "AUC-PR": 0.7040615663199706,
+            "f1": 0.7439024390243902,
+            "train_time": 749.4924221038818,
+            "test_time": 3.0037105083465576,
+            "epochs": 97
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9585588639092402,
+            "AUC-PR": 0.6165187641104009,
+            "f1": 0.6544715447154471,
+            "train_time": 775.1305594444275,
+            "test_time": 3.307760715484619,
+            "epochs": 100
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9631372890143876,
+            "AUC-PR": 0.7346715792267764,
+            "f1": 0.7601626016260162,
+            "train_time": 988.1030259132385,
+            "test_time": 3.1223676204681396,
+            "epochs": 128
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.962843944851469,
+            "AUC-PR": 0.7547060983227519,
+            "f1": 0.774390243902439,
+            "train_time": 980.3325748443604,
+            "test_time": 3.2044379711151123,
+            "epochs": 127
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.9537130162168123,
+            "AUC-PR": 0.7174159469820489,
+            "f1": 0.7601626016260162,
+            "train_time": 1048.9372618198395,
+            "test_time": 3.0191307067871094,
+            "epochs": 136
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.9627080889156081,
+            "AUC-PR": 0.6578576005788938,
+            "f1": 0.6808943089430894,
+            "train_time": 785.9461524486542,
+            "test_time": 3.1337103843688965,
+            "epochs": 102
+        }
+    ]
+}

@@ -1,0 +1,133 @@
+{
+    "model_config": {
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "queue_size": 16384,
+        "momentum": 0.999,
+        "temperature": 1.0,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.2,
+        "contrastive_loss_weight": 0.1,
+        "num_features": 29
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.98,
+        "batch_size": 2048,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 50,
+        "use_amp": false,
+        "model_type": "MOCO",
+        "dataset_name": "fraud",
+        "base_path": "results/MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp1.0/fraud/1.0",
+        "exp_name": "MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp1.0",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9609969954134394,
+        "AUC-PR": 0.6913056080657166,
+        "f1": 0.7213414634146342
+    },
+    "total_time": 7897.759340286255,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9587781750227073,
+            "AUC-PR": 0.6796050205449997,
+            "f1": 0.709349593495935,
+            "train_time": 726.5807356834412,
+            "test_time": 3.1289682388305664,
+            "epochs": 94
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9595376643210571,
+            "AUC-PR": 0.6871822720323911,
+            "f1": 0.7012195121951219,
+            "train_time": 941.8646335601807,
+            "test_time": 3.175187110900879,
+            "epochs": 122
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9616965612635066,
+            "AUC-PR": 0.7115282771472154,
+            "f1": 0.7398373983739838,
+            "train_time": 724.4335985183716,
+            "test_time": 3.059295892715454,
+            "epochs": 94
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9626082915642814,
+            "AUC-PR": 0.7147542522061595,
+            "f1": 0.758130081300813,
+            "train_time": 878.8463408946991,
+            "test_time": 3.291012763977051,
+            "epochs": 114
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9633030555604167,
+            "AUC-PR": 0.7124629179926166,
+            "f1": 0.758130081300813,
+            "train_time": 871.6114130020142,
+            "test_time": 3.1920101642608643,
+            "epochs": 113
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9626022436732196,
+            "AUC-PR": 0.5920623924333569,
+            "f1": 0.6260162601626016,
+            "train_time": 656.0702021121979,
+            "test_time": 3.2807798385620117,
+            "epochs": 85
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9672038666583854,
+            "AUC-PR": 0.717844747891361,
+            "f1": 0.725609756097561,
+            "train_time": 704.9465954303741,
+            "test_time": 3.446458339691162,
+            "epochs": 91
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9588480188710216,
+            "AUC-PR": 0.7494349825121734,
+            "f1": 0.774390243902439,
+            "train_time": 805.5271399021149,
+            "test_time": 2.9710216522216797,
+            "epochs": 105
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.9583229818602157,
+            "AUC-PR": 0.7059048576183582,
+            "f1": 0.7540650406504065,
+            "train_time": 821.0593757629395,
+            "test_time": 2.9665815830230713,
+            "epochs": 107
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.9570690953395838,
+            "AUC-PR": 0.6422763602785346,
+            "f1": 0.6666666666666666,
+            "train_time": 728.3599758148193,
+            "test_time": 3.1725196838378906,
+            "epochs": 95
+        }
+    ]
+}

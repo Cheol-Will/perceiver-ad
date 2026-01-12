@@ -1,0 +1,117 @@
+default: 
+  train_config:
+    data_dir: 'Data/'
+    epochs: 250
+    learning_rate: 0.01
+    sche_gamma: 0.95
+    batch_size: 512
+    random_seed: 42
+    num_workers: 0
+    preprocess: 'standard'
+    patience: 20
+    use_amp: false
+  model_config:
+    hidden_dim: 16
+    depth: 4
+    num_heads: 4
+    mlp_ratio: 4.0
+    dropout_prob: 0.0
+    num_prototypes: 10
+    temperature: 0.1
+    sinkhorn_iters: 3
+    sinkhorn_eps: 0.05
+    contrastive_loss_weight: 0.1
+    use_flash_attn: false
+
+wine:
+  num_prototypes: 5
+  patience: 5
+
+glass:
+  batch_size: 16
+  num_prototypes: 5
+  patience: 5
+
+wbc:
+  batch_size: 16
+  num_prototypes: 5
+  patience: 5
+
+ionosphere:
+  batch_size: 32
+  num_prototypes: 8
+  patience: 5
+
+arrhythmia:  
+  batch_size: 32
+  num_prototypes: 8
+
+breastw: 
+  batch_size: 64
+  num_prototypes: 10
+
+pima: 
+  batch_size: 64
+  num_prototypes: 10
+
+cardio: 
+  batch_size: 256
+  num_prototypes: 10
+
+cardiotocography: 
+  batch_size: 256
+  num_prototypes: 10
+
+thyroid:
+  batch_size: 256
+  num_prototypes: 15
+
+census:
+  batch_size: 256
+  learning_rate: 0.001
+  sche_gamma: 0.98
+  patience: 50
+  min_delta: 0.00001
+  num_prototypes: 20
+  epochs: 50
+  use_amp: true
+  use_flash_attn: true
+
+fraud:
+  batch_size: 2048
+  learning_rate: 0.001
+  sche_gamma: 0.98
+  patience: 50
+  min_delta: 0.00001
+  num_prototypes: 20
+
+nslkdd:
+  batch_size: 1024
+  learning_rate: 0.001
+  sche_gamma: 0.98
+  patience: 50
+  min_delta: 0.00001
+  num_prototypes: 20
+  use_amp: true
+  use_flash_attn: true
+
+shuttle:
+  num_prototypes: 15
+
+campaign:
+  num_prototypes: 15
+
+mammography:
+  num_prototypes: 15
+
+pendigits:
+  num_prototypes: 10
+
+satellite:
+  num_prototypes: 10
+
+satimage-2:
+  num_prototypes: 10
+
+optdigits:
+  num_prototypes: 10

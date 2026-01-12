@@ -1,0 +1,133 @@
+{
+    "model_config": {
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "queue_size": 4096,
+        "momentum": 0.999,
+        "temperature": 0.1,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.3,
+        "contrastive_loss_weight": 1.0,
+        "num_features": 6
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "use_amp": false,
+        "model_type": "MOCO",
+        "dataset_name": "mammography",
+        "base_path": "results/MOCO-d128-mo0.999-mixup_alpha0.3-cont1.0-temp0.1/mammography/1.0",
+        "exp_name": "MOCO-d128-mo0.999-mixup_alpha0.3-cont1.0-temp0.1",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.8590215263498859,
+        "AUC-PR": 0.3861124842430795,
+        "f1": 0.3980769230769231
+    },
+    "total_time": 300.7188243865967,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.8698173393797708,
+            "AUC-PR": 0.3425841426300151,
+            "f1": 0.3576923076923077,
+            "train_time": 12.913796424865723,
+            "test_time": 0.12605524063110352,
+            "epochs": 23
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.8467851308340141,
+            "AUC-PR": 0.3752831469962197,
+            "f1": 0.3384615384615385,
+            "train_time": 17.09104824066162,
+            "test_time": 0.1255652904510498,
+            "epochs": 32
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.8760069571585501,
+            "AUC-PR": 0.43468115907486754,
+            "f1": 0.4653846153846154,
+            "train_time": 52.408976554870605,
+            "test_time": 0.1323862075805664,
+            "epochs": 95
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.8546115821198209,
+            "AUC-PR": 0.41047153874526254,
+            "f1": 0.38461538461538464,
+            "train_time": 59.448936462402344,
+            "test_time": 0.13110661506652832,
+            "epochs": 108
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.8985325183787286,
+            "AUC-PR": 0.4159132085526011,
+            "f1": 0.4576923076923077,
+            "train_time": 13.019874572753906,
+            "test_time": 0.13314318656921387,
+            "epochs": 23
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.8700595724304988,
+            "AUC-PR": 0.4267437504430865,
+            "f1": 0.45,
+            "train_time": 61.448415756225586,
+            "test_time": 0.1343400478363037,
+            "epochs": 112
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.849426104836211,
+            "AUC-PR": 0.37827262971770514,
+            "f1": 0.35,
+            "train_time": 41.255327224731445,
+            "test_time": 0.20026397705078125,
+            "epochs": 75
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.8792834408359856,
+            "AUC-PR": 0.45503203776552875,
+            "f1": 0.4423076923076923,
+            "train_time": 12.395493030548096,
+            "test_time": 0.12927770614624023,
+            "epochs": 22
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.7492873841647185,
+            "AUC-PR": 0.2190090263742555,
+            "f1": 0.25,
+            "train_time": 14.619526386260986,
+            "test_time": 0.12984657287597656,
+            "epochs": 26
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.896405233360561,
+            "AUC-PR": 0.40313420213125256,
+            "f1": 0.4846153846153846,
+            "train_time": 12.965386867523193,
+            "test_time": 0.12832379341125488,
+            "epochs": 23
+        }
+    ]
+}

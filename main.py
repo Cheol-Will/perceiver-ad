@@ -21,23 +21,27 @@ def train_test_npt(model_config, train_config, run):
     train_time = end_train - start_train
     
     start_test = time.time()    
-    mse_rauc, mse_ap, mse_f1 = trainer.evaluate()
+    metrics = trainer.evaluate()
     end_test = time.time()    
     test_time = end_test - start_test
     
     if local_rank == 0:
-        if mse_rauc is not None:
-            train_config['logger'].info(f"[run {run}] AUC-ROC: {mse_rauc:.4f} | AUC-PR: {mse_ap:.4f} | F1: {mse_f1:.4f}")
+        if metrics is not None:
+            log_str = f"[run {run}]"
+            for key, value in metrics.items():
+                if isinstance(value, float):
+                    log_str += f" {key}: {value:.4f} |"
+            train_config['logger'].info(log_str.rstrip(' |'))
     
             results_dict = {
                 'run': run,
-                'AUC-ROC': float(mse_rauc),
-                'AUC-PR': float(mse_ap),
-                'f1': float(mse_f1),
                 'train_time': train_time,
                 'test_time': test_time,
                 'epochs': epochs,
             }
+            for key, value in metrics.items():
+                results_dict[key] = float(value) if isinstance(value, (int, float, np.floating)) else value
+            
             return results_dict    
     return None
 
@@ -53,21 +57,29 @@ def train_test(model_config, train_config, run):
     
     start_test = time.time()    
     metrics = trainer.evaluate()
-    mse_rauc, mse_ap, mse_f1 = metrics['rauc'], metrics['ap'], metrics['f1']
     end_test = time.time()    
     test_time = end_test - start_test
     
-    train_config['logger'].info(f"[run {run}] AUC-ROC: {mse_rauc:.4f} | AUC-PR: {mse_ap:.4f} | F1: {mse_f1:.4f}")
+    # 모든 metrics 로깅
+    log_str = f"[run {run}]"
+    for key, value in metrics.items():
+        if isinstance(value, (int, float, np.floating)):
+            log_str += f" {key}: {value:.4f} |"
+    train_config['logger'].info(log_str.rstrip(' |'))
+    
     results_dict = {
         'run': run,
-        'AUC-ROC': float(mse_rauc),
-        'AUC-PR': float(mse_ap),
-        'f1': float(mse_f1),
         'train_time': train_time,
         'test_time': test_time,
         'epochs': epochs,
     }
+
+    # add every metric    
+    for key, value in metrics.items():
+        results_dict[key] = float(value) if isinstance(value, (int, float, np.floating)) else value
+    
     return results_dict
+
 
 def main(args):
     is_nptad = args.model_type == 'NPTAD'
@@ -88,14 +100,12 @@ def main(args):
     
     writer = None
     if local_rank == 0:
-        # 공통 tensorboard 경로: exp_name/train_ratio 수준
         if args.contamination_ratio is not None:
             tensorboard_dir = f"results/{args.exp_name}/tensorboard_contam{args.contamination_ratio}/{args.train_ratio}"
         else:
             tensorboard_dir = f"results/{args.exp_name}/tensorboard/{args.train_ratio}"
         
         os.makedirs(tensorboard_dir, exist_ok=True)
-        # dataname을 포함한 writer 생성
         writer = SummaryWriter(log_dir=os.path.join(tensorboard_dir, args.dataname))
         print(f"TensorBoard logs will be saved to: {tensorboard_dir}/{args.dataname}")
     
@@ -104,7 +114,6 @@ def main(args):
     if train_config['num_workers'] > 0:
         torch.multiprocessing.set_start_method('spawn', force=True)
     
-    # rank 0에서만 출력
     if local_rank == 0:
         print(model_config)
         print(train_config)
@@ -133,26 +142,45 @@ def main(args):
         writer.close()
     
     if local_rank == 0 and len(all_results) > 0:
-        mean_metrics = {
-            'AUC-ROC': float(np.mean([r['AUC-ROC'] for r in all_results])),
-            'AUC-PR': float(np.mean([r['AUC-PR'] for r in all_results])),
-            'f1': float(np.mean([r['f1'] for r in all_results]))
-        }
+        # Extract metric keys (excluding run, train_time, test_time, epochs)
+        exclude_keys = {'run', 'train_time', 'test_time', 'epochs'}
+        metric_keys = [k for k in all_results[0].keys() if k not in exclude_keys]
+        
+        # mean and std
+        mean_metrics = {}
+        std_metrics = {}
+        for key in metric_keys:
+            values = [r[key] for r in all_results if key in r and isinstance(r[key], (int, float, np.floating))]
+            if values:
+                mean_metrics[key] = float(np.mean(values))
+                std_metrics[f"{key}_std"] = float(np.std(values))
+        
         train_config.pop('device')
         train_config.pop('logger')
-        train_config.pop('writer')  # 
+        train_config.pop('writer')
         
         summary = {
             'model_config': model_config,
             'train_config': train_config,
             'mean_metrics': mean_metrics,
+            'std_metrics': std_metrics,
             'total_time': total_time,
             'all_seeds': all_results,
         }
         with open(summary_path, 'w') as f:
             json.dump(summary, f, indent=4)
-        print("\nSummary")
-        print(json.dumps(summary, indent=4))
+        
+        print(f"\n{'='*80}")
+        print("Summary")
+        print(f"{'='*80}")
+        for key in sorted(mean_metrics.keys()):
+            std_key = f"{key}_std"
+            if std_key in std_metrics:
+                print(f"  {key}: {mean_metrics[key]:.4f} ± {std_metrics[std_key]:.4f}")
+            else:
+                print(f"  {key}: {mean_metrics[key]:.4f}")
+        print(f"{'='*80}\n")
+
 
 if __name__ == "__main__":
     parser = get_parser()

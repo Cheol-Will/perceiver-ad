@@ -1,0 +1,133 @@
+{
+    "model_config": {
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "queue_size": 512,
+        "momentum": 0.999,
+        "temperature": 0.1,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.2,
+        "contrastive_loss_weight": 1.0,
+        "num_features": 21
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 256,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "use_amp": false,
+        "model_type": "MOCO",
+        "dataset_name": "cardio",
+        "base_path": "results/MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp0.1/cardio/1.0",
+        "exp_name": "MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp0.1",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9548947353974528,
+        "AUC-PR": 0.8323846579597903,
+        "f1": 0.7801136363636363
+    },
+    "total_time": 99.82976412773132,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9617575208607817,
+            "AUC-PR": 0.8430102871005926,
+            "f1": 0.8011363636363636,
+            "train_time": 7.098022937774658,
+            "test_time": 0.056531429290771484,
+            "epochs": 32
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9634181488801055,
+            "AUC-PR": 0.86060610710172,
+            "f1": 0.7954545454545454,
+            "train_time": 9.953544616699219,
+            "test_time": 0.054811716079711914,
+            "epochs": 50
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9677549956082565,
+            "AUC-PR": 0.8482003307559204,
+            "f1": 0.8125,
+            "train_time": 8.911582946777344,
+            "test_time": 0.0556797981262207,
+            "epochs": 44
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9650787768994291,
+            "AUC-PR": 0.8468117059722855,
+            "f1": 0.8011363636363636,
+            "train_time": 10.850135326385498,
+            "test_time": 0.053960323333740234,
+            "epochs": 55
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9683039635485288,
+            "AUC-PR": 0.8690053671935796,
+            "f1": 0.8125,
+            "train_time": 6.576277017593384,
+            "test_time": 0.05480051040649414,
+            "epochs": 33
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9638230127360563,
+            "AUC-PR": 0.8629881348549652,
+            "f1": 0.8011363636363636,
+            "train_time": 7.931854963302612,
+            "test_time": 0.04548907279968262,
+            "epochs": 39
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9670687856829161,
+            "AUC-PR": 0.8682008032400726,
+            "f1": 0.8238636363636364,
+            "train_time": 14.329172611236572,
+            "test_time": 0.05681157112121582,
+            "epochs": 72
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9611399319279754,
+            "AUC-PR": 0.8399329989037178,
+            "f1": 0.7954545454545454,
+            "train_time": 4.9865288734436035,
+            "test_time": 0.054163217544555664,
+            "epochs": 25
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.8715758124725516,
+            "AUC-PR": 0.6397021193986191,
+            "f1": 0.6079545454545454,
+            "train_time": 21.145095348358154,
+            "test_time": 0.05564451217651367,
+            "epochs": 107
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.959026405357927,
+            "AUC-PR": 0.8453887250764318,
+            "f1": 0.75,
+            "train_time": 5.365135431289673,
+            "test_time": 0.05458474159240723,
+            "epochs": 27
+        }
+    ]
+}

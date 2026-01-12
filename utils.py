@@ -58,6 +58,11 @@ def get_parser():
     parser.add_argument('--oe_lambda', type=float, default=None)
     parser.add_argument('--oe_shuffle_ratio', type=float, default=None)
     parser.add_argument('--oe_lambda_memory', type=float, default=None)
+    parser.add_argument('--mixup_alpha', type=float, default=None)
+    parser.add_argument('--num_prototypes', type=int, default=None)
+    parser.add_argument('--sinkhorn_eps', type=float, default=None)
+    parser.add_argument('--reconstruction_loss_weight', type=float, default=None)
+    parser.add_argument('--contrastive_loss_weight', type=float, default=None)
 
     # Train config
     parser.add_argument('--learning_rate', type=float, default=None)
@@ -170,7 +175,6 @@ def build_trainer(model_config, train_config):
     if model_type in BASELINE_MODELS:
         from models.Baselines.Trainer import Trainer
     else:
-        # Dynamic import: models.{model_type}.Trainer
         module = __import__(f'models.{model_type}.Trainer', fromlist=['Trainer'])
         Trainer = module.Trainer
     

@@ -1,0 +1,133 @@
+{
+    "model_config": {
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "queue_size": 1024,
+        "momentum": 0.999,
+        "temperature": 0.1,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.2,
+        "contrastive_loss_weight": 0.1,
+        "num_features": 6
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 256,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "use_amp": false,
+        "model_type": "MOCO",
+        "dataset_name": "thyroid",
+        "base_path": "results/MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp0.1/thyroid/1.0",
+        "exp_name": "MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp0.1",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "run": 9
+    },
+    "mean_metrics": {
+        "AUC-ROC": 0.9664586255259466,
+        "AUC-PR": 0.7241181837051414,
+        "f1": 0.6526881720430108
+    },
+    "total_time": 423.27624344825745,
+    "all_seeds": [
+        {
+            "run": 0,
+            "AUC-ROC": 0.9861266947171575,
+            "AUC-PR": 0.8152488239408437,
+            "f1": 0.7526881720430108,
+            "train_time": 19.997812509536743,
+            "test_time": 0.0848078727722168,
+            "epochs": 50
+        },
+        {
+            "run": 1,
+            "AUC-ROC": 0.9830528284244974,
+            "AUC-PR": 0.7834768180681606,
+            "f1": 0.7204301075268817,
+            "train_time": 15.552906274795532,
+            "test_time": 0.08399152755737305,
+            "epochs": 42
+        },
+        {
+            "run": 2,
+            "AUC-ROC": 0.9551309022907902,
+            "AUC-PR": 0.625299210313535,
+            "f1": 0.5483870967741935,
+            "train_time": 55.23793840408325,
+            "test_time": 0.0887150764465332,
+            "epochs": 145
+        },
+        {
+            "run": 3,
+            "AUC-ROC": 0.9698866292660122,
+            "AUC-PR": 0.7989898632879607,
+            "f1": 0.7311827956989247,
+            "train_time": 44.24043607711792,
+            "test_time": 0.08411717414855957,
+            "epochs": 116
+        },
+        {
+            "run": 4,
+            "AUC-ROC": 0.9530271154745208,
+            "AUC-PR": 0.6105689974442834,
+            "f1": 0.5161290322580645,
+            "train_time": 47.54504919052124,
+            "test_time": 0.085693359375,
+            "epochs": 125
+        },
+        {
+            "run": 5,
+            "AUC-ROC": 0.9810074801309023,
+            "AUC-PR": 0.8183155384523764,
+            "f1": 0.7526881720430108,
+            "train_time": 43.84022355079651,
+            "test_time": 0.08553290367126465,
+            "epochs": 116
+        },
+        {
+            "run": 6,
+            "AUC-ROC": 0.9713592800374006,
+            "AUC-PR": 0.710622395309881,
+            "f1": 0.6451612903225806,
+            "train_time": 54.13969683647156,
+            "test_time": 0.08830118179321289,
+            "epochs": 143
+        },
+        {
+            "run": 7,
+            "AUC-ROC": 0.9540790088826555,
+            "AUC-PR": 0.637624977539976,
+            "f1": 0.5483870967741935,
+            "train_time": 47.804972410202026,
+            "test_time": 0.08677053451538086,
+            "epochs": 125
+        },
+        {
+            "run": 8,
+            "AUC-ROC": 0.9364305750350632,
+            "AUC-PR": 0.6211597367522506,
+            "f1": 0.5698924731182796,
+            "train_time": 58.92612147331238,
+            "test_time": 0.09863066673278809,
+            "epochs": 155
+        },
+        {
+            "run": 9,
+            "AUC-ROC": 0.9744857410004675,
+            "AUC-PR": 0.819875475942146,
+            "f1": 0.7419354838709677,
+            "train_time": 33.03039193153381,
+            "test_time": 0.08439946174621582,
+            "epochs": 87
+        }
+    ]
+}
