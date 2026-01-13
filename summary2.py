@@ -930,6 +930,8 @@ def main(args):
         "arrhythmia",
         "breastw",
         "pima",
+
+
         "cardio",
         "cardiotocography",
         "thyroid",
@@ -1064,23 +1066,32 @@ def main(args):
     my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp0.1")
     my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp0.1")
     
-    my_models.append("ProtoAD-d64-proto5-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d64-proto10-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d64-proto16-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d64-proto32-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d64-proto5-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d64-proto10-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d64-proto16-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d64-proto32-eps0.05-contra0.1-temp0.1")
 
-    my_models.append("ProtoAD-d32-proto5-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d32-proto10-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d32-proto16-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d32-proto32-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d32-proto64-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d32-proto128-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d32-proto5-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d32-proto10-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d32-proto16-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d32-proto32-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d32-proto64-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d32-proto128-eps0.05-contra0.1-temp0.1")
 
-    my_models.append("ProtoAD-d32-proto5-eps0.1-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d32-proto10-eps0.1-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d32-proto16-eps0.1-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d32-proto32-eps0.1-contra0.1-temp0.1")
-    
+    proto_list = [5, 10, 16, 32, 64, 128]
+    eps_list = [0.05, 0.1]
+    contra_list = [0.01, 0.1, 1.0]
+    hidden_dim_list = [32, 64, 128]
+    temp_list = [0.1]
+    temp = 0.1
+
+    for hidden_dim in hidden_dim_list:
+        for eps in eps_list:
+            for contra in contra_list:
+                for proto in proto_list:
+                    # my_models.append(f"ProtoAD-d{hidden_dim}-proto{proto}-eps{eps}-contra{contra}-temp{temp}")
+                    pass
+                    
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch30")
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch50")
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch100")
@@ -1139,7 +1150,7 @@ def main(args):
                     pass
 
     keys = [
-        'ratio_1.0_AUCROC', 
+        # 'ratio_1.0_AUCROC', 
         'ratio_1.0_AUCPR', 
         # 'ratio_1.0_f1'
     ]
