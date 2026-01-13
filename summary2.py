@@ -938,12 +938,12 @@ def main(args):
         "optdigits",
         "satimage-2",
         "satellite", 
-        # "pendigits",
-        # "mammography",
-        # "campaign",
-        # "shuttle",
-        # "fraud",
-        # "nslkdd",
+        "pendigits",
+        "mammography",
+        "campaign",
+        "shuttle",
+        "fraud",
+        "nslkdd",
         # "census"
     ]
     datasets = [
@@ -1052,24 +1052,24 @@ def main(args):
     
     my_models.append("MBT-d128-top_k5-temp0.1")
     my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont1.0-temp1.0")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp1.0")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont1.0-temp1.0")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont1.0-temp0.1")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp0.1")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont1.0-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont1.0-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont1.0-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont1.0-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont1.0-temp0.1")
 
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont0.1-temp1.0")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp1.0")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp1.0")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont0.1-temp0.1")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp0.1")
-    # my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont0.1-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp1.0")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont0.1-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp0.1")
+    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp0.1")
     
-    my_models.append("ProtoAD-d64-proto5-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d64-proto10-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d64-proto16-eps0.05-contra0.1-temp0.1")
-    my_models.append("ProtoAD-d64-proto32-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d64-proto5-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d64-proto10-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d64-proto16-eps0.05-contra0.1-temp0.1")
+    # my_models.append("ProtoAD-d64-proto32-eps0.05-contra0.1-temp0.1")
 
     # my_models.append("ProtoAD-d32-proto5-eps0.05-contra0.1-temp0.1")
     # my_models.append("ProtoAD-d32-proto10-eps0.05-contra0.1-temp0.1")
@@ -1089,7 +1089,7 @@ def main(args):
         for eps in eps_list:
             for contra in contra_list:
                 for proto in proto_list:
-                    my_models.append(f"ProtoAD-d{hidden_dim}-proto{proto}-eps{eps}-contra{contra}-temp{temp}")
+                    # my_models.append(f"ProtoAD-d{hidden_dim}-proto{proto}-eps{eps}-contra{contra}-temp{temp}")
                     pass
                     
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch30")
