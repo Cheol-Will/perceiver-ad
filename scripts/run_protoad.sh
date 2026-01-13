@@ -2,17 +2,19 @@
 set -euo pipefail
 
 data_list=(    
-    wine 
-    glass 
-    wbc 
-    ionosphere 
-    arrhythmia 
-    breastw 
-    pima  
-    cardio cardiotocography thyroid 
+    # wine 
+    # glass 
+    # wbc 
+    # ionosphere 
+    # arrhythmia 
+    # breastw 
+    # pima  
+    # cardio cardiotocography thyroid 
     
-    optdigits 
-    satellite "satimage-2" pendigits
+    # optdigits 
+    satellite 
+    "satimage-2" 
+    pendigits
 
     mammography 
     campaign 
@@ -31,12 +33,8 @@ num_prototypes_list=(16)
 # num_prototypes_list=(64)
 # num_prototypes_list=(128)
 hidden_dim_list=(128)
-# hidden_dim_list=(64)
-# sinkhorn_eps_list=(0.1)
-sinkhorn_eps_list=(0.05)
-# contrastive_loss_weight_list=(0.01 0.1 1.0)
-# contrastive_loss_weight_list=(1.0)
-contrastive_loss_weight_list=(0.1)
+sinkhorn_eps_list=(0.1 0.05)
+contrastive_loss_weight_list=(0.1 1.0)
 temperature_list=(0.1) 
 learning_rate=0.01
 
