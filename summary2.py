@@ -923,21 +923,21 @@ def main(args):
     
     # 기본 데이터셋 및 모델 정의        
     data = [
-        # "wine",
-        # "glass",
-        # "wbc",
-        # "ionosphere",
-        # "arrhythmia",
-        # "breastw",
-        # "pima",
+        "wine",
+        "glass",
+        "wbc",
+        "ionosphere",
+        "arrhythmia",
+        "breastw",
+        "pima",
 
 
-        # "cardio",
-        # "cardiotocography",
-        # "thyroid",
+        "cardio",
+        "cardiotocography",
+        "thyroid",
         "optdigits",
-        # "satimage-2",
-        # "satellite", 
+        "satimage-2",
+        "satellite", 
         # "pendigits",
         # "mammography",
         # "campaign",
