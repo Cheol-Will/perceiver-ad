@@ -2,14 +2,14 @@
 set -euo pipefail
 
 data_list=(    
-    # wine 
-    # glass 
-    # wbc 
-    # ionosphere 
-    # arrhythmia 
-    # breastw 
-    # pima  
-    # cardio cardiotocography thyroid 
+    wine 
+    glass 
+    wbc 
+    ionosphere 
+    arrhythmia 
+    breastw 
+    pima  
+    cardio cardiotocography thyroid 
     
     optdigits 
     satellite "satimage-2" pendigits
@@ -17,16 +17,22 @@ data_list=(
     mammography 
     campaign 
     shuttle 
-    fraud 
-    nslkdd 
-    census
+    # fraud 
+    # nslkdd 
+    # census
 ) 
 
 model_type="ProtoAD"
-hidden_dim_list=(32)
-num_prototypes_list=(32 64 128)
-sinkhorn_eps_list=(0.05)
-contrastive_loss_weight_list=(0.1)
+# num_prototypes_list=(5 10 16 32 64 128)
+num_prototypes_list=(5)
+# num_prototypes_list=(10)
+# num_prototypes_list=(16)
+# num_prototypes_list=(32)
+# num_prototypes_list=(64)
+# num_prototypes_list=(128)
+hidden_dim_list=(32 64 128)
+sinkhorn_eps_list=(0.05 0.1)
+contrastive_loss_weight_list=(0.01 0.1 1.0)
 temperature_list=(0.1) 
 learning_rate=0.01
 
