@@ -66,6 +66,19 @@ def plot_hp_sen():
         [128, 0.7245],
     ]
 
+    aucpr_vs_mixup_moco = [
+        [0.1, 0.6874],
+        [0.2, 0.6843],
+        [0.3, 0.6762],
+    ]
+
+    aucpr_vs_cont_moco = [
+        [0.1, 0.6874],
+        [1.0, 0.6765],
+    ]
+
+
+
     def _plot_hp_vs_aucpr(metrics, xlabel, color, y_label = ' '):
         fig, ax = plt.subplots(1, 1, figsize=(4, 3))
 
@@ -103,7 +116,8 @@ def plot_hp_sen():
     _plot_hp_vs_aucpr(aucpr_vs_depth, 'Depth', color='C3')
     _plot_hp_vs_aucpr(aucpr_vs_top_k_mbt, 'Top-k', color='C4')
     _plot_hp_vs_aucpr(aucpr_vs_hidden_dim_mbt, 'Hidden Dim', color='C4')
-
+    _plot_hp_vs_aucpr(aucpr_vs_mixup_moco, 'mixup_rate', color='C4')
+    _plot_hp_vs_aucpr(aucpr_vs_cont_moco, 'contrastive weight', color='C4')
 
 
     def plot_hp_sen_1x4():
