@@ -34,7 +34,8 @@ num_prototypes_list=(16)
 # num_prototypes_list=(128)
 hidden_dim_list=(128)
 sinkhorn_eps_list=(0.1 0.05)
-contrastive_loss_weight_list=(0.1 1.0)
+sinkhorn_eps_list=(0.1)
+contrastive_loss_weight_list=(0.1)
 temperature_list=(0.1) 
 learning_rate=0.01
 
