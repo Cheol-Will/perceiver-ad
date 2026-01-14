@@ -923,19 +923,20 @@ def main(args):
     
     # 기본 데이터셋 및 모델 정의        
     data = [
-        "wine",
-        "glass",
-        "wbc",
-        "ionosphere",
-        "arrhythmia",
-        "breastw",
-        "pima",
+        # group 1
+        # "wine",
+        # "glass",
+        # "wbc",
+        # "ionosphere",
+        # "arrhythmia",
+        # "breastw",
+        # "pima",
+        # "optdigits",
 
-
+        # group 2
         "cardio",
         "cardiotocography",
         "thyroid",
-        "optdigits",
         "satimage-2",
         "satellite", 
         "pendigits",
@@ -944,7 +945,7 @@ def main(args):
         "shuttle",
         "fraud",
         "nslkdd",
-        # "census"
+        "census"
     ]
     datasets = [
         "wine",
@@ -1051,8 +1052,8 @@ def main(args):
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch40")
     hidden_dim_list = [16, 32, 64, 128]
     lr_list = [0.1, 0.01, 0.001]
-    for hidden_dim in hidden_dim_list:
-        for lr in lr_list:
+    for lr in lr_list:
+        for hidden_dim in hidden_dim_list:
             my_models.append(f"TAE-d{hidden_dim}-lr{lr}")
 
     # my_models.append("MBT-d128-top_k5-temp0.1")
@@ -1165,7 +1166,7 @@ def main(args):
         k_mean = f"ratio_{tr}_{metr}_mean"
         df_for_test = pivots[k_mean][data].copy()
         highlight_models = [m for m in my_models if m in df_for_test.index]
-        # 모델 순서 재배열
+
         first = [m for m in test_models if m in df_for_test.index]
         rest = [m for m in my_test_models if m in df_for_test.index]
         order = first + rest

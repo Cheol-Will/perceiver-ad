@@ -106,9 +106,6 @@ class MemoryBank(nn.Module):
         return self.retrieve(query, exclude_indices)
 
 
-
-
-
 class MBT(nn.Module):
     """
     Memory Bank Transformer for Tabular Anomaly Detection.
