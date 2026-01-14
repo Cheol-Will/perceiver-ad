@@ -923,19 +923,20 @@ def main(args):
     
     # 기본 데이터셋 및 모델 정의        
     data = [
-        "wine",
-        "glass",
-        "wbc",
-        "ionosphere",
-        "arrhythmia",
-        "breastw",
-        "pima",
+        # group 1
+        # "wine",
+        # "glass",
+        # "wbc",
+        # "ionosphere",
+        # "arrhythmia",
+        # "breastw",
+        # "pima",
+        # "optdigits",
 
-
+        # group 2
         "cardio",
         "cardiotocography",
         "thyroid",
-        "optdigits",
         "satimage-2",
         "satellite", 
         "pendigits",
@@ -1165,7 +1166,7 @@ def main(args):
         k_mean = f"ratio_{tr}_{metr}_mean"
         df_for_test = pivots[k_mean][data].copy()
         highlight_models = [m for m in my_models if m in df_for_test.index]
-        # 모델 순서 재배열
+
         first = [m for m in test_models if m in df_for_test.index]
         rest = [m for m in my_test_models if m in df_for_test.index]
         order = first + rest
