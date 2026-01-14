@@ -25,7 +25,8 @@ data_list=(
 ) 
 
 model_type="TAECL"
-temperature_list=(0.1 1.0)
+temperature_list=(0.1)
+# temperature_list=(1.0)
 contrastive_loss_weight_list=(0.001 0.01 0.1)
 
 for data in "${data_list[@]}"; do
