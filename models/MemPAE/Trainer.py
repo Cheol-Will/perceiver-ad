@@ -49,7 +49,7 @@ class Trainer(object):
         self.min_delta = train_config['min_delta']
         self.writer = train_config.get('writer', None)
         self.run = train_config['run']
-        self.dataname = train_config.get('dataname', 'unknown')
+        self.dataname = train_config.get('dataset_name', 'unknown')
         self.eval_interval = train_config.get('eval_interval', 10)
         
         print(f"patience={self.patience} with min_delta={self.min_delta}")
