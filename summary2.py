@@ -40,9 +40,6 @@ class Config:
         return self.METRIC_ALIAS.get(name, name)
 
 
-# ============================================================================
-# 데이터 수집 및 처리 클래스
-# ============================================================================
 
 class ResultCollector:
     """실험 결과를 수집하고 처리하는 클래스"""
@@ -325,12 +322,6 @@ class ResultAnalyzer:
         
         return df
 
-
-
-# ============================================================================
-# 시각화 클래스
-# ============================================================================
-
 class Visualizer:
     """결과 시각화"""
     
@@ -382,10 +373,6 @@ class Visualizer:
         plt.close()
 
 
-# ============================================================================
-# 렌더링 클래스
-# ============================================================================
-
 class ResultRenderer:
     """결과를 다양한 형식으로 렌더링"""
     
@@ -416,22 +403,7 @@ class ResultRenderer:
         use_hpo_memory_latent: bool = False,
         use_hpo_memory_latent_top_k: bool = False,
     ) -> pd.DataFrame:
-        """
-        주요 렌더링 함수: 피벗 데이터를 포맷팅하고 시각화
-        
-        Parameters:
-        -----------
-        pivots : 피벗 테이블 딕셔너리
-        data : 포함할 데이터셋 리스트
-        models : 베이스라인 모델 리스트
-        my_models : 제안 모델 리스트
-        base : 메트릭 키 (예: 'ratio_1.0_AUCPR')
-        ... (기타 옵션들)
-        
-        Returns:
-        --------
-        pd.DataFrame : 렌더링된 결과 DataFrame
-        """
+
         tr, metr = base.split('_')[1], base.split('_')[2]
         k_mean = f"ratio_{tr}_{metr}_mean"
         k_std = f"ratio_{tr}_{metr}_std"
@@ -439,39 +411,14 @@ class ResultRenderer:
         df_mean = pivots[k_mean][data].copy()
         df_std = pivots[k_std][data].copy()
         
-        # HPO 관련 처리 (필터링 전에 수행)
-        if use_hpo_memory_latent_top_k:
-            df_mean = self._apply_hpo_memory_latent_top_k(df_mean)
-        
-        if use_top_k:
-            df_mean = self._apply_top_k(df_mean)
-        
-        if use_hpo_memory_latent:
-            df_mean = self._apply_hpo_memory_latent(df_mean)
-
-        if use_temp:
-            df_mean = self._apply_temp(df_mean)
-            
-        
         # 모델 순서 재배열 (HPO 처리 이후)
         first = [m for m in models if m in df_mean.index]
         rest = [m for m in my_models if m in df_mean.index]  # 존재하는 모델만 선택
         order = first + rest
         df_mean = df_mean.loc[order]
         df_std = df_std.loc[order]
-        
-        # df_mean.loc['NPTAD', 'census'] = 0.2672
-        # df_mean.loc['NPTAD', 'fraud'] = 0.3868
-        # df_mean.loc['LATTE-Full_rank-no_dec-d64-lr0.001-g0.99-t0.1-p20', 'fraud'] = 0.5100
-        # df_mean.loc['LATTE-patience', :] = df_mean.loc[latte_patience, :].max(axis=0, numeric_only=True)
-        # df_mean.loc['LATTE-patience', 'census'] = 0.2474
-        # df_mean.drop(latte_patience, axis=0, inplace=True)
-        # df_mean.loc["LATTE-patience-tuned", 'census'] = 0.2474
-        # df_mean.loc["MBT-d64-top_k5-temp0.1", 'fraud'] = 0.3549
-        # df_mean.loc["MBT-d64-top_k5-temp0.1", 'nslkdd'] = 0.9693
-        # df_mean.loc["MBT-d32-top_k5-temp0.1", 'fraud'] = 0.3549
+   
         # df_mean.loc["MBT-d32-top_k5-temp0.1", 'nslkdd'] = 0.9693
-        
 
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
@@ -924,14 +871,14 @@ def main(args):
     # 기본 데이터셋 및 모델 정의        
     data = [
         # group 1
-        # "wine",
-        # "glass",
-        # "wbc",
-        # "ionosphere",
-        # "arrhythmia",
-        # "breastw",
-        # "pima",
-        # "optdigits",
+        "wine",
+        "glass",
+        "wbc",
+        "ionosphere",
+        "arrhythmia",
+        "breastw",
+        "pima",
+        "optdigits",
 
         # group 2
         "cardio",
@@ -941,11 +888,11 @@ def main(args):
         "satellite", 
         "pendigits",
         "mammography",
-        "campaign",
-        "shuttle",
-        "fraud",
-        "nslkdd",
-        "census"
+        # "campaign",
+        # "shuttle",
+        # "fraud",
+        # "nslkdd",
+        # "census"
     ]
     datasets = [
         "wine",
@@ -1046,15 +993,20 @@ def main(args):
     #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d64-lr0.001-t0.1")
     #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d32-lr0.001-t0.1")
 
-    hidden_dim_list = [256, 128, 64, 32]
-    top_k_list = [5, 10, 16, 32, 0]
-    temperature_list = [0.1, 1.0]
-    # my_models.append("MBT-d128-top_k5-temp0.1-epoch40")
     hidden_dim_list = [16, 32, 64, 128]
     lr_list = [0.1, 0.01, 0.001]
     for lr in lr_list:
         for hidden_dim in hidden_dim_list:
             my_models.append(f"TAE-d{hidden_dim}-lr{lr}")
+    my_models.append("TAE-tuned")
+
+    temp_list = [0.1, 1.0]
+    contra_list = [0.001, 0.01, 0.1]
+    for temp in temp_list: 
+        for contra in contra_list:
+            my_models.append(f"TAECL-temp{temp}-contra{contra}")
+            my_models.append(f"TAECL-temp{temp}-contra{contra}-combined")
+            my_models.append(f"TAECL-temp{temp}-contra{contra}-contra")
 
     # my_models.append("MBT-d128-top_k5-temp0.1")
     # my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
@@ -1087,7 +1039,8 @@ def main(args):
     # MBT-d128-top_k5-temp0.1-lr0.01
 
     # my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
-
+    temperature_list = []
+    top_k_list = []
     for hidden_dim in hidden_dim_list:
         for temperature in temperature_list:
             for top_k in top_k_list:
