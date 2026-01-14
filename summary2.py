@@ -945,7 +945,7 @@ def main(args):
         "shuttle",
         "fraud",
         "nslkdd",
-        # "census"
+        "census"
     ]
     datasets = [
         "wine",

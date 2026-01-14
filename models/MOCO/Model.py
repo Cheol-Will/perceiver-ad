@@ -72,7 +72,6 @@ class MomentumQueue(nn.Module):
         return logits, labels
 
 
-
 class MOCO(nn.Module):
     """
     MOCO based Anomaly Detection Model.
@@ -127,8 +126,6 @@ class MOCO(nn.Module):
 
     def forward(self, x, return_dict=False):
         batch_size = x.shape[0]
-        query = self.encoder_q(x)
-        
         query = self.encoder_q(x)
 
         if self.training:

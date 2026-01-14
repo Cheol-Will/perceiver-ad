@@ -37,10 +37,6 @@ class Trainer(object):
         self.path = os.path.join(train_config['base_path'], str(train_config['run']))
         os.makedirs(self.path, exist_ok=True)
         
-    def get_num_train(self):
-        num_train = len(self.train_loader.dataset)
-        return num_train
-
     def training(self):
         print(self.model_config)
         print(self.train_config)
