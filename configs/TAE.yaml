@@ -1,0 +1,91 @@
+default: 
+  train_config:
+    data_dir: 'Data/'
+    epochs: 200
+    learning_rate: 0.01
+    sche_gamma: 0.95
+    batch_size: 512
+    random_seed: 42
+    num_workers: 0
+    preprocess: 'standard'
+    patience: 20
+    min_delta: 0
+    use_amp: false
+  model_config:
+    num_features: null
+    hidden_dim: 16
+    depth: 4
+    num_heads: 4
+    mlp_ratio: 4.0
+    dropout_prob: 0.0
+    use_flash_attn: false
+
+wine:
+  patience: 10
+
+glass:
+  patience: 10
+
+wbc:
+  patience: 10
+
+ionosphere:
+  patience: 10
+
+arrhythmia:  
+  patience: 10
+
+breastw: 
+  patience: 10
+
+pima: 
+  patience: 10
+ 
+cardio: 
+  patience: 10
+ 
+cardiotocography: 
+  patience: 10
+ 
+thyroid:
+  patience: 10
+
+optdigits:
+  num_prototypes: 10
+
+satellite:
+  patience: 10
+  num_prototypes: 10
+
+satimage-2:
+  patience: 10
+
+pendigits:
+  patience: 10
+
+mammography:
+  patience: 10
+
+campaign:
+  patience: 10
+
+shuttle:
+  patience: 10
+
+fraud:
+  batch_size: 2048
+  patience: 20
+
+nslkdd:
+  batch_size: 1024
+  patience: 20
+  epochs: 50
+  use_amp: true
+  use_flash_attn: true
+
+census:
+  batch_size: 256
+  patience: 20
+  epochs: 50
+  use_amp: true
+  use_flash_attn: true

@@ -1049,36 +1049,18 @@ def main(args):
     top_k_list = [5, 10, 16, 32, 0]
     temperature_list = [0.1, 1.0]
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch40")
-    
-    my_models.append("MBT-d128-top_k5-temp0.1")
-    my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont1.0-temp1.0")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp1.0")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont1.0-temp1.0")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont1.0-temp0.1")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont1.0-temp0.1")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont1.0-temp0.1")
+    hidden_dim_list = [16, 32, 64, 128]
+    lr_list = [0.1, 0.01, 0.001]
+    for hidden_dim in hidden_dim_list:
+        for lr in lr_list:
+            my_models.append(f"TAE-d{hidden_dim}-lr{lr}")
 
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont0.1-temp1.0")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp1.0")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp1.0")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.1-cont0.1-temp0.1")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.2-cont0.1-temp0.1")
-    my_models.append("MOCO-d128-mo0.999-mixup_alpha0.3-cont0.1-temp0.1")
-    
-    # my_models.append("ProtoAD-d64-proto5-eps0.05-contra0.1-temp0.1")
-    # my_models.append("ProtoAD-d64-proto10-eps0.05-contra0.1-temp0.1")
-    # my_models.append("ProtoAD-d64-proto16-eps0.05-contra0.1-temp0.1")
-    # my_models.append("ProtoAD-d64-proto32-eps0.05-contra0.1-temp0.1")
+    # my_models.append("MBT-d128-top_k5-temp0.1")
+    # my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
 
-    # my_models.append("ProtoAD-d32-proto5-eps0.05-contra0.1-temp0.1")
-    # my_models.append("ProtoAD-d32-proto10-eps0.05-contra0.1-temp0.1")
-    # my_models.append("ProtoAD-d32-proto16-eps0.05-contra0.1-temp0.1")
-    # my_models.append("ProtoAD-d32-proto32-eps0.05-contra0.1-temp0.1")
-    # my_models.append("ProtoAD-d32-proto64-eps0.05-contra0.1-temp0.1")
-    # my_models.append("ProtoAD-d32-proto128-eps0.05-contra0.1-temp0.1")
 
-    proto_list = [5, 10, 16, 32, 64, 128]
+    # proto_list = [5, 10, 16, 32, 64, 128]
+    proto_list = [5, 10, 16, 32, 64]
     eps_list = [0.05, 0.1]
     contra_list = [0.01, 0.1, 1.0]
     hidden_dim_list = [32, 64, 128]

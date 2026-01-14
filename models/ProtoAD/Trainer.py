@@ -164,6 +164,7 @@ class Trainer(object):
         entropy_scores = []
         recon_scores = []
         test_labels = []
+        loss_scores = []
         
         for step, batch in enumerate(self.test_loader):
             if len(batch) == 3:
