@@ -20,7 +20,7 @@ data_list=(
     # campaign 
     # shuttle 
     # fraud 
-    nslkdd 
+    # nslkdd 
     census
 ) 
 
