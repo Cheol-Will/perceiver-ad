@@ -1051,8 +1051,8 @@ def main(args):
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch40")
     hidden_dim_list = [16, 32, 64, 128]
     lr_list = [0.1, 0.01, 0.001]
-    for hidden_dim in hidden_dim_list:
-        for lr in lr_list:
+    for lr in lr_list:
+        for hidden_dim in hidden_dim_list:
             my_models.append(f"TAE-d{hidden_dim}-lr{lr}")
 
     # my_models.append("MBT-d128-top_k5-temp0.1")
