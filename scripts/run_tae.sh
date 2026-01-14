@@ -2,32 +2,36 @@
 set -euo pipefail
 
 data_list=(    
-    wine 
-    glass 
-    wbc 
-    ionosphere 
-    arrhythmia 
-    breastw 
-    pima  
-    cardio cardiotocography thyroid 
+    # wine 
+    # glass 
+    # wbc 
+    # ionosphere 
+    # arrhythmia 
+    # breastw 
+    # pima  
+    # cardio cardiotocography thyroid 
     
-    optdigits 
-    satellite 
-    "satimage-2" 
-    pendigits
+    # optdigits 
+    # satellite 
+    # "satimage-2" 
+    # pendigits
 
-    mammography 
-    campaign 
-    shuttle 
-    fraud 
+    # mammography 
+    # campaign 
+    # shuttle 
+    # fraud 
     nslkdd 
     census
 ) 
 
 model_type="TAE"
-hidden_dim_list=(16 32 64 128)
-learning_rate_list=(0.001)
-# learning_rate_list=(0.01)
+hidden_dim_list=(16)
+# hidden_dim_list=(32)
+# hidden_dim_list=(64)
+# hidden_dim_list=(128)
+
+# learning_rate_list=(0.001)
+learning_rate_list=(0.01 0.001)
 # learning_rate_list=(0.1)
 
 for data in "${data_list[@]}"; do
