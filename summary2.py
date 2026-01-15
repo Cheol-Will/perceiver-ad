@@ -888,10 +888,10 @@ def main(args):
         "satellite", 
         "pendigits",
         "mammography",
-        # "campaign",
-        # "shuttle",
-        # "fraud",
-        # "nslkdd",
+        "campaign",
+        "shuttle",
+        "fraud",
+        "nslkdd",
         # "census"
     ]
     datasets = [
