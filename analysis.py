@@ -5,10 +5,10 @@ import os
 import json
 import time
 from utils import get_parser, get_logger, load_yaml
+from vis import plot_latent, plot_score_hist
 
 BASELINE_MODELS = ['OCSVM', 'KNN', 'IForest', 'LOF', 'PCA', 'ECOD', 
                    'DeepSVDD', 'GOAD', 'ICL', 'NeuTraL']
-
 
 def build_analyzer(model_config, train_config, analysis_config):
     model_type = train_config['model_type']
@@ -27,13 +27,24 @@ def train_test(args, model_config, train_config, analysis_config, run):
     train_config['logger'].info(f"[run {run}]" + '-'*60)
     analyzer = build_analyzer(model_config, train_config, analysis_config)    
     
+    output = analyzer.get_score_and_latent()
+    score = output['score']
+    label = output['label']
+    latent = output['latent']
+        
     if args.plot_latent:
-        output = analyzer.get_score_and_latent()
-        score = output['score']
-        test_label = output['test_label']
-        latent = output['latent']
-        analyzer.plot_latent()
+        plot_latent(train_config, latent, label)
+        print("Saved latent T-SNE")
+    if args.plot_histogram:
+        plot_score_hist(train_config, score, label, score_name='Anomaly_Score')
+        print("Saved anoamly score histogram.")
 
+
+def train_test_latte(args, model_config, train_config, analysis_config, run):
+    # LATTE analysis
+    train_config['run'] = run
+    train_config['logger'].info(f"[run {run}]" + '-'*60)
+    analyzer = build_analyzer(model_config, train_config, analysis_config)    
     if args.plot_history:
         history = analyzer.training_with_history_tracking()
         analyzer.plot_training(history, smoothing_window=1)
@@ -44,7 +55,8 @@ def train_test(args, model_config, train_config, analysis_config, run):
     if analysis_config['compare_regresssion_with_sup_attn']:
         analyzer.training_supervised()
     else:
-        analyzer.training()
+        pass
+        # analyzer.training()
     if analysis_config['plot_recon']:
         analyzer.plot_reconstruction()
     if analysis_config['plot_histogram']:
@@ -171,7 +183,8 @@ def main(args):
 
     logger = get_logger(os.path.join(args.base_path, 'log.log'))
 
-    model_config, train_config = load_yaml(args)
+    model_config, train_config = load_yaml(args, parser)
+
     train_config['logger'] = logger
     train_config['device'] = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     train_config['base_path'] = args.base_path
@@ -215,6 +228,7 @@ if __name__ == "__main__":
     parser = get_parser()
 
     # Analysis arguments
+    parser.add_argument('--plot_latent', action='store_true')
     parser.add_argument('--plot_attn', action='store_true')
     parser.add_argument('--plot_recon', action='store_true')
     parser.add_argument('--plot_histogram', action='store_true')

@@ -892,7 +892,7 @@ def main(args):
         "shuttle",
         "fraud",
         "nslkdd",
-        "census"
+        # "census"
     ]
     datasets = [
         "wine",
@@ -993,24 +993,27 @@ def main(args):
     #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d64-lr0.001-t0.1")
     #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d32-lr0.001-t0.1")
 
+    my_models.append("TAE-tuned")
+    my_models.append("TAECL-temp0.1-contra0.1")
+
     hidden_dim_list = [16, 32, 64, 128]
     lr_list = [0.1, 0.01, 0.001]
     for lr in lr_list:
         for hidden_dim in hidden_dim_list:
-            my_models.append(f"TAE-d{hidden_dim}-lr{lr}")
-    my_models.append("TAE-tuned")
+            # my_models.append(f"TAE-d{hidden_dim}-lr{lr}")
+            pass
 
     temp_list = [0.1, 1.0]
     contra_list = [0.001, 0.01, 0.1]
     for temp in temp_list: 
         for contra in contra_list:
-            my_models.append(f"TAECL-temp{temp}-contra{contra}")
-            my_models.append(f"TAECL-temp{temp}-contra{contra}-combined")
-            my_models.append(f"TAECL-temp{temp}-contra{contra}-contra")
+            # my_models.append(f"TAECL-temp{temp}-contra{contra}")
+            # my_models.append(f"TAECL-temp{temp}-contra{contra}-combined")
+            # my_models.append(f"TAECL-temp{temp}-contra{contra}-contra")
+            pass
 
     # my_models.append("MBT-d128-top_k5-temp0.1")
     # my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
-
 
     # proto_list = [5, 10, 16, 32, 64, 128]
     proto_list = [5, 10, 16, 32, 64]
