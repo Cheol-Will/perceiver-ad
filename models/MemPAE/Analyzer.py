@@ -2845,7 +2845,6 @@ class Analyzer(Trainer):
         parameter_path = os.path.join(self.train_config['base_path'], 'model.pt')
         history_path = os.path.join(self.train_config['base_path'], 'training_history.npy')
 
-
         if os.path.exists(parameter_path) and os.path.exists(history_path):
             print(f"model.pt and training_history.npy already exist at {self.train_config['base_path']}.")
             print("Loading model and history...")
@@ -2857,7 +2856,6 @@ class Analyzer(Trainer):
             history = np.load(history_path, allow_pickle=True).item()
             print(f"Loaded training history with {len(history['train_loss'])} epochs")
             return history
-
 
         self.logger.info(self.train_loader.dataset.data[0]) # to confirm the same data split
         self.logger.info(self.test_loader.dataset.data[0]) # to confirm the same data split

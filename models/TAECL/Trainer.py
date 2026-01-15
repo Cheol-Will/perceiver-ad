@@ -127,7 +127,7 @@ class Trainer(object):
         model = self.model
         model.eval()
         print("Build memory bank for evaluation")
-        model.build_eval_memory_bank(self.train_loader, self.device, self.use_amp)
+        model.build_eval_memory_bank(self.train_loader, self.device, False) # do not use amp during inference
         
         score_list, test_label_list = [], []
         contra_score_list, combined_score_list = [], []

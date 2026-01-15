@@ -9,26 +9,16 @@ from utils import get_parser, get_logger, load_yaml
 BASELINE_MODELS = ['OCSVM', 'KNN', 'IForest', 'LOF', 'PCA', 'ECOD', 
                    'DeepSVDD', 'GOAD', 'ICL', 'NeuTraL']
 
+
 def build_analyzer(model_config, train_config, analysis_config):
     model_type = train_config['model_type']
-    if model_type == 'Perceiver':
-        from models.Perceiver.Analyzer import Analyzer
-    elif model_type == 'MemAE':
-        from models.MemAE.Analyzer import Analyzer
-    elif model_type == 'MemPAE':
-        from models.MemPAE.Analyzer import Analyzer
-    elif model_type == 'MCM':
-        from models.MCM.Analyzer import Analyzer
-    elif model_type == 'Disent':
-        from models.Disent.Analyzer import Analyzer
-    elif model_type == 'PAE':
-        from models.PAE.Analyzer import Analyzer        
-    elif model_type == 'AutoEncoder':
-        from models.AutoEncoder.Analyzer import Analyzer        
-    elif model_type in BASELINE_MODELS:
+    
+    if model_type in BASELINE_MODELS:
         from models.Baselines.Analyzer import Analyzer
     else:
-        raise ValueError(f"Unknown model type {model_type}")
+        module = __import__(f'models.{model_type}.Analyzer', fromlist=['Analyzer'])
+        Analyzer = module.Analyzer
+    
     return Analyzer(model_config, train_config, analysis_config)
 
 
@@ -37,6 +27,13 @@ def train_test(args, model_config, train_config, analysis_config, run):
     train_config['logger'].info(f"[run {run}]" + '-'*60)
     analyzer = build_analyzer(model_config, train_config, analysis_config)    
     
+    if args.plot_latent:
+        output = analyzer.get_score_and_latent()
+        score = output['score']
+        test_label = output['test_label']
+        latent = output['latent']
+        analyzer.plot_latent()
+
     if args.plot_history:
         history = analyzer.training_with_history_tracking()
         analyzer.plot_training(history, smoothing_window=1)
@@ -161,9 +158,6 @@ def train_test(args, model_config, train_config, analysis_config, run):
                         metric=m,
                         random_state=0,
                     )
-
-    # if args.plot_tsne_4types:
-    #     analyzer.plot_tsne_4types()
     return 
 
 

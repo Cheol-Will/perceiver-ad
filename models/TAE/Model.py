@@ -29,9 +29,18 @@ class TAE(nn.Module):
     def reset_parameters(self):
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
-    def forward(self, x):
+    def forward(self, x, return_dict = False):
         z = self.encoder(x)
         x_hat = self.decoder(z, self.pos_encoding)
+        if not self.training:
+            x = x.float() # turn of amp
+            x_hat = x_hat.float()        
         reconstruction_loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=-1)
 
-        return reconstruction_loss
+        if return_dict:
+            return {
+                'reconstruction_loss': reconstruction_loss,
+                'latent': z,    
+            }
+        else:
+            return reconstruction_loss

@@ -69,8 +69,8 @@ class TAECL(nn.Module):
         x_hat = self.decoder(z, self.pos_encoding)
         reconstruction_loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=-1) # (B,)
 
-        z_norm = F.normalize(z, dim=-1)
         if self.training:
+            z_norm = F.normalize(z, dim=-1)
             logits = torch.matmul(z_norm, z_norm.T) / self.temperature # (B, B)
             labels = torch.arange(batch_size).to(x.device)    
             contrastive_loss = F.cross_entropy(logits, labels, reduction='none') 
@@ -83,6 +83,8 @@ class TAECL(nn.Module):
             }
             return output
         else:
+            z = z.float()
+            z_norm = F.normalize(z, dim=-1)
             logits = torch.matmul(z_norm, self.memory_bank.T) / self.temperature # (B, N)
             contrastive_score = -torch.logsumexp(logits, dim=-1) * self.contrastive_loss_weight
 
