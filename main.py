@@ -60,7 +60,6 @@ def train_test(model_config, train_config, run):
     end_test = time.time()    
     test_time = end_test - start_test
     
-    # 모든 metrics 로깅
     log_str = f"[run {run}]"
     for key, value in metrics.items():
         if isinstance(value, (int, float, np.floating)):
@@ -88,9 +87,12 @@ def main(args):
     os.makedirs(args.base_path, exist_ok=True)
     summary_path = os.path.join(args.base_path, 'summary.json')
     
+    all_results = []
     if local_rank == 0 and os.path.exists(summary_path):
-        print(f"summary.json already exists at {summary_path}. Skipping execution.")
-        return
+        with open(summary_path, 'r') as f:
+            existing_summary = json.load(f)
+            all_results = existing_summary.get('all_seeds', [])
+        print(f"Resumed from {summary_path}. Loaded {len(all_results)} runs.")
 
     logger = get_logger(os.path.join(args.base_path, 'log.log'))
     model_config, train_config = load_yaml(args, parser)
@@ -119,60 +121,72 @@ def main(args):
         print(train_config)
     
     start = time.time()    
-    all_results = []
     
     for seed in range(args.runs):
+        if any(r['run'] == seed for r in all_results):
+            if local_rank == 0:
+                print(f"[run {seed}] Already exists. Skipping...")
+            continue
+
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         np.random.seed(seed)
         
+        current_train_config = train_config.copy()
+
         if train_config["model_type"] != 'NPTAD':
-            result = train_test(model_config, train_config, seed) 
-            all_results.append(result)
+            result = train_test(model_config, current_train_config, seed) 
+            if result is not None:
+                all_results.append(result)
         else:
-            result = train_test_npt(model_config, train_config, seed)
+            result = train_test_npt(model_config, current_train_config, seed)
             if local_rank == 0 and result is not None:
                 all_results.append(result)
+        
+        if local_rank == 0 and len(all_results) > 0:
+            # Extract metric keys
+            exclude_keys = {'run', 'train_time', 'test_time', 'epochs'}
+            metric_keys = []
+            if all_results:
+                # Union of all keys to be safe
+                all_keys = set().union(*(d.keys() for d in all_results))
+                metric_keys = [k for k in all_keys if k not in exclude_keys]
             
-    end = time.time()
-    total_time = end - start
-    
-    # Close TensorBoard writer
-    if writer is not None:
-        writer.close()
-    
+            # Aggregation
+            mean_metrics = {}
+            std_metrics = {}
+            for key in metric_keys:
+                values = [r[key] for r in all_results if key in r and isinstance(r[key], (int, float, np.floating))]
+                if values:
+                    mean_metrics[key] = float(np.mean(values))
+                    std_metrics[f"{key}_std"] = float(np.std(values))
+            
+            save_train_config = train_config.copy()
+            save_train_config.pop('device', None)
+            save_train_config.pop('logger', None)
+            save_train_config.pop('writer', None)
+            
+            total_time = time.time() - start # Approximate total time
+            
+            summary = {
+                'model_config': model_config,
+                'train_config': save_train_config,
+                'mean_metrics': mean_metrics,
+                'std_metrics': std_metrics,
+                'total_time': total_time,
+                'all_seeds': all_results,
+            }
+            
+            with open(summary_path, 'w') as f:
+                json.dump(summary, f, indent=4)
+            
+            print(f"Saved results for run {seed} to {summary_path}")
+
     if local_rank == 0 and len(all_results) > 0:
-        # Extract metric keys (excluding run, train_time, test_time, epochs)
-        exclude_keys = {'run', 'train_time', 'test_time', 'epochs'}
-        metric_keys = [k for k in all_results[0].keys() if k not in exclude_keys]
-        
-        # mean and std
-        mean_metrics = {}
-        std_metrics = {}
-        for key in metric_keys:
-            values = [r[key] for r in all_results if key in r and isinstance(r[key], (int, float, np.floating))]
-            if values:
-                mean_metrics[key] = float(np.mean(values))
-                std_metrics[f"{key}_std"] = float(np.std(values))
-        
-        train_config.pop('device')
-        train_config.pop('logger')
-        train_config.pop('writer')
-        
-        summary = {
-            'model_config': model_config,
-            'train_config': train_config,
-            'mean_metrics': mean_metrics,
-            'std_metrics': std_metrics,
-            'total_time': total_time,
-            'all_seeds': all_results,
-        }
-        with open(summary_path, 'w') as f:
-            json.dump(summary, f, indent=4)
-        
         print(f"\n{'='*80}")
-        print("Summary")
+        print("Final Summary")
         print(f"{'='*80}")
+    
         for key in sorted(mean_metrics.keys()):
             std_key = f"{key}_std"
             if std_key in std_metrics:
@@ -180,7 +194,9 @@ def main(args):
             else:
                 print(f"  {key}: {mean_metrics[key]:.4f}")
         print(f"{'='*80}\n")
-
+        
+    if writer is not None:
+        writer.close()
 
 if __name__ == "__main__":
     parser = get_parser()
