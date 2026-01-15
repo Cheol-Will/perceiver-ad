@@ -94,6 +94,10 @@ def main(args):
             all_results = existing_summary.get('all_seeds', [])
         print(f"Resumed from {summary_path}. Loaded {len(all_results)} runs.")
 
+    if len(all_results) >= args.runs:
+        if local_rank == 0:
+            print(f"All runs already exist. Skipping.")
+    
     logger = get_logger(os.path.join(args.base_path, 'log.log'))
     model_config, train_config = load_yaml(args, parser)
 
