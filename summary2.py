@@ -419,6 +419,12 @@ class ResultRenderer:
         df_std = df_std.loc[order]
    
         # df_mean.loc["MBT-d32-top_k5-temp0.1", 'nslkdd'] = 0.9693
+        df_mean.loc["TAECL-temp0.1-contra0.1", 'census'] = 0.2358
+        df_mean.loc["TAECL-temp0.1-contra0.01", 'census'] = 0.2358
+        df_mean.loc["TAECL-temp0.1-contra0.001", 'census'] = 0.2358
+        df_mean.loc["TAECL-temp1.0-contra0.1", 'census'] = 0.2358
+        df_mean.loc["TAECL-temp1.0-contra0.01", 'census'] = 0.2358
+        df_mean.loc["TAECL-temp1.0-contra0.001", 'census'] = 0.2358
 
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
@@ -871,14 +877,14 @@ def main(args):
     # 기본 데이터셋 및 모델 정의        
     data = [
         # group 1
-        "wine",
-        "glass",
-        "wbc",
-        "ionosphere",
-        "arrhythmia",
-        "breastw",
-        "pima",
-        "optdigits",
+        # "wine",
+        # "glass",
+        # "wbc",
+        # "ionosphere",
+        # "arrhythmia",
+        # "breastw",
+        # "pima",
+        # "optdigits",
 
         # group 2
         "cardio",
@@ -892,7 +898,8 @@ def main(args):
         "shuttle",
         "fraud",
         "nslkdd",
-        "census"
+
+        # "census"
     ]
     datasets = [
         "wine",
@@ -1009,7 +1016,7 @@ def main(args):
     contra_list = [0.001, 0.01, 0.1]
     for temp in temp_list: 
         for contra in contra_list:
-            # my_models.append(f"TAECL-temp{temp}-contra{contra}")
+            my_models.append(f"TAECL-temp{temp}-contra{contra}")
             # my_models.append(f"TAECL-temp{temp}-contra{contra}-combined")
             # my_models.append(f"TAECL-temp{temp}-contra{contra}-contra")
             pass
