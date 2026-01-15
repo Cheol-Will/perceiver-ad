@@ -9,8 +9,9 @@ data_list=(
     # arrhythmia 
     # breastw 
     # pima  
-    # cardio cardiotocography thyroid 
-    # optdigits 
+    # cardio cardiotocography 
+    thyroid 
+    optdigits 
     satellite 
     "satimage-2" 
     pendigits
