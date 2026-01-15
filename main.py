@@ -97,7 +97,10 @@ def main(args):
     if len(all_results) >= args.runs:
         if local_rank == 0:
             print(f"All runs already exist. Skipping.")
-    
+        return
+    else:
+        print(f"Have {len(all_results)} results")
+
     logger = get_logger(os.path.join(args.base_path, 'log.log'))
     model_config, train_config = load_yaml(args, parser)
 

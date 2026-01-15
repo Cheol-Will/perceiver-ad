@@ -2,21 +2,21 @@
 set -euo pipefail
 
 data_list=(    
-    wine 
-    glass 
-    wbc 
-    ionosphere 
-    arrhythmia 
-    breastw 
-    pima  
-    cardio cardiotocography thyroid 
+    # wine 
+    # glass 
+    # wbc 
+    # ionosphere 
+    # arrhythmia 
+    # breastw 
+    # pima  
+    # cardio cardiotocography thyroid 
     
-    optdigits 
-    satellite 
-    "satimage-2" 
-    pendigits
+    # optdigits 
+    # satellite 
+    # "satimage-2" 
+    # pendigits
 
-    mammography 
+    # mammography 
     campaign 
     shuttle 
     fraud 
@@ -28,7 +28,7 @@ model_type="TAECL"
 temperature_list=(0.2)
 # temperature_list=(0.1)
 # temperature_list=(1.0)
-contrastive_loss_weight_list=(0.001)
+# contrastive_loss_weight_list=(0.001)
 # contrastive_loss_weight_list=(0.01)
 # contrastive_loss_weight_list=(0.1)
 
