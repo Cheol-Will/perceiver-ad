@@ -995,7 +995,8 @@ def main(args):
 
     my_models.append("TAE-tuned")
     my_models.append("TAECL-temp0.1-contra0.1")
-
+    my_models.append("TCL-temp0.1-mixup_alpha0")
+    
     hidden_dim_list = [16, 32, 64, 128]
     lr_list = [0.1, 0.01, 0.001]
     for lr in lr_list:

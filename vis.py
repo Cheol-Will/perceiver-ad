@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.manifold import TSNE 
 
-def plot_latent(self, target, label):
+def plot_latent(train_config, target, label):
     
     if isinstance(target, torch.Tensor):
         target = target.detach().cpu().numpy()
@@ -32,14 +32,14 @@ def plot_latent(self, target, label):
         alpha=0.7 
     )
     
-    plt.title(f"t-SNE Visualization - {self.train_config.get('dataset_name', 'Dataset')}")
+    plt.title(f"t-SNE Visualization - {train_config.get('dataset_name', 'Dataset')}")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
 
-    base_path = self.train_config['base_path']
+    base_path = train_config['base_path']
     os.makedirs(base_path, exist_ok=True) 
     
-    out_path = os.path.join(base_path, f'latent_tsne_{self.train_config.get("dataset_name", "result")}.png')
+    out_path = os.path.join(base_path, f'latent_tsne_{train_config.get("dataset_name", "result")}.png')
     plt.savefig(out_path, bbox_inches='tight', dpi=200)
     print(f"Latent plot saved at: {out_path}")
     
