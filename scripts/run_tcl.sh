@@ -2,35 +2,33 @@
 set -euo pipefail
 
 data_list=(    
-    wine 
-    glass 
-    wbc 
-    ionosphere 
-    arrhythmia 
-    breastw 
-    pima  
-    cardio cardiotocography thyroid 
-    
-    optdigits 
+    # wine 
+    # glass 
+    # wbc 
+    # ionosphere 
+    # arrhythmia 
+    # breastw 
+    # pima  
+    # cardio cardiotocography thyroid 
+    # optdigits 
     satellite 
     "satimage-2" 
     pendigits
 
-    mammography 
-    campaign 
-    shuttle 
-    fraud 
-    nslkdd 
-    census
-) 
+    # mammography 
+    # campaign 
+    # shuttle 
+    # fraud 
 
-# temperature_list=(1.0)
-# contrastive_loss_weight_list=(0.01)
-# contrastive_loss_weight_list=(0.1)
+    # nslkdd 
+    # census
+) 
 
 model_type="TCL"
 temperature_list=(0.1)
 mixup_alpha_list=(0)
+# mixup_alpha_list=(0.1)
+# mixup_alpha_list=(1.0)
 
 for data in "${data_list[@]}"; do
     for temperature in "${temperature_list[@]}"; do
