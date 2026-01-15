@@ -10,26 +10,28 @@ data_list=(
     # breastw 
     # pima  
     # cardio cardiotocography 
-    thyroid 
-    optdigits 
-    satellite 
-    "satimage-2" 
-    pendigits
+    # thyroid 
 
-    # mammography 
-    # campaign 
-    # shuttle 
+    # optdigits 
+    # satellite 
+    # "satimage-2" 
+    # pendigits
+
+    mammography 
+    campaign 
+    shuttle 
+    
+    
     # fraud 
-
     # nslkdd 
     # census
 ) 
 
 model_type="TCL"
 temperature_list=(0.1)
-mixup_alpha_list=(0)
+# mixup_alpha_list=(0)
 # mixup_alpha_list=(0.1)
-# mixup_alpha_list=(1.0)
+mixup_alpha_list=(1.0)
 
 for data in "${data_list[@]}"; do
     for temperature in "${temperature_list[@]}"; do
