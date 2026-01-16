@@ -92,5 +92,6 @@ class TAECL(nn.Module):
                 'contrastive_score': contrastive_score,
                 'combined': reconstruction_loss + contrastive_score,
                 'latent': z_norm,
+                'x_hat': x_hat,
             }
             return output

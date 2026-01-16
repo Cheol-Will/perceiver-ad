@@ -2,25 +2,22 @@
 set -euo pipefail
 
 data_list=(    
-    optdigits
-)
-  
-data_list=(    
-    # good 
+    wbc
+    glass
+    pima
+    breastw    
+    wine
+    cardiotocography
     optdigits 
     cardio 
     satellite 
     pendigits
-    
-    # not good
-    wine
     campaign
-
     arrhythmia 
     thyroid 
     ionosphere 
     mammography 
-    # shuttle # 1 minutes
+    shuttle # 1 minutes
     # census
 ) 
 
@@ -32,6 +29,8 @@ for data in "${data_list[@]}"; do
         --dataname "$data" \
         --model_type $model_type \
         --exp_name "$exp_name" \
-        --plot_histogram
-        # --plot_latent
+        --plot_recon \
+        --plot_histogram \
+        --plot_latent \
+        --plot_input_recon
 done

@@ -2,33 +2,31 @@
 set -euo pipefail
 
 data_list=(    
-    optdigits
-)
-  
-data_list=(    
-    # good 
     optdigits 
+    wbc
+    glass
+    pima
+    breastw    
+    wine
+    cardiotocography
     cardio 
     satellite 
     pendigits
-    
-    # not good
-    wine
     campaign
-
     arrhythmia 
     thyroid 
     ionosphere 
     mammography 
-    # shuttle # 1 minutes
+    shuttle # 1 minutes
     # census
 ) 
 
 model_type="TAECL"
-exp_name="TAECL-tuned"
+contrastive_loss_weight=0.001
 temperature=0.1
-contrastive_loss_weight=0.1
+
 exp_name="$model_type-temp$temperature-contra$contrastive_loss_weight"
+# exp_name="TAECL-tuned"
 
 for data in "${data_list[@]}"; do
     echo "Running $exp_name on $data."
@@ -36,8 +34,11 @@ for data in "${data_list[@]}"; do
         --dataname "$data" \
         --model_type $model_type \
         --exp_name "$exp_name" \
-        --temperature "$temperature" \
-        --contrastive_loss_weight "$contrastive_loss_weight" \
-        --plot_histogram
-        # --plot_latent
+        --contrastive_loss_weight $contrastive_loss_weight \
+        --temperature $temperature \
+        --plot_contra_histogram \
+        --plot_recon \
+        --plot_histogram \
+        --plot_latent \
+        --plot_input_recon
 done

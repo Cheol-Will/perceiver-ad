@@ -419,12 +419,7 @@ class ResultRenderer:
         df_std = df_std.loc[order]
    
         # df_mean.loc["MBT-d32-top_k5-temp0.1", 'nslkdd'] = 0.9693
-        df_mean.loc["TAECL-temp0.1-contra0.1", 'census'] = 0.2358
-        df_mean.loc["TAECL-temp0.1-contra0.01", 'census'] = 0.2358
-        df_mean.loc["TAECL-temp0.1-contra0.001", 'census'] = 0.2358
-        df_mean.loc["TAECL-temp1.0-contra0.1", 'census'] = 0.2358
-        df_mean.loc["TAECL-temp1.0-contra0.01", 'census'] = 0.2358
-        df_mean.loc["TAECL-temp1.0-contra0.001", 'census'] = 0.2358
+        # df_mean.loc["TAECL-temp0.1-contra0.1", 'census'] = 0.2358
 
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
@@ -877,14 +872,14 @@ def main(args):
     # 기본 데이터셋 및 모델 정의        
     data = [
         # group 1
-        # "wine",
-        # "glass",
-        # "wbc",
-        # "ionosphere",
-        # "arrhythmia",
-        # "breastw",
-        # "pima",
-        # "optdigits",
+        "wine",
+        "glass",
+        "wbc",
+        "ionosphere",
+        "arrhythmia",
+        "breastw",
+        "pima",
+        "optdigits",
 
         # group 2
         "cardio",
@@ -899,7 +894,7 @@ def main(args):
         "fraud",
         "nslkdd",
 
-        # "census"
+        "census"
     ]
     datasets = [
         "wine",
@@ -985,7 +980,10 @@ def main(args):
         
         
         "LATTE-patience-tuned", 
-        "OELATTE-temp",
+        "TAE-tuned",
+        "TAECL-temp0.2-contra0.01",
+        "TAECL-tuned",
+        # "OELATTE-temp",
         
         # "OELATTE-d16-oe_lam1.0-oe_rat0.1",
 
@@ -1000,10 +998,12 @@ def main(args):
     #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d64-lr0.001-t0.1")
     #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d32-lr0.001-t0.1")
 
-    my_models.append("TAE-tuned")
-    my_models.append("TAECL-temp0.1-contra0.1")
-    my_models.append("TCL-temp0.1-mixup_alpha0")
-    my_models.append("TCL-temp0.1-mixup_alpha1.0")
+    # my_models.append("TAE-tuned")
+    # my_models.append("TAECL-tuned")
+
+    # my_models.append("TAECL-temp0.1-contra0.1")
+    # my_models.append("TCL-temp0.1-mixup_alpha0")
+    # my_models.append("TCL-temp0.1-mixup_alpha1.0")
 
     hidden_dim_list = [16, 32, 64, 128]
     lr_list = [0.1, 0.01, 0.001]
@@ -1012,11 +1012,11 @@ def main(args):
             # my_models.append(f"TAE-d{hidden_dim}-lr{lr}")
             pass
 
-    temp_list = [0.1, 1.0]
-    contra_list = [0.001, 0.01, 0.1]
+    temp_list = [0.1, 0.2, 1.0]
+    contra_list = [0.001, 0.01, 0.02, 0.05, 0.1, 0.2]
     for temp in temp_list: 
         for contra in contra_list:
-            my_models.append(f"TAECL-temp{temp}-contra{contra}")
+            # my_models.append(f"TAECL-temp{temp}-contra{contra}")
             # my_models.append(f"TAECL-temp{temp}-contra{contra}-combined")
             # my_models.append(f"TAECL-temp{temp}-contra{contra}-contra")
             pass
@@ -1107,7 +1107,7 @@ def main(args):
         print(f"\nRendering {base}...")
         renderer.render(
             pivots, data, models, my_models, base,
-            add_avg_rank=True, use_rank=False, use_std=args.use_std,
+            add_avg_rank=True, use_rank=args.use_rank, use_std=args.use_std,
             use_baseline_pr=True, is_plot=False,
             use_temp=args.use_temp, 
             use_top_k=args.use_top_k, 
@@ -1311,6 +1311,7 @@ def main(args):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='실험 결과 분석 스크립트')
+    parser.add_argument('--use_rank', action='store_true', help='show rank.')
     parser.add_argument('--use_std', action='store_true', help='show std.')
     parser.add_argument('--synthetic', action='store_true', help='합성 데이터 분석 수행')
     parser.add_argument('--contamination', action='store_true', help='오염 비율 분석 수행')

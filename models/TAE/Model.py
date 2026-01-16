@@ -41,6 +41,7 @@ class TAE(nn.Module):
             return {
                 'reconstruction_loss': reconstruction_loss,
                 'latent': z,    
+                'x_hat': x_hat,    
             }
         else:
             return reconstruction_loss

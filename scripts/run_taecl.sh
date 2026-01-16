@@ -9,18 +9,18 @@ data_list=(
     # arrhythmia 
     # breastw 
     # pima  
-    # cardio cardiotocography thyroid 
-    
-    # optdigits 
-    # satellite 
-    # "satimage-2" 
-    # pendigits
 
+    # cardio cardiotocography thyroid 
+    # optdigits 
+    # "satimage-2" 
+    # satellite 
+    # pendigits
     # mammography 
-    campaign 
-    shuttle 
-    fraud 
-    nslkdd 
+
+    # campaign 
+    # shuttle 
+    # fraud 
+    # nslkdd 
     census
 ) 
 
@@ -29,8 +29,11 @@ temperature_list=(0.2)
 # temperature_list=(0.1)
 # temperature_list=(1.0)
 # contrastive_loss_weight_list=(0.001)
+# contrastive_loss_weight_list=(0.05)
+contrastive_loss_weight_list=(0.02)
 # contrastive_loss_weight_list=(0.01)
 # contrastive_loss_weight_list=(0.1)
+# contrastive_loss_weight_list=(0.2)
 
 for data in "${data_list[@]}"; do
     for temperature in "${temperature_list[@]}"; do

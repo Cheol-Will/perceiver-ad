@@ -5,12 +5,12 @@ import os
 import json
 import time
 from utils import get_parser, get_logger, load_yaml
-from vis import plot_latent, plot_score_hist
+from vis import plot_tsne, plot_tsne_input_and_recon, plot_score_hist
 
 BASELINE_MODELS = ['OCSVM', 'KNN', 'IForest', 'LOF', 'PCA', 'ECOD', 
                    'DeepSVDD', 'GOAD', 'ICL', 'NeuTraL']
 
-def build_analyzer(model_config, train_config, analysis_config):
+def build_analyzer(model_config, train_config):
     model_type = train_config['model_type']
     
     if model_type in BASELINE_MODELS:
@@ -19,25 +19,37 @@ def build_analyzer(model_config, train_config, analysis_config):
         module = __import__(f'models.{model_type}.Analyzer', fromlist=['Analyzer'])
         Analyzer = module.Analyzer
     
-    return Analyzer(model_config, train_config, analysis_config)
+    return Analyzer(model_config, train_config)
 
 
-def train_test(args, model_config, train_config, analysis_config, run):
+def train_test(args, model_config, train_config, run):
     train_config['run'] = run
     train_config['logger'].info(f"[run {run}]" + '-'*60)
-    analyzer = build_analyzer(model_config, train_config, analysis_config)    
+    analyzer = build_analyzer(model_config, train_config)    
     
     output = analyzer.get_score_and_latent()
     score = output['score']
     label = output['label']
     latent = output['latent']
+    x_hat = output['x_hat']
+    x = output['x']
         
     if args.plot_latent:
-        plot_latent(train_config, latent, label)
+        plot_tsne(train_config, latent, label, target_name='latent')
         print("Saved latent T-SNE")
+    if args.plot_recon:
+        plot_tsne(train_config, x_hat, label, target_name='x_hat')
+        print("Saved x_hat T-SNE")
+    if args.plot_input_recon:
+        plot_tsne_input_and_recon(train_config, x, x_hat, label, target_name='x_and_x_hat')
+        print("Saved input and reconstruction T-SNE")
     if args.plot_histogram:
         plot_score_hist(train_config, score, label, score_name='Anomaly_Score')
         print("Saved anoamly score histogram.")
+    if args.plot_contra_histogram:
+        contrastive_score = output['contrastive_score']
+        plot_score_hist(train_config, contrastive_score, label, score_name='Contrastive_Score')
+        print("Saved contrastive anoamly score histogram.")
 
 
 def train_test_latte(args, model_config, train_config, analysis_config, run):
@@ -191,26 +203,14 @@ def main(args):
     if train_config['num_workers'] > 0:
         torch.multiprocessing.set_start_method('spawn', force=True)
 
-    analysis_config = {}
-    analysis_config['plot_attn'] = args.plot_attn
-    analysis_config['plot_recon'] = args.plot_recon
-    analysis_config['plot_histogram'] = args.plot_histogram
-    analysis_config['plot_memory_weight'] = args.plot_memory_weight
-    analysis_config['compare_regresssion_with_attn'] = args.compare_regresssion_with_attn
-    analysis_config['compare_regresssion_with_sup_attn'] = args.compare_regresssion_with_sup_attn
-    analysis_config['plot_attn_and_corr'] = args.plot_attn_and_corr
-    analysis_config['plot_tsne_recon'] = args.plot_tsne_recon
-    
     
     start = time.time()    
     for seed in range(1):
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         np.random.seed(seed)
-        train_test(args, model_config, train_config, analysis_config, seed)
+        train_test(args, model_config, train_config, seed)
 
-    end = time.time()
-    total_time = end - start
     summary = {
         'model_config': {
             'model_type': args.model_type,
@@ -218,8 +218,6 @@ def main(args):
             'train_ratio': args.train_ratio
         },
     }
-    # with open(summary_path, 'w') as f:
-    #     json.dump(summary, f, indent=4)
     print("\nSummary")
     print(json.dumps(summary, indent=4))
 
@@ -231,7 +229,9 @@ if __name__ == "__main__":
     parser.add_argument('--plot_latent', action='store_true')
     parser.add_argument('--plot_attn', action='store_true')
     parser.add_argument('--plot_recon', action='store_true')
+    parser.add_argument('--plot_input_recon', action='store_true')
     parser.add_argument('--plot_histogram', action='store_true')
+    parser.add_argument('--plot_contra_histogram', action='store_true')
     parser.add_argument('--plot_memory_weight', action='store_true')
     parser.add_argument('--compare_regresssion_with_attn', action='store_true')
     parser.add_argument('--lambda_attn', type=float, default=1.0)
