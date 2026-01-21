@@ -13,15 +13,20 @@ class TAE(nn.Module):
         mlp_ratio,
         dropout_prob,
         use_flash_attn: bool = False,
+        depth_enc: int = None,
+        depth_dec: int = None,
     ):
         super().__init__()
+        depth_enc = depth if depth_enc is None else depth_enc
+        depth_dec = 1 if depth_dec is None else depth_dec
+
         self.encoder = BaseEncoder(
-            num_features, hidden_dim, depth, num_heads,
+            num_features, hidden_dim, depth_enc, num_heads,
             mlp_ratio, dropout_prob, use_flash_attn
         )
         self.decoder = BaseDecoder(
-            num_features, hidden_dim, num_heads, 
-            mlp_ratio, dropout_prob
+            num_features, hidden_dim, depth_dec, num_heads, 
+            mlp_ratio, dropout_prob, use_flash_attn
         )
         self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
         self.reset_parameters()
@@ -30,18 +35,20 @@ class TAE(nn.Module):
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
 
     def forward(self, x, return_dict = False):
-        z = self.encoder(x)
-        x_hat = self.decoder(z, self.pos_encoding)
+        z, attn_enc = self.encoder(x)
+        x_hat, attn_dec = self.decoder(z, self.pos_encoding)
         if not self.training:
-            x = x.float() # turn of amp
+            x = x.float() # turn off amp
             x_hat = x_hat.float()        
         reconstruction_loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=-1)
 
         if return_dict:
             return {
                 'reconstruction_loss': reconstruction_loss,
-                'latent': z,    
-                'x_hat': x_hat,    
+                'latent': z,
+                'x_hat': x_hat,
+                'attn_enc': attn_enc,
+                'attn_dec': attn_dec,
             }
         else:
             return reconstruction_loss

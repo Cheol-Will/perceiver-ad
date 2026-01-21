@@ -35,44 +35,57 @@ class Analyzer(Trainer):
 
         score, latent = [], []
         x, x_hat, contrastive_score = [], [], []
-        plot_label = []
+        attn_enc, attn_dec = [], []
+        label = []
+        with torch.no_grad():
+            for (x_input, y_label) in self.train_loader:
+                x_input = x_input.to(self.device)
+                output = model(x_input)
+                
+                score.append(output['reconstruction_loss'].data.cpu()) 
+                contrastive_score.append(output['contrastive_score'].data.cpu()) 
+                latent.append(output['latent'].data.cpu())
+                x.append(x_input.data.cpu())
+                x_hat.append(output['x_hat'].data.cpu())
+                batch_attn_enc = torch.stack(output['attn_enc'], dim=1).cpu()
+                attn_enc.append(batch_attn_enc)
+                batch_attn_dec = torch.stack(output['attn_dec'], dim=1).cpu()
+                attn_dec.append(batch_attn_dec)
+                label.extend(['Train-Normal'] * x_input.size(0))
 
-        for (x_input, y_label) in self.train_loader:
-            x_input = x_input.to(self.device)
-            output = model(x_input)
-            
-            score.append(output['reconstruction_loss'].data.cpu()) 
-            contrastive_score.append(output['contrastive_score'].data.cpu()) 
-            latent.append(output['latent'].data.cpu())
-            x.append(x_input.data.cpu())
-            x_hat.append(output['x_hat'].data.cpu())
-            plot_label.extend(['Train-Normal'] * x_input.size(0))
-
-        for (x_input, y_label) in self.test_loader:
-            x_input = x_input.to(self.device)
-            output = model(x_input)
-            
-            score.append(output['reconstruction_loss'].data.cpu()) 
-            contrastive_score.append(output['contrastive_score'].data.cpu()) 
-            latent.append(output['latent'].data.cpu())
-            x.append(x_input.data.cpu())
-            x_hat.append(output['x_hat'].data.cpu())
-            
-            y_np = y_label.cpu().numpy()
-            batch_labels = np.where(y_np == 0, 'Test-Normal', 'Test-Abnormal')
-            plot_label.extend(batch_labels)
+            for (x_input, y_label) in self.test_loader:
+                x_input = x_input.to(self.device)
+                output = model(x_input)
+                
+                score.append(output['reconstruction_loss'].data.cpu()) 
+                contrastive_score.append(output['contrastive_score'].data.cpu()) 
+                latent.append(output['latent'].data.cpu())
+                x.append(x_input.data.cpu())
+                x_hat.append(output['x_hat'].data.cpu())
+                batch_attn_enc = torch.stack(output['attn_enc'], dim=1).cpu()
+                attn_enc.append(batch_attn_enc)
+                batch_attn_dec = torch.stack(output['attn_dec'], dim=1).cpu()
+                attn_dec.append(batch_attn_dec)
+                
+                y_np = y_label.cpu().numpy()
+                batch_labels = np.where(y_np == 0, 'Test-Normal', 'Test-Abnormal')
+                label.extend(batch_labels)
 
         score = torch.cat(score, axis=0).numpy()
         contrastive_score = torch.cat(contrastive_score, axis=0).numpy()
         latent = torch.cat(latent, axis=0) 
         x = torch.cat(x, axis=0) 
         x_hat = torch.cat(x_hat, axis=0) 
+        attn_enc = torch.cat(attn_enc, axis=0) # (B, L1, H, F+1, F+1)
+        attn_dec = torch.cat(attn_dec, axis=0) # (B, L2, H, F+1, F+1)
 
         return {
             'score': score,
             'contrastive_score': contrastive_score,
-            'label': plot_label,
+            'label': label,
             'latent': latent,
             'x': x,
             'x_hat': x_hat,
+            'attn_enc': attn_enc,
+            'attn_dec': attn_dec,
         }

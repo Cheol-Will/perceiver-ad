@@ -13,11 +13,11 @@ data_list=(
     satellite 
     pendigits
     campaign
-    arrhythmia 
     thyroid 
     ionosphere 
     mammography 
     shuttle # 1 minutes
+    arrhythmia 
     # census
 ) 
 
@@ -29,8 +29,10 @@ for data in "${data_list[@]}"; do
         --dataname "$data" \
         --model_type $model_type \
         --exp_name "$exp_name" \
-        --plot_recon \
-        --plot_histogram \
-        --plot_latent \
-        --plot_input_recon
+        --plot_attn
+        # --plot_latent_norm_histogram
+        # --plot_recon \
+        # --plot_histogram \
+        # --plot_latent \
+        # --plot_input_recon
 done

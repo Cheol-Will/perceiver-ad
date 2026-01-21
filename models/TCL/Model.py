@@ -42,10 +42,10 @@ class TCL(nn.Module):
             x_input = x_input.to(device)
             if use_amp:
                 with autocast():
-                    z = self.encoder(x_input)
+                    z, attn = self.encoder(x_input)
                 z = z.float()
             else:
-                z = self.encoder(x_input)
+                z, attn = self.encoder(x_input)
             all_keys.append(z.cpu())
 
         all_keys = torch.cat(all_keys, dim=0).to(device)
@@ -67,8 +67,8 @@ class TCL(nn.Module):
             else:
                 x_aug = x
 
-            query = self.encoder(x)
-            key = self.encoder(x_aug)
+            query, _ = self.encoder(x)
+            key, _ = self.encoder(x_aug)
             query = F.normalize(query, dim=-1)
             key = F.normalize(key, dim=-1)
             logits = torch.matmul(query, key.T) / self.temperature # (B, B)
@@ -81,7 +81,7 @@ class TCL(nn.Module):
             return output
             
         else:
-            z = self.encoder(x)
+            z, _ = self.encoder(x)
             z = z.float()
             z_norm = F.normalize(z, dim=-1)
             

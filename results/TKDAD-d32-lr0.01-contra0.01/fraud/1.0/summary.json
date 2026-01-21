@@ -1,0 +1,60 @@
+{
+    "model_config": {
+        "num_features": 29,
+        "hidden_dim": 32,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": false,
+        "ema_decay": 0.999,
+        "contrastive_loss_weight": 0.01
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 2048,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TKDAD",
+        "dataset_name": "fraud",
+        "base_path": "results/TKDAD-d32-lr0.01-contra0.01/fraud/1.0",
+        "exp_name": "TKDAD-d32-lr0.01-contra0.01",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "rauc": 0.8964993662725214,
+        "avg_abnormal_score": 7.787135837133974e-05,
+        "avg_normal_score": 2.478975147823803e-06,
+        "f1": 0.32926829268292684,
+        "ap": 0.23525138820904676
+    },
+    "std_metrics": {
+        "rauc_std": 0.0,
+        "avg_abnormal_score_std": 0.0,
+        "avg_normal_score_std": 0.0,
+        "f1_std": 0.0,
+        "ap_std": 0.0
+    },
+    "total_time": 425.2190010547638,
+    "all_seeds": [
+        {
+            "run": 0,
+            "train_time": 419.1889476776123,
+            "test_time": 3.647512435913086,
+            "epochs": 83,
+            "rauc": 0.8964993662725214,
+            "ap": 0.23525138820904676,
+            "f1": 0.32926829268292684,
+            "avg_normal_score": 2.478975147823803e-06,
+            "avg_abnormal_score": 7.787135837133974e-05
+        }
+    ]
+}

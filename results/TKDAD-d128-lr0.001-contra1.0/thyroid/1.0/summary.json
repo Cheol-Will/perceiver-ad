@@ -1,0 +1,159 @@
+{
+    "model_config": {
+        "num_features": 6,
+        "hidden_dim": 128,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": false,
+        "ema_decay": 0.999,
+        "contrastive_loss_weight": 1.0
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TKDAD",
+        "dataset_name": "thyroid",
+        "base_path": "results/TKDAD-d128-lr0.001-contra1.0/thyroid/1.0",
+        "exp_name": "TKDAD-d128-lr0.001-contra1.0",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "f1": 0.7365591397849462,
+        "avg_abnormal_score": 0.04229107070714235,
+        "rauc": 0.9853196587190276,
+        "ap": 0.7309037523251238,
+        "avg_normal_score": 0.006957489997148514
+    },
+    "std_metrics": {
+        "f1_std": 0.07265030508218867,
+        "avg_abnormal_score_std": 0.011419390914226451,
+        "rauc_std": 0.005993976598647664,
+        "ap_std": 0.11258065648636427,
+        "avg_normal_score_std": 0.0013707656481769153
+    },
+    "total_time": 42.46461343765259,
+    "all_seeds": [
+        {
+            "run": 0,
+            "train_time": 3.9481773376464844,
+            "test_time": 0.02790522575378418,
+            "epochs": 23,
+            "rauc": 0.9926951846657316,
+            "ap": 0.8945466372918531,
+            "f1": 0.8064516129032258,
+            "avg_normal_score": 0.006673848256468773,
+            "avg_abnormal_score": 0.036459311842918396
+        },
+        {
+            "run": 1,
+            "train_time": 3.557238817214966,
+            "test_time": 0.027974843978881836,
+            "epochs": 52,
+            "rauc": 0.9759525479195885,
+            "ap": 0.48855853329501386,
+            "f1": 0.5698924731182796,
+            "avg_normal_score": 0.006426428910344839,
+            "avg_abnormal_score": 0.030104460194706917
+        },
+        {
+            "run": 2,
+            "train_time": 2.180237293243408,
+            "test_time": 0.027910470962524414,
+            "epochs": 32,
+            "rauc": 0.9917192613370734,
+            "ap": 0.8395788636440416,
+            "f1": 0.8172043010752689,
+            "avg_normal_score": 0.004536456428468227,
+            "avg_abnormal_score": 0.03775953873991966
+        },
+        {
+            "run": 3,
+            "train_time": 1.4064135551452637,
+            "test_time": 0.02765631675720215,
+            "epochs": 21,
+            "rauc": 0.9895044413277232,
+            "ap": 0.8131357374415206,
+            "f1": 0.8064516129032258,
+            "avg_normal_score": 0.009049313142895699,
+            "avg_abnormal_score": 0.04689524322748184
+        },
+        {
+            "run": 4,
+            "train_time": 4.465437650680542,
+            "test_time": 0.048006296157836914,
+            "epochs": 35,
+            "rauc": 0.9901706404862085,
+            "ap": 0.7684665758216562,
+            "f1": 0.7634408602150538,
+            "avg_normal_score": 0.006571422331035137,
+            "avg_abnormal_score": 0.06821838766336441
+        },
+        {
+            "run": 5,
+            "train_time": 3.9804952144622803,
+            "test_time": 0.04839920997619629,
+            "epochs": 21,
+            "rauc": 0.9755376344086022,
+            "ap": 0.6309896962769052,
+            "f1": 0.6989247311827957,
+            "avg_normal_score": 0.008500668220221996,
+            "avg_abnormal_score": 0.03222380578517914
+        },
+        {
+            "run": 6,
+            "train_time": 4.85145378112793,
+            "test_time": 0.04662752151489258,
+            "epochs": 26,
+            "rauc": 0.9840871902758298,
+            "ap": 0.6823250051394019,
+            "f1": 0.6774193548387096,
+            "avg_normal_score": 0.008842617273330688,
+            "avg_abnormal_score": 0.057619571685791016
+        },
+        {
+            "run": 7,
+            "train_time": 5.53462553024292,
+            "test_time": 0.04911613464355469,
+            "epochs": 32,
+            "rauc": 0.9802244039270687,
+            "ap": 0.6693068580683019,
+            "f1": 0.7311827956989247,
+            "avg_normal_score": 0.006446500774472952,
+            "avg_abnormal_score": 0.0355730839073658
+        },
+        {
+            "run": 8,
+            "train_time": 5.775231838226318,
+            "test_time": 0.04673147201538086,
+            "epochs": 33,
+            "rauc": 0.9887038335670876,
+            "ap": 0.8016494667224537,
+            "f1": 0.7849462365591398,
+            "avg_normal_score": 0.005599455442279577,
+            "avg_abnormal_score": 0.03747749328613281
+        },
+        {
+            "run": 9,
+            "train_time": 4.501651048660278,
+            "test_time": 0.047324419021606445,
+            "epochs": 26,
+            "rauc": 0.9846014492753623,
+            "ap": 0.7204801495500897,
+            "f1": 0.7096774193548387,
+            "avg_normal_score": 0.006928189191967249,
+            "avg_abnormal_score": 0.04057981073856354
+        }
+    ]
+}

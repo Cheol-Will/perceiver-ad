@@ -37,6 +37,8 @@ def get_parser():
     # Model config
     parser.add_argument('--num_heads', type=int, default=None)
     parser.add_argument('--depth', type=int, default=None)
+    parser.add_argument('--depth_enc', type=int, default=None)
+    parser.add_argument('--depth_dec', type=int, default=None)
     parser.add_argument('--hidden_dim', type=int, default=None)
     parser.add_argument('--mlp_ratio', type=float, default=None)
     parser.add_argument('--dropout_prob', type=float, default=None)
@@ -63,6 +65,9 @@ def get_parser():
     parser.add_argument('--sinkhorn_eps', type=float, default=None)
     parser.add_argument('--reconstruction_loss_weight', type=float, default=None)
     parser.add_argument('--contrastive_loss_weight', type=float, default=None)
+    parser.add_argument('--mask_ratio', type=float, default=None)
+    parser.add_argument('--num_eval_repeat', type=int, default=None)
+    parser.add_argument('--share_mask', action='store_true')
 
     # Train config
     parser.add_argument('--learning_rate', type=float, default=None)

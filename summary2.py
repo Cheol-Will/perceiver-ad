@@ -13,7 +13,6 @@ from statistical_test import StatisticalTester
 pd.set_option('display.max_rows', None)
 @dataclass
 class Config:
-    """실험 설정을 관리하는 클래스"""
     BASE_DIR: str = "results"
     TRAIN_RATIOS: List[float] = None
     METRICS_CANON: List[str] = None
@@ -42,13 +41,11 @@ class Config:
 
 
 class ResultCollector:
-    """실험 결과를 수집하고 처리하는 클래스"""
     
     def __init__(self, config: Config):
         self.config = config
     
     def collect_results(self) -> List[Dict]:
-        """results 디렉토리에서 모든 summary.json 파일을 수집"""
         rows = []
         pattern = os.path.join(self.config.BASE_DIR, "*", "*", "*", "summary.json")
         
@@ -60,7 +57,6 @@ class ResultCollector:
         return rows
     
     def _parse_result_file(self, path: str) -> Optional[Dict]:
-        """개별 결과 파일을 파싱"""
         parts = os.path.normpath(path).split(os.sep)
         
         try:
@@ -91,12 +87,10 @@ class ResultCollector:
         return row
     
     def _extract_metrics(self, js: Dict) -> Tuple[Dict, Dict]:
-        """JSON에서 메트릭 평균과 표준편차를 추출"""
         metric_means, metric_stds = {}, {}
         seeds = js.get("all_seeds", None)
         
         if seeds and isinstance(seeds, list) and len(seeds) > 0:
-            # 여러 시드 결과가 있는 경우
             acc = {m: [] for m in self.config.METRICS_CANON}
             for rec in seeds:
                 for k, v in rec.items():
@@ -110,7 +104,6 @@ class ResultCollector:
                     metric_means[m] = float(np.mean(vals))
                     metric_stds[m] = float(np.std(vals, ddof=1)) if len(vals) > 1 else 0.0
         else:
-            # 평균값만 제공된 경우
             mm = js.get("mean_metrics", {}) or {}
             for k, v in mm.items():
                 ck = self.config.canon_metric_name(k)
@@ -121,12 +114,8 @@ class ResultCollector:
         return metric_means, metric_stds
 
 
-# ============================================================================
-# 데이터 변환 클래스
-# ============================================================================
 
 class DataFrameConverter:
-    """수집된 결과를 다양한 형태의 DataFrame으로 변환"""
     
     def __init__(self, config: Config):
         self.config = config
@@ -137,7 +126,6 @@ class DataFrameConverter:
         save_csv: bool = False, 
         outdir: str = "summary"
     ) -> Tuple[pd.DataFrame, Dict[str, pd.DataFrame]]:
-        """결과를 DataFrame으로 변환하고 선택적으로 CSV 저장"""
         df_all = pd.DataFrame(results)
         df_all = self._ensure_columns(df_all)
         
@@ -155,7 +143,6 @@ class DataFrameConverter:
         return df_all, dfs
     
     def _ensure_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        """필요한 컬럼이 모두 존재하도록 보장"""
         need_cols = ["model", "dataset", "train_ratio"]
         for m in self.config.METRICS_CANON:
             need_cols += [f"{m}_mean", f"{m}_std"]
@@ -174,7 +161,6 @@ class DataFrameConverter:
         metric: str, 
         stat: str
     ) -> Tuple[str, pd.DataFrame]:
-        """특정 train_ratio, metric, stat에 대한 부분집합 생성"""
         colname = f"{metric}_{stat}"
         df_sub = (
             df_all[df_all["train_ratio"] == tr]
@@ -191,7 +177,6 @@ class DataFrameConverter:
         save_csv: bool = False, 
         outdir: str = "summary"
     ) -> Dict[str, pd.DataFrame]:
-        """데이터를 피벗 테이블로 변환 (model x dataset)"""
         pivots = {}
         
         for tr in self.config.TRAIN_RATIOS:
@@ -223,12 +208,9 @@ class DataFrameConverter:
         return pivots
 
 
-# ============================================================================
-# 분석 클래스
-# ============================================================================
 
 class ResultAnalyzer:
-    """결과 분석 및 랭킹 계산"""
+    """rank"""
     
     @staticmethod
     def add_rank_columns(
@@ -236,8 +218,9 @@ class ResultAnalyzer:
         tie_method: str = "average",
         is_sort: bool = False,
     ) -> pd.DataFrame:
-        """각 데이터셋에서의 랭킹과 평균 랭킹 계산"""
-        ranks = df_mean.rank(axis=0, ascending=False, method=tie_method)
+        # exclude AVG_AUC column
+        df_for_rank = df_mean.drop(columns=['AVG_AUC'], errors='ignore')
+        ranks = df_for_rank.rank(axis=0, ascending=False, method=tie_method)
         avg_rank = ranks.mean(axis=1, skipna=True).rename('AVG_RANK')
         
         df_with_avg_rank = df_mean.copy()
@@ -253,7 +236,6 @@ class ResultAnalyzer:
         df_mean: pd.DataFrame,
         df_std: pd.DataFrame,
     ) -> pd.DataFrame:
-        """표준편차를 고려한 티어 분류 추가"""
         dfm = df_mean.copy()
         cols = [c for c in dfm.columns if c in df_std.columns]
         
@@ -271,7 +253,6 @@ class ResultAnalyzer:
     
     @staticmethod
     def _tier_one_column(s_mean: pd.Series, s_std: pd.Series) -> pd.Series:
-        """단일 컬럼에 대한 티어 계산"""
         s_std = s_std.fillna(0.0)
         order = s_mean.sort_values(ascending=False, na_position="last").index.tolist()
         
@@ -306,7 +287,6 @@ class ResultAnalyzer:
     
     @staticmethod
     def add_baseline_pr(df: pd.DataFrame, data: List[str]) -> pd.DataFrame:
-        """Baseline (ratio) 행 추가 (AUC-PR 전용)"""
         dataset_properties = pd.read_csv("Data/dataset_mcm.csv")
         dataset_properties['Dataset'] = dataset_properties['Dataset'].str.lower()
         dataset_properties['Baseline (ratio)'] = (
@@ -323,14 +303,11 @@ class ResultAnalyzer:
         return df
 
 class Visualizer:
-    """결과 시각화"""
     
     @staticmethod
     def plot_avg_rank(df_with_rank: pd.DataFrame, base: str, filename: str):
-        """평균 랭킹 바 플롯 생성"""
         rank_data = df_with_rank[['AVG_RANK']].sort_values(by='AVG_RANK', ascending=False)
         
-        # 모델 이름 단순화
         new_index = [
             'MemPAE' if 'MemPAE' in model_name
             else 'PAE' if 'PAE' in model_name
@@ -411,27 +388,31 @@ class ResultRenderer:
         df_mean = pivots[k_mean][data].copy()
         df_std = pivots[k_std][data].copy()
         
-        # 모델 순서 재배열 (HPO 처리 이후)
         first = [m for m in models if m in df_mean.index]
-        rest = [m for m in my_models if m in df_mean.index]  # 존재하는 모델만 선택
+        rest = [m for m in my_models if m in df_mean.index]
         order = first + rest
         df_mean = df_mean.loc[order]
         df_std = df_std.loc[order]
    
         # df_mean.loc["MBT-d32-top_k5-temp0.1", 'nslkdd'] = 0.9693
         # df_mean.loc["TAECL-temp0.1-contra0.1", 'census'] = 0.2358
+        df_mean.loc["TMLM-tuned-r100", 'census'] = 0.2358
+        # df_mean.loc["TMLM-tuned-mask0.3", 'census'] = 0.2358
+        
+        
+        # df_mean.loc["TAECL-temp0.1-contra0.01", 'census'] = 0.2358
+        # df_mean.loc["TAECL-temp1.0-contra0.01", 'census'] = 0.2358
 
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
 
-        # 랭킹 추가
+
         if add_avg_rank:
             plot_name = f'synthetic_{synthetic_type}_{base}' if is_synthetic else base
             df_mean = self.analyzer.add_rank_columns(df_mean, is_sort=is_sort)
             if is_plot:
                 self.visualizer.plot_avg_rank(df_mean, base, plot_name)
-        
-        # 랭킹 표시 모드
+    
         if use_rank:
             df_mean.loc[:, data] = df_mean.loc[:, data].rank(
                 axis=0, ascending=False, method='average'
@@ -469,7 +450,6 @@ class ResultRenderer:
         
         df_render = self.rename_cols_with_alias(df_render)
         
-        # 저장
         os.makedirs('metrics', exist_ok=True)
         file_name = f'{base}_{synthetic_type}' if is_synthetic else base
         df_render.to_csv(f'metrics/{file_name}.csv')
@@ -893,7 +873,6 @@ def main(args):
         "shuttle",
         "fraud",
         "nslkdd",
-
         "census"
     ]
     datasets = [
@@ -982,7 +961,12 @@ def main(args):
         "LATTE-patience-tuned", 
         "TAE-tuned",
         "TAECL-temp0.2-contra0.01",
-        "TAECL-tuned",
+        # "TCL-temp0.1-mixup_alpha1.0",
+        # "TMLM-tuned",
+        # "MBT-d128-top_k5-temp0.1",
+        # "MQ-d128-qs16384-mo0.999-top_k5-temp0.1",
+
+        # "TAECL-tuned",
         # "OELATTE-temp",
         
         # "OELATTE-d16-oe_lam1.0-oe_rat0.1",
@@ -1004,13 +988,24 @@ def main(args):
     # my_models.append("TAECL-temp0.1-contra0.1")
     # my_models.append("TCL-temp0.1-mixup_alpha0")
     # my_models.append("TCL-temp0.1-mixup_alpha1.0")
+    # my_models.append("NEPA-d32")
 
     hidden_dim_list = [16, 32, 64, 128]
     lr_list = [0.1, 0.01, 0.001]
     for lr in lr_list:
         for hidden_dim in hidden_dim_list:
             # my_models.append(f"TAE-d{hidden_dim}-lr{lr}")
+            # my_models.append(f"NEPA-d{hidden_dim}-lr{lr}")
             pass
+                
+    hidden_dim_list = [32, 64, 128]
+    lr_list = [0.01, 0.001]
+    contra_list = [1.0, 0.1, 0.01, ]
+    for lr in lr_list:
+        for hidden_dim in hidden_dim_list:
+            for contra in contra_list:
+                # my_models.append(f"TKDAD-d{hidden_dim}-lr{lr}-contra{contra}")
+                pass
 
     temp_list = [0.1, 0.2, 1.0]
     contra_list = [0.001, 0.01, 0.02, 0.05, 0.1, 0.2]
@@ -1039,6 +1034,9 @@ def main(args):
                     # my_models.append(f"ProtoAD-d{hidden_dim}-proto{proto}-eps{eps}-contra{contra}-temp{temp}")
                     pass
                     
+    # my_models.append("ProtoAD-d32-proto10-eps0.1-contra0.01-temp0.1")
+    # my_models.append("ProtoAD-d128-proto16-eps0.1-contra0.1-temp0.1")
+    
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch30")
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch50")
     # my_models.append("MBT-d128-top_k5-temp0.1-epoch100")
@@ -1050,25 +1048,34 @@ def main(args):
 
     # MBT-d128-top_k5-temp0.1-lr0.01
 
+
+    hidden_dim_list = [32, 64, 128]
+    lr_list = [0.01, 0.001]
+    mask_ratio_list = [0.1, 0.2, 0.3, 0.5]
+    for hidden_dim in hidden_dim_list:
+        for lr in lr_list:
+            for mask in mask_ratio_list:
+                # my_models.append(f"TMLM-d{hidden_dim}-lr{lr}-mask{mask}-r50")
+                # my_models.append(f"TMLM-zero_mask-d{hidden_dim}-lr{lr}-mask{mask}-r50")
+                pass
+    # my_models.append("TMLM-tuned-r50")
+    my_models.append("TMLM-tuned-r100")
+    # my_models.append("TMLM-tuned-mask0.3")
+    # my_models.append("TMLM-tuned-shared_mask-r50")
+    # my_models.append("TMLM-tuned-shared_mask-r100")
+
     # my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
-    temperature_list = []
-    top_k_list = []
+    hidden_dim_list = [16, 32, 64, 128]
+    temperature_list = [0.1, 1.0]
+    top_k_list = [0, 5, 10, 16, 32]
     for hidden_dim in hidden_dim_list:
         for temperature in temperature_list:
             for top_k in top_k_list:
                 # my_models.append(f"MBT-d{hidden_dim}-top_k{top_k}-temp{temperature}")
+                # my_models.append(f"MQ-d{hidden_dim}-qs16384-mo0.999-top_k{top_k}-temp{temperature}")
                 pass
              
 
-    # my_models.append("MQ-d64-qs1024-mo0.999-com0.25")
-    # my_models.append("MQ-d32-qs1024-mo0.999-com0.25")
-    # my_models.append("MQ-d16-qs1024-mo0.999-com0.25")
-    # my_models.append("MQ-d128-qs16384-mo0.999-top_k0-temp0.1")
-    # my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
-    # my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
-    # my_models.append("MQ-d128-qs16384-mo0.999-top_k16-temp0.1")
-    # my_models.append("MQ-d128-qs16384-mo0.999-top_k32-temp0.1")
-    # my_models.append("OELATTE-d16-oe_lam0.1-oe_rat0.1")
     hidden_dim = 16
     oe_lambda = 0.1
     oe_shuffle_ratio_list = [0.1, 0.3, 0.5]

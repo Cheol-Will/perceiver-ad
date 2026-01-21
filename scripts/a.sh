@@ -1,23 +1,33 @@
-#!/bin/bash
+data_list=(
+    # wine 
+    # glass 
+    # wbc 
+    # ionosphere 
+    # arrhythmia 
+    # breastw 
+    # pima  
+    # optdigits 
 
-# results 디렉토리로 이동
-cd results || { echo "❌ results directory not found"; exit 1; }
+    cardio 
+    cardiotocography 
+    thyroid 
+    satellite 
+    "satimage-2" 
+    pendigits
 
-# sqrt_NF를 포함하는 모든 디렉토리 찾기
-for dir in *sqrt_NF-*; do
-    # 디렉토리가 실제로 존재하는지 확인
-    if [ -d "$dir" ]; then
-        # sqrt_NF를 sqrt_NF_2p로 변경
-        new_dir="${dir/sqrt_NF-/sqrt_NF_2p-}"
-        
-        # 이미 변경된 이름이 존재하는지 확인
-        if [ -d "$new_dir" ]; then
-            echo "⚠️  $new_dir already exists, skipping $dir"
-        else
-            echo "Renaming: $dir -> $new_dir"
-            mv "$dir" "$new_dir"
-        fi
-    fi
+    mammography 
+    campaign 
+    shuttle 
+    fraud 
+    nslkdd 
+    census
+)
+
+for data in "${data_list[@]}"; do
+    cp -r results/TMLM-d64-lr0.001-mask0.3-r50/$data/ results/TMLM-tuned-mask0.3
+    
+    # rm results_analysis/TAECL-temp0.2-contra0.01/$data/1.0/model.pt
+    # cp -r results/TMLM-d128-lr0.001-mask0.1-r50/$data results/TMLM-tuned/
+    # echo "Copying pdf in $data";
+    # cp results_analysis/MemPAE-ws-pos_query+token-d64-lr0.001-t0.1/$data/1.0/attention_2x4_comparison_idx0_$data.pdf results_analysis_paper/further_analysis/
 done
-
-echo "✅ Done!"

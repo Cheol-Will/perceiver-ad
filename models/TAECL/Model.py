@@ -16,15 +16,19 @@ class TAECL(nn.Module):
         temperature,
         contrastive_loss_weight,
         use_flash_attn: bool = False,
+        depth_enc: int = None,
+        depth_dec: int = None,
     ):
         super().__init__()
+        depth_enc = depth if depth_enc is None else depth_enc
+        depth_dec = 1 if depth_dec is None else depth_dec        
         self.encoder = BaseEncoder(
-            num_features, hidden_dim, depth, num_heads,
+            num_features, hidden_dim, depth_enc, num_heads,
             mlp_ratio, dropout_prob, use_flash_attn
         )
         self.decoder = BaseDecoder(
-            num_features, hidden_dim, num_heads, 
-            mlp_ratio, dropout_prob
+            num_features, hidden_dim, depth_dec, num_heads, 
+            mlp_ratio, dropout_prob, use_flash_attn
         )
         self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
         self.memory_bank = None
@@ -50,10 +54,10 @@ class TAECL(nn.Module):
             x_input = x_input.to(device)
             if use_amp:
                 with autocast():
-                    z = self.encoder(x_input)
+                    z, attn_enc = self.encoder(x_input)
                 z = z.float()
             else:
-                z = self.encoder(x_input)
+                z, attn_enc = self.encoder(x_input)
             all_keys.append(z.cpu())
 
         all_keys = torch.cat(all_keys, dim=0).to(device)
@@ -65,8 +69,8 @@ class TAECL(nn.Module):
     def forward(self, x):
         batch_size = x.shape[0]
 
-        z = self.encoder(x)
-        x_hat = self.decoder(z, self.pos_encoding)
+        z, attn_enc = self.encoder(x)
+        x_hat, attn_dec = self.decoder(z, self.pos_encoding)
         reconstruction_loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=-1) # (B,)
 
         if self.training:
@@ -93,5 +97,7 @@ class TAECL(nn.Module):
                 'combined': reconstruction_loss + contrastive_score,
                 'latent': z_norm,
                 'x_hat': x_hat,
+                'attn_enc': attn_enc,
+                'attn_dec': attn_dec,
             }
             return output

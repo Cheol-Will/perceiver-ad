@@ -5,7 +5,7 @@ import os
 import json
 import time
 from utils import get_parser, get_logger, load_yaml
-from vis import plot_tsne, plot_tsne_input_and_recon, plot_score_hist
+from vis import plot_tsne, plot_tsne_input_and_recon, plot_score_hist, plot_attn_heatmap
 
 BASELINE_MODELS = ['OCSVM', 'KNN', 'IForest', 'LOF', 'PCA', 'ECOD', 
                    'DeepSVDD', 'GOAD', 'ICL', 'NeuTraL']
@@ -50,6 +50,13 @@ def train_test(args, model_config, train_config, run):
         contrastive_score = output['contrastive_score']
         plot_score_hist(train_config, contrastive_score, label, score_name='Contrastive_Score')
         print("Saved contrastive anoamly score histogram.")
+    if args.plot_latent_norm_histogram:
+        latent_norm = np.linalg.norm(latent, axis=1)
+        plot_score_hist(train_config, latent_norm, label, score_name='Latent_Norm')
+    if args.plot_attn:
+        attn_enc = output['attn_enc']
+        attn_dec = output['attn_dec']
+        plot_attn_heatmap(train_config, attn_enc, attn_dec, label)
 
 
 def train_test_latte(args, model_config, train_config, analysis_config, run):
@@ -232,6 +239,8 @@ if __name__ == "__main__":
     parser.add_argument('--plot_input_recon', action='store_true')
     parser.add_argument('--plot_histogram', action='store_true')
     parser.add_argument('--plot_contra_histogram', action='store_true')
+    parser.add_argument('--plot_latent_norm_histogram', action='store_true')
+    
     parser.add_argument('--plot_memory_weight', action='store_true')
     parser.add_argument('--compare_regresssion_with_attn', action='store_true')
     parser.add_argument('--lambda_attn', type=float, default=1.0)

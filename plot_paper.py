@@ -77,6 +77,23 @@ def plot_hp_sen():
         [1.0, 0.6765],
     ]
 
+    aucpr_vs_temp_taecl = [
+        [0.1, 0.7230],
+        [0.2, 0.7267],
+        [1.0, 0.7253],
+    ]
+
+    aucpr_vs_cont_taecl = [
+        [0.001, 0.7238],
+        [0.01, 0.7267],
+        [0.1, 0.7246],
+    ]
+
+    aucpr_vs_mask_tmlm = [
+        [0.1, 0.7000],
+        [0.3, 0.6973],
+        [0.5, 0.6921],
+    ]
 
 
     def _plot_hp_vs_aucpr(metrics, xlabel, color, y_label = ' '):
@@ -118,6 +135,9 @@ def plot_hp_sen():
     _plot_hp_vs_aucpr(aucpr_vs_hidden_dim_mbt, 'Hidden Dim', color='C4')
     _plot_hp_vs_aucpr(aucpr_vs_mixup_moco, 'mixup_rate', color='C4')
     _plot_hp_vs_aucpr(aucpr_vs_cont_moco, 'contrastive weight', color='C4')
+    _plot_hp_vs_aucpr(aucpr_vs_cont_taecl, 'contrastive weight', color='C1')
+    _plot_hp_vs_aucpr(aucpr_vs_temp_taecl, 'temperature weight', color='C2')
+    _plot_hp_vs_aucpr(aucpr_vs_mask_tmlm, 'mask ratio', color='C2')
 
 
     def plot_hp_sen_1x4():

@@ -1,10 +1,14 @@
 import os
+import yaml
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import ks_2samp
 from sklearn.feature_selection import mutual_info_classif
+from sklearn.manifold import TSNE
+import umap
+from DataSet.DataLoader import get_dataset
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -12,24 +16,13 @@ plt.style.use('seaborn-v0_8-whitegrid')
 sns.set_palette("husl")
 
 
-def eda(dataset, dataset_name: str, output_dir: str = "results_eda"):
-    """
-    EDA function for analyzing normal vs abnormal samples.
-    Generates 4 plots:
-    1. Feature Importance (MI + Variance Ratio)
-    2. Distribution Comparison (top discriminative features)
-    3. Box Plot Comparison
-    4. Mahalanobis Distance Distribution
-    """
-    # Create output directory
+def eda(dataset, dataset_name: str, args, output_dir: str = "results_eda"):
     save_dir = os.path.join(output_dir, dataset_name)
     os.makedirs(save_dir, exist_ok=True)
     
-    # Extract data and labels
     data = dataset.data.numpy() if hasattr(dataset.data, 'numpy') else np.array(dataset.data)
     labels = dataset.targets.numpy() if hasattr(dataset.targets, 'numpy') else np.array(dataset.targets)
     
-    # Separate normal and abnormal samples
     normal_mask = labels == 0
     abnormal_mask = labels == 1
     
@@ -39,48 +32,50 @@ def eda(dataset, dataset_name: str, output_dir: str = "results_eda"):
     n_features = data.shape[1]
     feature_names = [f"Feature_{i}" for i in range(n_features)]
     
-    print(f"\n{'='*60}")
-    print(f"EDA for Dataset: {dataset_name}")
-    print(f"{'='*60}")
+    print(f"\nEDA for Dataset: {dataset_name}")
     print(f"Total samples: {len(data)}")
-    print(f"Normal samples: {len(normal_data)} ({100*len(normal_data)/len(data):.2f}%)")
-    print(f"Abnormal samples: {len(abnormal_data)} ({100*len(abnormal_data)/len(data):.2f}%)")
-    print(f"Number of features: {n_features}")
-    print(f"{'='*60}\n")
+    print(f"Normal samples: {len(normal_data)}")
+    print(f"Abnormal samples: {len(abnormal_data)}")
+    print(f"Number of features: {n_features}\n")
     
-    # Compute KS statistics for feature ranking
-    ks_stats = []
-    for i in range(n_features):
-        ks_stat, _ = ks_2samp(normal_data[:, i], abnormal_data[:, i])
-        ks_stats.append(ks_stat)
-    ks_stats = np.array(ks_stats)
+    ks_stats = None
+    if args.all or args.dist or args.box:
+        ks_stats = []
+        for i in range(n_features):
+            ks_stat, _ = ks_2samp(normal_data[:, i], abnormal_data[:, i])
+            ks_stats.append(ks_stat)
+        ks_stats = np.array(ks_stats)
     
-    # Plot 1: Feature Importance
-    print("1. Generating Feature Importance Plot...")
-    plot_feature_importance(data, labels, feature_names, save_dir)
+    if args.all or args.importance:
+        print("Generating Feature Importance Plot...")
+        plot_feature_importance(data, labels, feature_names, save_dir)
     
-    # Plot 2: Distribution Comparison
-    print("2. Generating Distribution Comparison Plot...")
-    plot_distributions(normal_data, abnormal_data, feature_names, ks_stats, save_dir)
+    if args.all or args.dist:
+        print("Generating Distribution Comparison Plot...")
+        plot_distributions(normal_data, abnormal_data, feature_names, ks_stats, save_dir)
     
-    # Plot 3: Box Plot Comparison
-    print("3. Generating Box Plot Comparison...")
-    plot_boxplots(normal_data, abnormal_data, feature_names, ks_stats, save_dir)
+    if args.all or args.box:
+        print("Generating Box Plot Comparison...")
+        plot_boxplots(normal_data, abnormal_data, feature_names, ks_stats, save_dir)
     
-    # Plot 4: Mahalanobis Distance Distribution
-    print("4. Generating Mahalanobis Distance Plot...")
-    plot_mahalanobis(normal_data, abnormal_data, save_dir)
+    if args.all or args.mahal:
+        print("Generating Mahalanobis Distance Plot...")
+        plot_mahalanobis(normal_data, abnormal_data, save_dir)
+
+    if args.all or args.tsne:
+        print("Generating t-SNE Plot...")
+        plot_tsne(normal_data, abnormal_data, save_dir)
+
+    if args.all or args.umap:
+        print("Generating UMAP Plot...")
+        plot_umap(normal_data, abnormal_data, save_dir)
     
-    print(f"\n✓ EDA complete! Results saved to: {save_dir}")
+    print(f"\nEDA complete! Results saved to: {save_dir}")
 
 
 def plot_feature_importance(data, labels, feature_names, save_dir):
-    """Plot 1: Feature importance using MI and Variance Ratio."""
-    
-    # Mutual Information
     mi_scores = mutual_info_classif(data, labels, random_state=42)
     
-    # Variance ratio
     normal_data = data[labels == 0]
     abnormal_data = data[labels == 1]
     
@@ -93,7 +88,6 @@ def plot_feature_importance(data, labels, feature_names, save_dir):
         variance_ratios.append(between_var / (within_var + 1e-8))
     variance_ratios = np.array(variance_ratios)
     
-    # Sort by MI
     mi_order = np.argsort(-mi_scores)
     vr_order = np.argsort(-variance_ratios)
     
@@ -101,7 +95,6 @@ def plot_feature_importance(data, labels, feature_names, save_dir):
     
     top_n = min(20, len(feature_names))
     
-    # MI plot
     top_mi_idx = mi_order[:top_n]
     axes[0].barh(range(top_n), mi_scores[top_mi_idx])
     axes[0].set_yticks(range(top_n))
@@ -110,12 +103,11 @@ def plot_feature_importance(data, labels, feature_names, save_dir):
     axes[0].set_title(f'Top {top_n} Features by Mutual Information')
     axes[0].invert_yaxis()
     
-    # VR plot
     top_vr_idx = vr_order[:top_n]
     axes[1].barh(range(top_n), variance_ratios[top_vr_idx])
     axes[1].set_yticks(range(top_n))
     axes[1].set_yticklabels([feature_names[i] for i in top_vr_idx])
-    axes[1].set_xlabel('Variance Ratio (Between/Within)')
+    axes[1].set_xlabel('Variance Ratio')
     axes[1].set_title(f'Top {top_n} Features by Variance Ratio')
     axes[1].invert_yaxis()
     
@@ -125,8 +117,6 @@ def plot_feature_importance(data, labels, feature_names, save_dir):
 
 
 def plot_distributions(normal_data, abnormal_data, feature_names, ks_stats, save_dir):
-    """Plot 2: Distribution comparison for top discriminative features."""
-    
     top_features_idx = np.argsort(-ks_stats)[:min(12, len(feature_names))]
     
     n_cols = 3
@@ -163,8 +153,6 @@ def plot_distributions(normal_data, abnormal_data, feature_names, ks_stats, save
 
 
 def plot_boxplots(normal_data, abnormal_data, feature_names, ks_stats, save_dir):
-    """Plot 3: Box plots for top discriminative features."""
-    
     top_features_idx = np.argsort(-ks_stats)[:min(12, len(feature_names))]
     
     n_cols = 3
@@ -195,8 +183,6 @@ def plot_boxplots(normal_data, abnormal_data, feature_names, ks_stats, save_dir)
 
 
 def plot_mahalanobis(normal_data, abnormal_data, save_dir):
-    """Plot 4: Mahalanobis distance distribution."""
-    
     normal_mean = np.mean(normal_data, axis=0)
     
     try:
@@ -225,9 +211,51 @@ def plot_mahalanobis(normal_data, abnormal_data, save_dir):
         print(f"  Warning: Could not compute Mahalanobis distances: {e}")
 
 
-def create_synthetic_dataset():
-    """Create a synthetic dataset for demonstration."""
+def plot_tsne(normal_data, abnormal_data, save_dir):
+    X = np.vstack([normal_data, abnormal_data])
+    y = np.concatenate([np.zeros(len(normal_data)), np.ones(len(abnormal_data))])
     
+    if len(X) > 3000:
+        idx = np.random.choice(len(X), 3000, replace=False)
+        X = X[idx]
+        y = y[idx]
+    
+    tsne = TSNE(n_components=2, random_state=42)
+    X_embedded = tsne.fit_transform(X)
+    
+    plt.figure(figsize=(10, 8))
+    plt.scatter(X_embedded[y == 0, 0], X_embedded[y == 0, 1], c='blue', label='Normal', alpha=0.5, s=15)
+    plt.scatter(X_embedded[y == 1, 0], X_embedded[y == 1, 1], c='red', label='Abnormal', alpha=0.5, s=15)
+    plt.title("t-SNE Visualization")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'tsne_visualization.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+
+
+def plot_umap(normal_data, abnormal_data, save_dir):
+    X = np.vstack([normal_data, abnormal_data])
+    y = np.concatenate([np.zeros(len(normal_data)), np.ones(len(abnormal_data))])
+    
+    if len(X) > 3000:
+        idx = np.random.choice(len(X), 3000, replace=False)
+        X = X[idx]
+        y = y[idx]
+    
+    reducer = umap.UMAP(random_state=42)
+    X_embedded = reducer.fit_transform(X)
+    
+    plt.figure(figsize=(10, 8))
+    plt.scatter(X_embedded[y == 0, 0], X_embedded[y == 0, 1], c='blue', label='Normal', alpha=0.5, s=15)
+    plt.scatter(X_embedded[y == 1, 0], X_embedded[y == 1, 1], c='red', label='Abnormal', alpha=0.5, s=15)
+    plt.title("UMAP Visualization")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'umap_visualization.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+
+
+def create_synthetic_dataset():
     class MockDataset:
         def __init__(self):
             np.random.seed(42)
@@ -247,41 +275,33 @@ def create_synthetic_dataset():
 
 
 def main(args):
-    """Main function to run EDA on a dataset."""
-    if hasattr(args, 'dataname') and args.dataname:
-        import sys
-        sys.path.insert(0, '.')
-        
-        try:
-            from DataSet.DataLoader import get_dataset
-            import yaml
-            dict_to_import = args.model_type + '.yaml'
-            with open(f'configs/{dict_to_import}', 'r') as f:
-                configs = yaml.safe_load(f)
-            train_config = configs['default']['train_config']
-            train_config['dataset_name'] = args.dataname
-            train_config['train_ratio'] = args.train_ratio
-            train_set, test_set = get_dataset(train_config)
-            dataset_name = train_config['dataset_name']
-        except ImportError:
-            print("Could not import from DataSet.DataLoader. Running with synthetic data...")
-            dataset_name = args.dataname
-            test_set = create_synthetic_dataset()
-    else:
-        dataset_name = "synthetic_demo"
-        test_set = create_synthetic_dataset()
+    dict_to_import = args.model_type + '.yaml'
+    with open(f'configs/{dict_to_import}', 'r') as f:
+        configs = yaml.safe_load(f)
+    train_config = configs['default']['train_config']
+    train_config['dataset_name'] = args.dataname
+    train_config['train_ratio'] = args.train_ratio
+    train_set, test_set = get_dataset(train_config)
+    dataset_name = train_config['dataset_name']
     
-    eda(test_set, dataset_name)
+    eda(test_set, dataset_name, args)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='EDA for Tabular Anomaly Detection')
-    parser.add_argument('--config_file_name', type=str, default=None)
     parser.add_argument('--dataname', type=str, default='wine', help='Dataset name')
     parser.add_argument('--model_type', type=str, default='DRL')
     parser.add_argument('--exp_name', type=str, default=None)
     parser.add_argument('--train_ratio', type=float, default=1.0)
-    parser.add_argument('--demo', action='store_true', help='Run with synthetic demo data')
+    
+    parser.add_argument('--all', action='store_true', help='Run all analyses')
+    parser.add_argument('--importance', action='store_true', help='Feature importance')
+    parser.add_argument('--dist', action='store_true', help='Distribution comparison')
+    parser.add_argument('--box', action='store_true', help='Boxplot comparison')
+    parser.add_argument('--tsne', action='store_true', help='t-SNE visualization')
+    parser.add_argument('--umap', action='store_true', help='UMAP visualization')
+    parser.add_argument('--mahal', action='store_true', help='Mahalanobis distance')
+
     args = parser.parse_args()
     
     main(args)

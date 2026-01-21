@@ -1,0 +1,73 @@
+{
+    "model_config": {
+        "num_features": 21,
+        "hidden_dim": 64,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": false,
+        "mask_ratio": 0.1,
+        "num_eval_repeat": 100,
+        "eval_chunk_size": 50,
+        "share_mask": true
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TMLM",
+        "dataset_name": "cardiotocography",
+        "base_path": "results/TMLM-tuned-shared_mask-r100/cardiotocography/1.0",
+        "exp_name": "TMLM-tuned-shared_mask-r100",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "rauc": 0.7525209383724323,
+        "ap": 0.6926750582602743,
+        "f1": 0.6008583690987124,
+        "avg_normal_score": 0.2903306782245636,
+        "avg_abnormal_score": 1.3713378310203552
+    },
+    "std_metrics": {
+        "rauc_std": 0.022490520438351647,
+        "ap_std": 0.02689333174188363,
+        "f1_std": 0.015021459227467837,
+        "avg_normal_score_std": 0.014057844877243042,
+        "avg_abnormal_score_std": 0.18620795011520386
+    },
+    "total_time": 21.703580617904663,
+    "all_seeds": [
+        {
+            "run": 0,
+            "train_time": 9.304213762283325,
+            "test_time": 0.5006673336029053,
+            "epochs": 71,
+            "rauc": 0.7300304179340806,
+            "ap": 0.6657817265183906,
+            "f1": 0.5858369098712446,
+            "avg_normal_score": 0.27627283334732056,
+            "avg_abnormal_score": 1.1851298809051514
+        },
+        {
+            "run": 1,
+            "train_time": 9.809110641479492,
+            "test_time": 0.5005011558532715,
+            "epochs": 80,
+            "rauc": 0.7750114588107839,
+            "ap": 0.7195683900021579,
+            "f1": 0.6158798283261803,
+            "avg_normal_score": 0.30438852310180664,
+            "avg_abnormal_score": 1.557545781135559
+        }
+    ]
+}

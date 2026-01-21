@@ -180,9 +180,9 @@ class NEPA_TAD(nn.Module):
         depth: int = 4,
         mlp_ratio: float = 4.0,
         dropout_prob: float = 0.0,
-        use_rope: bool = True,
+        use_rope: bool = False,
         layer_scale_init: float = 1e-5,
-        num_permutations: int = 10,  # For ensemble at test time
+        num_permutations: int = 50,  # For ensemble at test time
     ):
         super().__init__()
         
@@ -194,7 +194,6 @@ class NEPA_TAD(nn.Module):
         # Feature tokenizer
         self.tokenizer = FeatureTokenizer(num_features, hidden_dim)
         
-        # Learnable positional encoding (fallback if not using RoPE)
         self.pos_encoding = nn.Parameter(torch.empty(1, num_features, hidden_dim))
         nn.init.trunc_normal_(self.pos_encoding, std=0.02)
         
@@ -226,18 +225,16 @@ class NEPA_TAD(nn.Module):
         z_hat: torch.Tensor,
         reduction: str = 'none'
     ) -> torch.Tensor:
-        # Shift for next-token prediction
+        # Shift 
         pred = z_hat[:, :-1, :] 
         target = z[:, 1:, :] 
         
-        # Normalize
         pred_norm = F.normalize(pred, dim=-1)
-        target_norm = F.normalize(target.detach(), dim=-1)  # Stop gradient on target!
+        target_norm = F.normalize(target.detach(), dim=-1)  # Stop gradient on target
         
-        # Cosine similarity per position
         cos_sim = (pred_norm * target_norm).sum(dim=-1)  # (B, F-1)
         
-        # Loss = 1 - similarity (so higher is worse)
+        # so higher is worse
         loss_per_pos = 1 - cos_sim  # (B, F-1)
         
         if reduction == 'none':
@@ -253,26 +250,14 @@ class NEPA_TAD(nn.Module):
         perm: Optional[torch.Tensor] = None,
         causal: bool = True,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Single forward pass with optional permutation
-        
-        x: (B, F)
-        perm: (F,) permutation indices
-        causal: whether to use causal attention
-        
-        Returns: loss (B,), z (B, F, D), z_hat (B, F, D)
-        """
-        # Tokenize (with permutation)
+
         z = self.tokenizer(x, perm)  # (B, F, D)
-        
-        # Add positional encoding
         if perm is not None:
             pos = self.pos_encoding[:, perm, :]
         else:
             pos = self.pos_encoding
         z = z + pos
         
-        # Apply RoPE if enabled
         if self.use_rope:
             z = self.rope(z)
         
@@ -315,25 +300,17 @@ class NEPA_TAD(nn.Module):
         self, 
         x: torch.Tensor,
         num_permutations: Optional[int] = None,
-        aggregation: str = 'mean',  # 'mean', 'max', 'median'
+        aggregation: str = 'mean',  
     ) -> torch.Tensor:
-        """
-        Inference: Permutation ensemble for robust anomaly scoring
-        
-        x: (B, F)
-        num_permutations: number of random permutations (default: self.num_permutations)
-        aggregation: how to aggregate scores across permutations
-        
-        Returns: anomaly_score (B,)
-        """
+
         if num_permutations is None:
             num_permutations = self.num_permutations
             
-        B, F = x.shape
+        batch_size, num_features = x.shape
         scores = []
         
         for _ in range(num_permutations):
-            perm = torch.randperm(F, device=x.device)
+            perm = torch.randperm(num_features, device=x.device)
             loss, _, _ = self.forward_single(x, perm=perm, causal=True)
             scores.append(loss)
         
@@ -354,11 +331,7 @@ class NEPA_TAD(nn.Module):
         x: torch.Tensor,
         num_permutations: Optional[int] = None,
     ) -> dict:
-        """
-        Detailed anomaly scoring with multiple aggregations
-        
-        Returns dict with mean, max, std scores
-        """
+
         if num_permutations is None:
             num_permutations = self.num_permutations
             

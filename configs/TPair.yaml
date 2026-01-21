@@ -1,0 +1,174 @@
+default: 
+  train_config:
+    data_dir: 'Data/'
+    epochs: 200
+    learning_rate: 0.01
+    sche_gamma: 0.95
+    batch_size: 512
+    random_seed: 42
+    num_workers: 0
+    preprocess: 'standard'
+    patience: 20
+    min_delta: 0
+    use_amp: false
+  model_config:
+    num_features: null
+    hidden_dim: 16
+    depth: 4
+    num_heads: 4
+    mlp_ratio: 4.0
+    dropout_prob: 0.0
+    temperature: 1.0
+    contrastive_loss_weight: 0.001
+    use_flash_attn: false
+
+wine:
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  contrastive_loss_weight: 0.1
+
+glass:
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  contrastive_loss_weight: 0.1
+
+wbc:
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  contrastive_loss_weight: 0.1
+
+ionosphere:
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  contrastive_loss_weight: 0.1
+
+arrhythmia:  
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  contrastive_loss_weight: 0.1
+
+breastw: 
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  contrastive_loss_weight: 0.1
+
+pima: 
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  contrastive_loss_weight: 0.1
+
+optdigits:
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  contrastive_loss_weight: 0.1
+
+cardio: 
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+  epoch: 10
+
+cardiotocography: 
+  patience: 10
+  hidden_dim: 128
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+  learning_rate: 0.001
+  epoch: 10
+ 
+thyroid:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+
+satellite:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+
+satimage-2:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+
+pendigits:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+
+mammography:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+
+campaign:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+
+shuttle:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+
+fraud:
+  batch_size: 2048
+  patience: 20
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+
+nslkdd:
+  batch_size: 2048
+  patience: 20
+  epochs: 50
+  use_amp: true
+  use_flash_attn: true
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01
+
+census:
+  batch_size: 512
+  patience: 20
+  epochs: 50
+  use_amp: true
+  use_flash_attn: true
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  contrastive_loss_weight: 0.01

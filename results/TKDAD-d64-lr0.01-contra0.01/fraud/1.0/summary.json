@@ -1,0 +1,71 @@
+{
+    "model_config": {
+        "num_features": 29,
+        "hidden_dim": 64,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": false,
+        "ema_decay": 0.999,
+        "contrastive_loss_weight": 0.01
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 2048,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TKDAD",
+        "dataset_name": "fraud",
+        "base_path": "results/TKDAD-d64-lr0.01-contra0.01/fraud/1.0",
+        "exp_name": "TKDAD-d64-lr0.01-contra0.01",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "avg_abnormal_score": 5.6535163821536116e-05,
+        "f1": 0.5050813008130082,
+        "rauc": 0.894812040410321,
+        "ap": 0.42356299443767986,
+        "avg_normal_score": 9.733219314966846e-07
+    },
+    "std_metrics": {
+        "avg_abnormal_score_std": 2.3117996533983387e-05,
+        "f1_std": 0.10873983739837395,
+        "rauc_std": 0.006863577135117149,
+        "ap_std": 0.14198969994980493,
+        "avg_normal_score_std": 2.6440861233822943e-07
+    },
+    "total_time": 1721.458860874176,
+    "all_seeds": [
+        {
+            "run": 0,
+            "train_time": 616.4233889579773,
+            "test_time": 3.6333322525024414,
+            "epochs": 113,
+            "rauc": 0.8879484632752038,
+            "ap": 0.28157329448787494,
+            "f1": 0.39634146341463417,
+            "avg_normal_score": 1.237730543834914e-06,
+            "avg_abnormal_score": 3.341716728755273e-05
+        },
+        {
+            "run": 1,
+            "train_time": 1093.9605700969696,
+            "test_time": 4.0981152057647705,
+            "epochs": 200,
+            "rauc": 0.9016756175454381,
+            "ap": 0.5655526943874848,
+            "f1": 0.6138211382113821,
+            "avg_normal_score": 7.089133191584551e-07,
+            "avg_abnormal_score": 7.96531603555195e-05
+        }
+    ]
+}

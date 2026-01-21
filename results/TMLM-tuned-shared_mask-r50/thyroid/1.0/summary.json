@@ -1,0 +1,84 @@
+{
+    "model_config": {
+        "num_features": 6,
+        "hidden_dim": 64,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": false,
+        "mask_ratio": 0.1,
+        "num_eval_repeat": 50,
+        "eval_chunk_size": 50,
+        "share_mask": true
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TMLM",
+        "dataset_name": "thyroid",
+        "base_path": "results/TMLM-tuned-shared_mask-r50/thyroid/1.0",
+        "exp_name": "TMLM-tuned-shared_mask-r50",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "ap": 0.846803559769176,
+        "rauc": 0.9875486987688952,
+        "avg_normal_score": 0.19636586805184683,
+        "avg_abnormal_score": 66.37301890055339,
+        "f1": 0.7634408602150536
+    },
+    "std_metrics": {
+        "ap_std": 0.024263698334946838,
+        "rauc_std": 0.00042917736268544937,
+        "avg_normal_score_std": 0.026508143860876122,
+        "avg_abnormal_score_std": 2.5801441014922992,
+        "f1_std": 0.02633859938476533
+    },
+    "total_time": 30.036914825439453,
+    "all_seeds": [
+        {
+            "run": 0,
+            "train_time": 6.03292441368103,
+            "test_time": 0.1129465103149414,
+            "epochs": 35,
+            "rauc": 0.9881019167835436,
+            "ap": 0.8325806963515312,
+            "f1": 0.7634408602150538,
+            "avg_normal_score": 0.22355061769485474,
+            "avg_abnormal_score": 69.31524658203125
+        },
+        {
+            "run": 1,
+            "train_time": 10.42012906074524,
+            "test_time": 0.10640215873718262,
+            "epochs": 69,
+            "rauc": 0.9870558672276765,
+            "ap": 0.8268710789931857,
+            "f1": 0.7311827956989247,
+            "avg_normal_score": 0.1604180783033371,
+            "avg_abnormal_score": 63.03289794921875
+        },
+        {
+            "run": 2,
+            "train_time": 3.90952205657959,
+            "test_time": 0.1186065673828125,
+            "epochs": 25,
+            "rauc": 0.9874883122954652,
+            "ap": 0.8809589039628114,
+            "f1": 0.7956989247311828,
+            "avg_normal_score": 0.20512890815734863,
+            "avg_abnormal_score": 66.77091217041016
+        }
+    ]
+}

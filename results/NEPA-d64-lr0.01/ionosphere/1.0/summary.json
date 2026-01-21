@@ -1,0 +1,58 @@
+{
+    "model_config": {
+        "hidden_dim": 64,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_rope": true,
+        "num_permutations": 30,
+        "num_features": 33
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 250,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "use_amp": false,
+        "model_type": "NEPA",
+        "dataset_name": "ionosphere",
+        "base_path": "results/NEPA-d64-lr0.01/ionosphere/1.0",
+        "exp_name": "NEPA-d64-lr0.01",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "avg_abnormal_score": 0.7107852697372437,
+        "ap": 0.8929481995257063,
+        "rauc": 0.8802500351172917,
+        "avg_normal_score": 0.6134704947471619,
+        "f1": 0.7777777777777778
+    },
+    "std_metrics": {
+        "avg_abnormal_score_std": 0.0,
+        "ap_std": 0.0,
+        "rauc_std": 0.0,
+        "avg_normal_score_std": 0.0,
+        "f1_std": 0.0
+    },
+    "total_time": 5.52288818359375,
+    "all_seeds": [
+        {
+            "run": 0,
+            "train_time": 4.246133804321289,
+            "test_time": 0.11381888389587402,
+            "epochs": 93,
+            "rauc": 0.8802500351172917,
+            "ap": 0.8929481995257063,
+            "f1": 0.7777777777777778,
+            "avg_normal_score": 0.6134704947471619,
+            "avg_abnormal_score": 0.7107852697372437
+        }
+    ]
+}
