@@ -396,7 +396,7 @@ class ResultRenderer:
    
         # df_mean.loc["MBT-d32-top_k5-temp0.1", 'nslkdd'] = 0.9693
         # df_mean.loc["TAECL-temp0.1-contra0.1", 'census'] = 0.2358
-        df_mean.loc["TMLM-tuned-r100", 'census'] = 0.2358
+        # df_mean.loc["TMLM-tuned-r100", 'census'] = 0.2358
         # df_mean.loc["TMLM-tuned-mask0.3", 'census'] = 0.2358
         
         
@@ -958,9 +958,15 @@ def main(args):
         # 251130
         
         
-        "LATTE-patience-tuned", 
+        # "LATTE-patience-tuned", 
         "TAE-tuned",
         "TAECL-temp0.2-contra0.01",
+        "TMLM-tuned-r100",
+
+        # "TMLMSwap-default-swap0.1-r50",
+        # "TMLMSwap-default-swap0.3-r50",
+        # "TMLMSwap-default-swap0.5-r50",
+
         # "TCL-temp0.1-mixup_alpha1.0",
         # "TMLM-tuned",
         # "MBT-d128-top_k5-temp0.1",
@@ -973,6 +979,11 @@ def main(args):
 
         #64-lr0.001-t0.1",
     ]
+
+    top_k_list = [1, 5, 10, 16, 32, 64]
+    for top_k in top_k_list:
+        my_models.append(f"TADAM-default-knn{top_k}")
+    my_models.append(f"TADAM-default")
 
 
     # f_list = [0.5, 1.0, 2.0, 4.0]
@@ -1058,11 +1069,6 @@ def main(args):
                 # my_models.append(f"TMLM-d{hidden_dim}-lr{lr}-mask{mask}-r50")
                 # my_models.append(f"TMLM-zero_mask-d{hidden_dim}-lr{lr}-mask{mask}-r50")
                 pass
-    # my_models.append("TMLM-tuned-r50")
-    my_models.append("TMLM-tuned-r100")
-    # my_models.append("TMLM-tuned-mask0.3")
-    # my_models.append("TMLM-tuned-shared_mask-r50")
-    # my_models.append("TMLM-tuned-shared_mask-r100")
 
     # my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
     hidden_dim_list = [16, 32, 64, 128]
@@ -1160,7 +1166,6 @@ def main(args):
         #     highlight_models=highlight_models
         # )
         
-        # # 결과를 CSV로 저장
         # import os
         # os.makedirs('metrics/statistical_tests', exist_ok=True)
         

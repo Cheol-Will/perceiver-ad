@@ -46,7 +46,8 @@ class Analyzer(Trainer):
                 x_hat.append(output['x_hat'].data.cpu())
                 batch_attn_enc = torch.stack(output['attn_enc'], dim=1).cpu()
                 attn_enc.append(batch_attn_enc)
-                attn_dec.append(output['attn_dec'].data.cpu())
+                batch_attn_dec = torch.stack(output['attn_dec'], dim=1).cpu()
+                attn_dec.append(batch_attn_dec)
                 label.extend(['Train-Normal'] * x_input.size(0))
 
             for (x_input, y_label) in self.test_loader:
@@ -59,7 +60,8 @@ class Analyzer(Trainer):
                 x_hat.append(output['x_hat'].data.cpu())
                 batch_attn_enc = torch.stack(output['attn_enc'], dim=1).cpu()
                 attn_enc.append(batch_attn_enc)
-                attn_dec.append(output['attn_dec'].data.cpu())
+                batch_attn_dec = torch.stack(output['attn_dec'], dim=1).cpu()
+                attn_dec.append(batch_attn_dec)
 
                 y_np = y_label.cpu().numpy()
                 batch_labels = np.where(y_np == 0, 'Test-Normal', 'Test-Abnormal')

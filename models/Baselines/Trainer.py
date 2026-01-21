@@ -34,9 +34,9 @@ def build_model(model_config):
     elif model_type == 'ECOD':
         from pyod.models.ecod import ECOD
         return ECOD()
-    # elif model_type == 'AutoEncoder':
-    #     from pyod.models.auto_encoder import AutoEncoder        
-    #     return AutoEncoder(batch_size=batch_size)
+    elif model_type == 'AutoEncoder':
+        from pyod.models.auto_encoder import AutoEncoder        
+        return AutoEncoder(batch_size=batch_size)
         # return AutoEncoder(batch_size=batch_size, hidden_neuron_list=[64, 64, 64], )
     elif model_type == 'DeepSVDD':
         from pyod.models.deep_svdd import DeepSVDD
@@ -91,4 +91,10 @@ class Trainer(object):
         y_test = self._to_numpy(self.test_set.targets, dtype=np.int64).ravel()
         mse_rauc, mse_ap = aucPerformance(scores_arr, y_test)
         mse_f1 = F1Performance(scores_arr, y_test)
-        return mse_rauc, mse_ap, mse_f1
+        metric_dict = {
+            'rauc': float(mse_rauc),
+            'ap': float(mse_ap),
+            'f1': float(mse_f1),
+
+        }
+        return metric_dict

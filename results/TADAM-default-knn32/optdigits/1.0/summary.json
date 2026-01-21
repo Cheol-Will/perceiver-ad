@@ -1,0 +1,63 @@
+{
+    "model_config": {
+        "num_features": 64,
+        "hidden_dim": 64,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "none",
+        "patience": 100,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TADAM",
+        "dataset_name": "optdigits",
+        "base_path": "results/TADAM-default-knn32/optdigits/1.0",
+        "exp_name": "TADAM-default-knn32",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "rauc": 0.8681510725095407,
+        "ap": 0.21487575865063205,
+        "f1": 0.26
+    },
+    "std_metrics": {
+        "rauc_std": 0.04576128437952359,
+        "ap_std": 0.038716261142331426,
+        "f1_std": 0.013333333333333322
+    },
+    "total_time": 191.29386949539185,
+    "all_seeds": [
+        {
+            "rauc": 0.8223897881300172,
+            "ap": 0.17615949750830062,
+            "f1": 0.2733333333333333,
+            "run": 0,
+            "epochs": 200,
+            "train_time": 90.71113801002502,
+            "test_time": 2.310493230819702
+        },
+        {
+            "rauc": 0.9139123568890644,
+            "ap": 0.2535920197929635,
+            "f1": 0.24666666666666667,
+            "run": 1,
+            "epochs": 200,
+            "train_time": 94.20796322822571,
+            "test_time": 2.211993932723999
+        }
+    ]
+}

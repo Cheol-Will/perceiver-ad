@@ -11,7 +11,7 @@ data_list=(
     # pima  
 
     # cardio cardiotocography thyroid 
-    # optdigits 
+    optdigits 
     # "satimage-2" 
     # satellite 
     # pendigits
@@ -21,7 +21,7 @@ data_list=(
     # shuttle 
     # fraud 
     # nslkdd 
-    census
+    # census
 ) 
 
 model_type="TAECL"
@@ -30,10 +30,11 @@ temperature_list=(0.2)
 # temperature_list=(1.0)
 # contrastive_loss_weight_list=(0.001)
 # contrastive_loss_weight_list=(0.05)
-contrastive_loss_weight_list=(0.02)
+contrastive_loss_weight_list=(0.01)
 # contrastive_loss_weight_list=(0.01)
 # contrastive_loss_weight_list=(0.1)
 # contrastive_loss_weight_list=(0.2)
+
 
 for data in "${data_list[@]}"; do
     for temperature in "${temperature_list[@]}"; do

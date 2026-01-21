@@ -33,8 +33,9 @@ def main(args):
         print(f"Directory not found: {source_dir}")
         return
 
-    modes = ["combined", "contra"]
-
+    # modes = ["combined", "contra"]
+    top_k_list = [1, 5, 10, 16, 32, 64]
+    modes = [f"knn{top_k}" for top_k in top_k_list]
     for root, dirs, files in os.walk(source_dir):
         for file in files:
             if file == "summary.json":

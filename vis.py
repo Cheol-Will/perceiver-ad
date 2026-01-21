@@ -7,13 +7,16 @@ import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import umap 
 
-plt.rcParams.update({'font.size': 14})
-plt.rcParams.update({'axes.titlesize': 16})
-plt.rcParams.update({'axes.labelsize': 14})
-plt.rcParams.update({'xtick.labelsize': 12})
-plt.rcParams.update({'ytick.labelsize': 12})
-plt.rcParams.update({'legend.fontsize': 12})
-plt.rcParams.update({'figure.titlesize': 18})
+plt.rcParams.update({'font.size': 18})
+plt.rcParams.update({'axes.titlesize': 20})
+plt.rcParams.update({'axes.labelsize': 18})
+plt.rcParams.update({'xtick.labelsize': 16})
+plt.rcParams.update({'ytick.labelsize': 16})
+plt.rcParams.update({'legend.fontsize': 16})
+plt.rcParams.update({'figure.titlesize': 22})
+
+def _to_numpy(x):
+    return x.detach().cpu().numpy() if isinstance(x, torch.Tensor) else x
 
 def plot_tsne(train_config, target, label, target_name='latent'):
     
@@ -261,22 +264,23 @@ def plot_score_hist(train_config, target, label, score_name='Score'):
     plt.close()
 
 
+def _plot_heatmap_on_ax(ax, data, vmin, vmax, xticklabels, yticklabels, title=None, ylabel=None):
+    sns.heatmap(
+        data, ax=ax, cmap="viridis", square=True,
+        xticklabels=xticklabels, yticklabels=yticklabels,
+        vmin=vmin, vmax=vmax, cbar=True
+    )
+    if title:
+        ax.set_title(title)
+    if ylabel:
+        ax.set_ylabel(ylabel, fontsize=20, fontweight='bold')
+    if xticklabels:
+        ax.set_xticklabels(xticklabels, rotation=90)
 
 def plot_attn_heatmap(train_config, attn_enc, attn_dec, labels, feature_names=None):
-    def to_numpy(x):
-        return x.detach().cpu().numpy() if isinstance(x, torch.Tensor) else x
-
-    attn_enc = to_numpy(attn_enc)
-    attn_dec = to_numpy(attn_dec)
+    attn_enc = _to_numpy(attn_enc)
+    attn_dec = _to_numpy(attn_dec)
     labels = np.array(labels)
-
-    seq_len = attn_enc.shape[-1]
-    if feature_names is None:
-        feature_names = [f"F{i}" for i in range(seq_len - 1)]
-    
-    tick_labels = ['CLS'] + feature_names
-    base_path = train_config['base_path']
-    dataset_name = train_config.get("dataset_name", "result")
 
     normal_idx = np.where(labels == 'Test-Normal')[0]
     abnormal_idx = np.where(labels == 'Test-Abnormal')[0]
@@ -284,89 +288,77 @@ def plot_attn_heatmap(train_config, attn_enc, attn_dec, labels, feature_names=No
     if len(normal_idx) == 0 or len(abnormal_idx) == 0:
         return
 
-    layers_enc = [(attn_enc[:, i, :, :, :], f"Encoder L{i}") for i in range(attn_enc.shape[1])]
-    layers_dec = [(attn_dec[:, i, :, :, :], f"Decoder L{i}") for i in range(attn_dec.shape[1])]
-    layers = layers_enc + layers_dec
+    seq_len = attn_enc.shape[-1]
+    if feature_names is None:
+        feature_names = [f"F{i}" for i in range(seq_len - 1)]
+    tick_labels = ['CLS'] + feature_names
+
+    layers = []
+    for i in range(attn_enc.shape[1]):
+        layers.append((attn_enc[:, i, :, :, :], f"Encoder L{i}"))
+    for i in range(attn_dec.shape[1]):
+        layers.append((attn_dec[:, i, :, :, :], f"Decoder L{i}"))
+
+    sample_indices = [normal_idx[0], normal_idx[1], abnormal_idx[0], abnormal_idx[1]]
+    row_titles = [
+        "Normal-Avg", "Abnormal-Avg",
+        "Normal-1", "Normal-2", "Abnormal-1", "Abnormal-2"
+    ]
+
     num_cols = len(layers)
-
-    fig, axes = plt.subplots(2, num_cols, figsize=(5 * num_cols, 10))
-    if num_cols == 1: axes = axes[:, np.newaxis]
+    num_rows = len(row_titles)
     
-    cmap = "viridis"
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(5 * num_cols, 4 * num_rows))
+    if num_cols == 1:
+        axes = axes[:, np.newaxis]
 
-    for col, (data, name) in enumerate(layers):
-        attn_avg_head = data.mean(axis=1) 
-        
-        mean_maps = [
+    for col, (layer_data, layer_name) in enumerate(layers):
+        attn_avg_head = layer_data.mean(axis=1)
+
+        means = [
             attn_avg_head[normal_idx].mean(axis=0),
             attn_avg_head[abnormal_idx].mean(axis=0)
         ]
-        titles = [f"{name} (Normal)", f"{name} (Abnormal)"]
+        samples = list(attn_avg_head[sample_indices])
         
-        vmin = min(m.min() for m in mean_maps)
-        vmax = max(m.max() for m in mean_maps)
-
-        for row, (heatmap_data, title) in enumerate(zip(mean_maps, titles)):
-            ax = axes[row, col]
-            is_bottom = (row == 1)
-            is_left = (col == 0)
-
-            sns.heatmap(heatmap_data, ax=ax, cmap=cmap, square=True,
-                        xticklabels=tick_labels if is_bottom else [],
-                        yticklabels=tick_labels if is_left else [],
-                        vmin=vmin, vmax=vmax, cbar=True)
-            
-            ax.set_title(title)
-            if is_bottom:
-                ax.set_xticklabels(tick_labels, rotation=90)
-
-    plt.suptitle(f"Attention Heatmap: {dataset_name}", fontsize=18)
-    plt.tight_layout()
-    
-    out_path = os.path.join(base_path, "attention_heatmap.png")
-    plt.savefig(out_path, dpi=150, bbox_inches='tight')
-    plt.close()
-    print(f"Saved combined attention heatmap: {out_path}")
-
-    sample_indices = [normal_idx[0], normal_idx[1], abnormal_idx[0], abnormal_idx[1]]
-    row_titles = ["Normal-1", "Normal-2", "Abnormal-1", "Abnormal-2"]
-    
-    num_rows = 4
-    fig, axes = plt.subplots(num_rows, num_cols, figsize=(5 * num_cols, 4 * num_rows))
-    if num_cols == 1: axes = axes[:, np.newaxis]
-
-    for col, (data, name) in enumerate(layers):
-        attn_avg_head = data.mean(axis=1)
-        selected_maps = attn_avg_head[sample_indices]
+        all_maps = means + samples
         
-        vmin, vmax = selected_maps.min(), selected_maps.max()
+        vmin_mean = min(m.min() for m in means)
+        vmax_mean = max(m.max() for m in means)
+        vmin_samp = min(s.min() for s in samples)
+        vmax_samp = max(s.max() for s in samples)
 
-        for row in range(num_rows):
+        for row, heatmap_data in enumerate(all_maps):
             ax = axes[row, col]
-            heatmap_data = selected_maps[row]
-            
-            is_last_row = (row == num_rows - 1)
+            is_mean_row = row < 2
             is_first_col = (col == 0)
+            is_first_row = (row == 0)
+            is_last_row = (row == num_rows - 1)
 
-            sns.heatmap(heatmap_data, ax=ax, cmap=cmap, square=True,
-                        xticklabels=tick_labels if is_last_row else [],
-                        yticklabels=tick_labels if is_first_col else [],
-                        vmin=vmin, vmax=vmax, cbar=True)
-
-            if row == 0:
-                ax.set_title(name)
+            current_vmin = vmin_mean if is_mean_row else vmin_samp
+            current_vmax = vmax_mean if is_mean_row else vmax_samp
             
-            if is_first_col:
-                ax.set_ylabel(row_titles[row], fontsize=12, fontweight='bold')
-            
-            if is_last_row:
-                ax.set_xticklabels(tick_labels, rotation=90)
+            title = None
 
-    plt.suptitle(f"Individual Attention Heatmaps (4 Samples): {dataset_name}", fontsize=18)
+            if is_first_row:
+                # sub_name = "Normal" if row == 0 else "Abnormal"
+                title = layer_name
+            
+            x_ticks = tick_labels if is_last_row else []
+            y_ticks = tick_labels if is_first_col else []
+            y_label = row_titles[row] if is_first_col else None
+
+            _plot_heatmap_on_ax(
+                ax, heatmap_data, current_vmin, current_vmax,
+                x_ticks, y_ticks, title, y_label
+            )
+
+    dataset_name = train_config.get("dataset_name", "result")
+    plt.suptitle(f"Attention Heatmaps: {dataset_name}", fontsize=18)
     plt.tight_layout()
     plt.subplots_adjust(top=0.92)
 
-    out_path_samples = os.path.join(base_path, "attention_heatmap_samples.png")
-    plt.savefig(out_path_samples, dpi=150, bbox_inches='tight')
+    out_path = os.path.join(train_config['base_path'], "attention_heatmap.png")
+    plt.savefig(out_path, dpi=150, bbox_inches='tight')
+    print(f"Saved combined attention heatmap: {out_path}")
     plt.close()
-    print(f"Saved sample-wise attention heatmap: {out_path_samples}")

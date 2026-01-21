@@ -2,25 +2,28 @@
 set -euo pipefail
 
 data_list=(    
-    wine 
-    glass 
-    wbc 
-    ionosphere 
-    arrhythmia 
-    breastw 
-    pima  
-    cardio 
-    cardiotocography 
-    thyroid 
-    
-    optdigits 
-    satellite 
-    "satimage-2" 
-    pendigits
 
-    mammography 
-    campaign 
-    shuttle 
+    optdigits 
+
+    # wine 
+    # glass 
+    # wbc 
+    # ionosphere 
+    # arrhythmia 
+    # breastw 
+    # pima  
+    # cardio 
+    # cardiotocography 
+    # thyroid 
+    
+    # optdigits 
+    # satellite 
+    # "satimage-2" 
+    # pendigits
+
+    # mammography 
+    # campaign 
+    # shuttle 
     # fraud 
     # nslkdd 
     # census
@@ -28,16 +31,15 @@ data_list=(
 
 model_type="TMLM"
 num_eval_repeat=50
-exp_name="TMLM-tuned-shared_mask-r$num_eval_repeat"
+exp_name="TMLM-temp-r$num_eval_repeat"
 for data in "${data_list[@]}"; do
     echo "Running $exp_name on $data."
     python main.py \
         --dataname "$data" \
         --model_type $model_type \
         --exp_name "$exp_name" \
-        --num_eval_repeat "$num_eval_repeat" \
-        --share_mask
-        # --patience 100 \
+        --patience 100 \
+        --num_eval_repeat "$num_eval_repeat"
         # --epochs 10
 done
 

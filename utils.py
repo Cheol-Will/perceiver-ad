@@ -66,6 +66,7 @@ def get_parser():
     parser.add_argument('--reconstruction_loss_weight', type=float, default=None)
     parser.add_argument('--contrastive_loss_weight', type=float, default=None)
     parser.add_argument('--mask_ratio', type=float, default=None)
+    parser.add_argument('--swap_ratio', type=float, default=None)
     parser.add_argument('--num_eval_repeat', type=int, default=None)
     parser.add_argument('--share_mask', action='store_true')
 
