@@ -27,7 +27,7 @@ data_list=(
 
 
 
-hidden_dim_list=(32)
+hidden_dim_list=(128)
 lr_list=(0.01 0.001)
 model_type="TADAM"
 for data in "${data_list[@]}"; do
