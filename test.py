@@ -1,0 +1,156 @@
+import torch
+import numpy as np
+import argparse
+import os
+import json
+import time
+from torch.utils.tensorboard import SummaryWriter
+from utils import get_parser, get_logger, build_tester, load_yaml
+
+def test(model_config, train_config, run):
+    train_config['run'] = run
+    train_config['logger'].info(f"[run {run}]" + '-'*60)
+    tester = build_tester(model_config, train_config)   
+    start_test = time.time()    
+    metrics = tester.evaluate() 
+    end_test = time.time()    
+    test_time = end_test - start_test # This time might be false for KNN.
+
+    results_dict = {
+        'run': run,
+        'test_time': test_time,
+    }
+    for key, value, in metrics.items():
+        results_dict[key] = float(value) if isinstance(value, (int, float, np.floating)) else value
+    print(metrics)
+    return results_dict
+
+
+def main(args):
+    
+    os.makedirs(args.base_path, exist_ok=True)
+    summary_path = os.path.join(args.base_path, 'summary.json')
+    if os.path.exists(summary_path):
+        with open(summary_path, 'r') as f:
+            existing_summary = json.load(f)
+            all_results = existing_summary.get('all_seeds', [])
+        print(f"Resumed from {summary_path}. Loaded {len(all_results)} runs.")
+    else:
+        all_results = []
+    if len(all_results) >= args.runs:
+        print(f"All runs already exist. Skipping.")
+        return
+    else:
+        print(f"Have {len(all_results)} results")
+
+    logger = get_logger(os.path.join(args.base_path, 'log.log'))
+    model_config, train_config = load_yaml(args, parser)
+    train_config['logger'] = logger
+    train_config['device'] = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    train_config['base_pth_path'] = args.base_pth_path
+
+    writer = None
+    if args.contamination_ratio is not None:
+        tensorboard_dir = f"results/{args.exp_name}/tensorboard_contam{args.contamination_ratio}/{args.train_ratio}"
+    else:
+        tensorboard_dir = f"results/{args.exp_name}/tensorboard/{args.train_ratio}"
+    os.makedirs(tensorboard_dir, exist_ok=True)
+    writer = SummaryWriter(log_dir=os.path.join(tensorboard_dir, args.dataname))
+    print(f"TensorBoard logs will be saved to: {tensorboard_dir}/{args.dataname}")
+    
+    train_config['writer'] = writer
+    
+    if train_config['num_workers'] > 0:
+        torch.multiprocessing.set_start_method('spawn', force=True)
+    
+    print(model_config)
+    print(train_config)
+    
+    start = time.time()    
+    
+    for seed in range(args.runs):
+        if any(r['run'] == seed for r in all_results):
+            print(f"[run {seed}] Already exists. Skipping...")
+            continue
+
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        np.random.seed(seed)
+        
+        current_train_config = train_config.copy()
+
+        if train_config["model_type"] != 'NPTAD':
+            result = test(model_config, current_train_config, seed) 
+            if result is not None:
+                all_results.append(result)
+        
+        if len(all_results) > 0:
+            # Extract metric keys
+            exclude_keys = {'run', 'train_time', 'test_time', 'epochs'}
+            metric_keys = []
+            if all_results:
+                # Union of all keys to be safe
+                all_keys = set().union(*(d.keys() for d in all_results))
+                metric_keys = [k for k in all_keys if k not in exclude_keys]
+            
+            # Aggregation
+            mean_metrics = {}
+            std_metrics = {}
+            for key in metric_keys:
+                values = [r[key] for r in all_results if key in r and isinstance(r[key], (int, float, np.floating))]
+                if values:
+                    mean_metrics[key] = float(np.mean(values))
+                    std_metrics[f"{key}_std"] = float(np.std(values))
+            
+            save_train_config = train_config.copy()
+            save_train_config.pop('device', None)
+            save_train_config.pop('logger', None)
+            save_train_config.pop('writer', None)
+            
+            total_time = time.time() - start # Approximate total time
+            
+            summary = {
+                'model_config': model_config,
+                'train_config': save_train_config,
+                'mean_metrics': mean_metrics,
+                'std_metrics': std_metrics,
+                'total_time': total_time,
+                'all_seeds': all_results,
+            }
+            
+            with open(summary_path, 'w') as f:
+                json.dump(summary, f, indent=4)
+            
+            print(f"Saved results for run {seed} to {summary_path}")
+
+    if len(all_results) > 0:
+        print(f"\n{'='*80}")
+        print("Final Summary")
+        print(f"{'='*80}")
+    
+        for key in sorted(mean_metrics.keys()):
+            std_key = f"{key}_std"
+            if std_key in std_metrics:
+                print(f"  {key}: {mean_metrics[key]:.4f} ± {std_metrics[std_key]:.4f}")
+            else:
+                print(f"  {key}: {mean_metrics[key]:.4f}")
+        print(f"{'='*80}\n")
+        
+    if writer is not None:
+        writer.close()
+
+if __name__ == "__main__":
+    parser = get_parser()
+    parser.add_argument('--pth_dir_name', type=str)
+    args = parser.parse_args()
+
+    if args.exp_name is None:
+        args.exp_name = args.model_type 
+    if args.contamination_ratio is not None:
+        args.base_pth_path = f"results/{args.pth_dir_name}/{args.dataname}_contam{args.contamination_ratio}/{args.train_ratio}"
+        args.base_path = f"results/{args.exp_name}/{args.dataname}_contam{args.contamination_ratio}/{args.train_ratio}"
+    else:
+        args.base_pth_path = f"results/{args.pth_dir_name}/{args.dataname}/{args.train_ratio}"
+        args.base_path = f"results/{args.exp_name}/{args.dataname}/{args.train_ratio}"
+
+    main(args)

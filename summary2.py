@@ -375,10 +375,6 @@ class ResultRenderer:
         synthetic_type: Optional[str] = None,
         is_plot: bool = False,
         is_print: bool = True,
-        use_temp: bool = False,
-        use_top_k: bool = False,
-        use_hpo_memory_latent: bool = False,
-        use_hpo_memory_latent_top_k: bool = False,
     ) -> pd.DataFrame:
 
         tr, metr = base.split('_')[1], base.split('_')[2]
@@ -426,7 +422,6 @@ class ResultRenderer:
         if use_std:
             df_render = self._render_mean_pm_std(df_mean.round(4), df_std.round(4))
         
-        # Baseline 추가 (AUC-PR 전용)
         if base == 'ratio_1.0_AUCPR':
             if use_baseline_pr and not use_rank and not use_std:
                 df_render = self.analyzer.add_baseline_pr(df_render, data)
@@ -434,19 +429,8 @@ class ResultRenderer:
         if not use_std:
             df_render = df_render.round(4)
         
-        # 별칭 적용
         if use_alias:
             df_render = self._apply_aliases(df_render)
-        
-        # 모델 이름 정리
-        df_render.index = [
-            c.replace("pos_query+token", "pos") if "pos_query+token" in c else c
-            for c in df_render.index
-        ]
-        df_render.index = [
-            c.replace("MemPAE-ws-cross_attn", "MPCA") if "MemPAE-ws-cross_attn" in c else c
-            for c in df_render.index
-        ]
         
         df_render = self.rename_cols_with_alias(df_render)
         
@@ -463,165 +447,13 @@ class ResultRenderer:
         
         return df_render
     
-    def _apply_hpo_memory_latent_top_k(self, df_mean: pd.DataFrame) -> pd.DataFrame:
-        """HPO 메모리/레이턴트 + top-k 적용"""
-        our_model = ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
-        
-        # top-k 없는 모델들
-        num_latent_list = [0.5, 1.0, 2.0, 4.0]
-        num_memory_list = [0.5, 1.0, 2.0, 4.0]
-        temperature_list = [0.1]
-        
-        for l in num_latent_list:
-            for m in num_memory_list:
-                for t in temperature_list:
-                    model_name = f"MemPAE-ws-local+global-sqrt_F{l}-sqrt_N{m}-d64-lr0.001-t{t}"
-                    our_model.append(model_name)
-        
-        # top-k 있는 모델들
-        top_k_list = [1, 5, 10, 15]
-        temperature_list = [0.1, 0.5, 1.0]
-        
-        for k in top_k_list:
-            for l in num_latent_list:
-                for m in num_memory_list:
-                    for t in temperature_list:
-                        model_name = f"MemPAE-ws-local+global-sqrt_F{l}-sqrt_N{m}-top{k}-d64-lr0.001-t{t}"
-                        our_model.append(model_name)
-        
-        print("\n" + "="*80)
-        print("Best Model per Dataset (HPO Memory Latent)")
-        print("="*80)
-        for col in df_mean.columns:
-            max_idx = df_mean.loc[our_model, col].idxmax()
-            max_val = df_mean.loc[our_model, col].max()
-            print(f"{col:20s} -> {max_idx:70s} (score: {max_val:.4f})")
-        print("="*80 + "\n")
-
-
-        # 최대값으로 통합
-        df_mean.loc[our_model[0], :] = df_mean.loc[our_model, :].max(axis=0)
-        df_mean.drop(our_model[1:], axis=0, inplace=True)
-        
-        return df_mean
-    
-    def _apply_temp(self, df_mean: pd.DataFrame) -> pd.DataFrame:
-        """top-k 모델 선택"""
-        our_model = ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
-        
-        # for t in [0.1, 0.5, 1.0]:
-        for t in [0.01, 0.05, 0.1, 0.5, 1.0]:
-            model_name = f"MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-d64-lr0.001-t{t}"
-            our_model.append(model_name)
-        
-        print("\n" + "="*80)
-        print("Best Model per Dataset (HPO: Temperature)")
-        print("="*80)
-        for col in df_mean.columns:
-            max_idx = df_mean.loc[our_model, col].idxmax()
-            max_val = df_mean.loc[our_model, col].max()
-            print(f"{col:20s} -> {max_idx:70s} (score: {max_val:.4f})")
-        print("="*80 + "\n")
-
-        df_mean.loc[our_model[0], :] = df_mean.loc[our_model, :].max(axis=0)
-        df_mean.drop(our_model[1:], axis=0, inplace=True)
-        
-        return df_mean
-    def _apply_top_k(self, df_mean: pd.DataFrame) -> pd.DataFrame:
-        """top-k 모델 선택"""
-        our_model = ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
-        
-        for k in [1, 5, 10, 15]:
-            for t in [0.01, 0.05, 0.1, 0.5, 1.0]:
-                model_name = f"MemPAE-ws-local+global-sqrt_F-sqrt_N-top{k}-d64-lr0.001-t{t}"
-                our_model.append(model_name)
-        
-        print("\n" + "="*80)
-        print("Best Model per Dataset (HPO Memory Latent)")
-        print("="*80)
-        for col in df_mean.columns:
-            max_idx = df_mean.loc[our_model, col].idxmax()
-            max_val = df_mean.loc[our_model, col].max()
-            print(f"{col:20s} -> {max_idx:70s} (score: {max_val:.4f})")
-        print("="*80 + "\n")
-
-        df_mean.loc[our_model[0], :] = df_mean.loc[our_model, :].max(axis=0)
-        df_mean.drop(our_model[1:], axis=0, inplace=True)
-        
-        return df_mean
-    
-    def _apply_hpo_memory_latent(self, df_mean: pd.DataFrame) -> pd.DataFrame:
-        """HPO 메모리/레이턴트 적용"""
-        print(f"use_hpo_memory_latent=True")
-        our_model = ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
-        
-        num_latent_list = [0.5, 1.0, 2.0, 4.0]
-        num_memory_list = [0.5, 1.0, 2.0, 4.0]
-        temperature_list = [0.1, 0.5, 1.0]
-        
-        for l in num_latent_list:
-            for m in num_memory_list:
-                for t in temperature_list:
-                    model_name = f"MemPAE-ws-local+global-sqrt_F{l}-sqrt_N{m}-d64-lr0.001-t{t}"
-                    our_model.append(model_name)
-        a = [
-            'MemPAE-ws-pos_query-d16-lr0.001-t0.1',
-            'MemPAE-ws-pos_query-d16-lr0.005-t0.1',
-            'MemPAE-ws-pos_query-d16-lr0.01-t0.1',
-            'MemPAE-ws-pos_query-d16-lr0.05-t0.1',
-            'MemPAE-ws-pos_query-d32-lr0.001-t0.1',
-            'MemPAE-ws-pos_query-d32-lr0.005-t0.1',
-            'MemPAE-ws-pos_query-d32-lr0.01-t0.1',
-            'MemPAE-ws-pos_query-d32-lr0.05-t0.1',
-            'MemPAE-ws-pos_query-L6-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query-L2-d64-lr0.001-t0.1',
-
-            'MemPAE-ws-pos_query+token-d64-lr0.001',
-            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.01',
-            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.05',
-            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.5',
-            'MemPAE-ws-pos_query+token-L0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-L2-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-L3-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-L4-d64-lr0.001-t0.2',
-            'MemPAE-ws-pos_query+token-L5-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-L5-d64-lr0.005-t0.1',
-            'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.01',
-            'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.05',
-            'MemPAE-ws-pos_query+token-L6-d64-lr0.001-t0.1',
-
-            'MemPAE-ws-pos_query+token-memory_ratio0.5-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-memory_ratio2.0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-memory_ratio8.0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-latent_ratio0.5-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-latent_ratio2.0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-latent_ratio4.0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1',
-        ]
-
-        our_model = our_model + a
-        print("\n" + "="*80)
-        print("Best Model per Dataset (HPO Memory Latent)")
-        print("="*80)
-        for col in df_mean.columns:
-            max_idx = df_mean.loc[our_model, col].idxmax()
-            max_val = df_mean.loc[our_model, col].max()
-            print(f"{col:20s} -> {max_idx:70s} (score: {max_val:.4f})")
-        print("="*80 + "\n")
-
-        df_mean.loc[our_model[0], :] = df_mean.loc[our_model, :].max(axis=0)
-        df_mean.drop(our_model[1:], axis=0, inplace=True)
-        
-        return df_mean
-    
+   
     @staticmethod
     def _render_mean_pm_std(
         df_mean: pd.DataFrame, 
         df_std: pd.DataFrame, 
         digits: int = 4
     ) -> pd.DataFrame:
-        """평균 ± 표준편차 형식으로 포맷팅"""
         df_std = df_std.reindex(index=df_mean.index, columns=df_mean.columns)
         
         def fmt(m, s):
@@ -666,7 +498,7 @@ class ResultRenderer:
 
     @staticmethod
     def _apply_aliases(df_render: pd.DataFrame) -> pd.DataFrame:
-        """컬럼 이름에 별칭 적용"""
+        """Apply alias"""
         aliases = {
             'global': 'G', 'cluster': 'C', 'local': 'L', 'dependency': 'D',
             '_anomalies': '', 'irrelevant_features': 'if',
@@ -690,12 +522,7 @@ class ResultRenderer:
         return df_render.round(4)
 
 
-# ============================================================================
-# 특수 분석 함수들
-# ============================================================================
-
 class SpecializedAnalysis:
-    """특수 목적 분석 함수들"""
     
     def __init__(self, config: Config, renderer: ResultRenderer):
         self.config = config
@@ -832,7 +659,6 @@ def main(args):
     """메인 실행 함수"""
     config = Config()
     
-    # 데이터 수집 및 변환
     collector = ResultCollector(config)
     converter = DataFrameConverter(config)
     
@@ -845,11 +671,9 @@ def main(args):
     print("Creating pivot tables...")
     pivots = converter.make_pivots(dfs, save_csv=False)
     
-    # 렌더링 및 분석
     renderer = ResultRenderer(config)
     specialized = SpecializedAnalysis(config, renderer)
     
-    # 기본 데이터셋 및 모델 정의        
     data = [
         # group 1
         "wine",
@@ -870,10 +694,10 @@ def main(args):
         "pendigits",
         "mammography",
         "campaign",
-        "shuttle",
-        "fraud",
-        "nslkdd",
-        "census"
+        # "shuttle",
+        # "fraud",
+        # "nslkdd",
+        # "census"
     ]
     datasets = [
         "wine",
@@ -960,8 +784,8 @@ def main(args):
         
         # "LATTE-patience-tuned", 
         "TAE-tuned",
-        "TAECL-temp0.2-contra0.01",
-        "TMLM-tuned-r100",
+        # "TAECL-temp0.2-contra0.01",
+        # "TMLM-tuned-r100",
 
         # "TMLMSwap-default-swap0.1-r50",
         # "TMLMSwap-default-swap0.3-r50",
@@ -980,10 +804,32 @@ def main(args):
         #64-lr0.001-t0.1",
     ]
 
+    d_list = [32, 64, 128]
+    lr_list = [0.01, 0.001]
+    top_k_list = [1, 5]
     top_k_list = [1, 5, 10, 16, 32, 64]
+    for d in d_list:
+        for lr in lr_list:
+            # my_models.append(f"TADAM-d{d}-lr{lr}")
+            pass
+            for top_k in top_k_list:
+                # my_models.append(f"TADAM-d{d}-lr{lr}-knn{top_k}")
+                pass
+    
+    my_models.append(f"TADAM-default")
+    # my_models.append(f"TADAM-default-cls")
     for top_k in top_k_list:
         my_models.append(f"TADAM-default-knn{top_k}")
-    my_models.append(f"TADAM-default")
+        my_models.append(f"TADAM-default-cls-cls_knn{top_k}")
+        # my_models.append(f"TADAM-default-knn{top_k}")
+    
+    weight_list = [0.01, 0.1, 1.0]
+    my_models.append(f"TADAM-default-test")
+    for weight in weight_list:
+        for top_k in top_k_list:
+            my_models.append(f"TADAM-default-test-recon_weight{weight}_cls_knn{top_k}")
+            my_models.append(f"TADAM-default-test-recon_weight{weight}_knn{top_k}")
+
 
 
     # f_list = [0.5, 1.0, 2.0, 4.0]
@@ -1122,10 +968,6 @@ def main(args):
             pivots, data, models, my_models, base,
             add_avg_rank=True, use_rank=args.use_rank, use_std=args.use_std,
             use_baseline_pr=True, is_plot=False,
-            use_temp=args.use_temp, 
-            use_top_k=args.use_top_k, 
-            use_hpo_memory_latent=args.use_hpo_memory_latent,
-            use_hpo_memory_latent_top_k=args.use_hpo_memory_latent_top_k,
         )
 
     if args.stat_test:
@@ -1177,7 +1019,6 @@ def main(args):
 
 
         
-    # 특수 분석
     if args.train_ratio:
         print("\n" + "=" * 80)
         print("Training Ratio Analysis")
@@ -1242,7 +1083,7 @@ def main(args):
                     is_synthetic=True, synthetic_type=anomaly_type.strip('_'),
                     is_plot=False, is_print=True
                 )
-    # Contamination 분석
+
     if args.contamination:
         print("\n" + "=" * 80)
         print("Contamination Analysis")
@@ -1282,42 +1123,6 @@ def main(args):
                     is_plot=False, is_print=True,
                 )
     
-    # Hyperparameter Ratio 분석
-    if args.hp_ratio:
-        print("\n" + "=" * 80)
-        print("Hyperparameter Ratio Analysis")
-        print("=" * 80)
-        
-        data_hp = [
-            'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
-            'ionosphere', 'pima', 'wbc', 'wine', 'thyroid',
-            'optdigits', 'pendigits', 'satellite', 'campaign', 'mammography',
-            'satimage-2', 'nslkdd', 'fraud', 'shuttle', 'census',
-        ]
-        data_hp.sort()
-        
-        models_hp = ['KNN']
-        my_models_hp = [
-            'MemPAE-ws-pos_query+token-latent_ratio0.5-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-latent_ratio2.0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-latent_ratio4.0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-latent_ratio8.0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-memory_ratio0.5-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-memory_ratio2.0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-memory_ratio4.0-d64-lr0.001-t0.1',
-            'MemPAE-ws-pos_query+token-memory_ratio8.0-d64-lr0.001-t0.1',
-        ]
-        
-        base_hp = 'ratio_1.0_AUCPR'
-        renderer.render(
-            pivots, data_hp, models_hp, my_models_hp, base_hp,
-            add_avg_rank=True, use_rank=False, use_std=False,
-            use_baseline_pr=True, is_temp_tune=False, is_sort=False,
-            is_plot=True, is_print=True,
-            
-        )
   
     print("\nAnalysis complete!")
     

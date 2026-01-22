@@ -235,7 +235,7 @@ def plot_score_hist(train_config, target, label, score_name='Score'):
     
     out_path = os.path.join(base_path, f'hist_{score_name}_{dataset_name}.png')
     plt.savefig(out_path, bbox_inches='tight', dpi=200)
-    print(f"Original Histogram plot saved at: {out_path}")
+    print(f"Histogram plot saved at: {out_path}")
     plt.close()
 
     threshold = np.percentile(target, 95)

@@ -44,6 +44,8 @@ class Trainer(object):
         optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
         self.model.train()
+        path = os.path.join(self.path, "model.pth")
+
         print("Training Start.")
 
         if self.patience is not None:
@@ -108,11 +110,12 @@ class Trainer(object):
                         print(f"Best loss: {best_loss:.4f}")
                         if best_model_state is not None:
                             self.model.load_state_dict(best_model_state)
-                            path = os.path.join(self.path, "model.pth")
-                            torch.save(self.model, path)
+                            print(f"Training complete. Save parameters to {path}")
+                            torch.save(self.model.state_dict(), path)
                         return epoch
         
-        print("Training complete.")
+        print(f"Training complete. Save parameters to {path}")
+        torch.save(self.model.state_dict(), path)
         return self.epochs
 
     @torch.no_grad()
@@ -164,77 +167,6 @@ class Trainer(object):
             metric_dict.update(calc_metrics(knn_score, test_label, prefix=f'knn{k}_'))
 
         return metric_dict
-    
-    def train_test_per_epoch(self, test_per_epochs = 50):
-        print(self.model_config)
-        print(self.train_config)
-  
-        self.logger.info(self.train_loader.dataset.data[0])
-        self.logger.info(self.test_loader.dataset.data[0])
-
-        optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
-        scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
-        self.model.train()
-        print("Training Start.")
-        top_k_list = [1, 5, 10, 16, 32, 64]
-        base_keys = ['rauc', 'ap', 'f1', 'avg_normal_score', 'avg_abnormal_score']
-
-        metrics = {k: [] for k in base_keys}
-        metrics.update({f'knn{kk}_{k}': [] for kk in top_k_list for k in base_keys})
-
-        for epoch in range(self.epochs):
-            running_loss = 0.0
-            for step, (x_input, y_label) in enumerate(self.train_loader):
-                x_input = x_input.to(self.device)
-                loss = self.model(x_input).mean()
-
-                running_loss += loss.item()
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-
-            scheduler.step()
-            avg_loss = running_loss / len(self.train_loader)
-            
-            info = 'Epoch:[{}]\t loss={:.4f}\t'
-            self.logger.info(info.format(epoch, avg_loss))
-            self._log_training(epoch, avg_loss)
-            
-            if (epoch+1) % test_per_epochs == 0:
-                metric_dict = self.evaluate()
-
-                metrics['rauc'].append(metric_dict['rauc'])
-                metrics['ap'].append(metric_dict['ap'])
-                metrics['f1'].append(metric_dict['f1'])
-                metrics['avg_normal_score'].append(metric_dict['avg_normal_score'])
-                metrics['avg_abnormal_score'].append(metric_dict['avg_abnormal_score'])
-
-                top_k_list = [1, 5, 10, 16, 32, 64]
-                base_keys = ['rauc', 'ap', 'f1', 'avg_normal_score', 'avg_abnormal_score']
-
-                for kk in top_k_list:
-                    for key in base_keys:
-                        metrics[f'knn{kk}_{key}'].append(metric_dict[f'knn{kk}_{key}'])
-
-                print(f"Evaluate on test epoch={epoch+1}")
-
-                score_types = [("Recon", ""), ("KNN1", "knn1_"), ("KNN5", "knn5_"), ("KNN10", "knn10_"),
-                               ("KNN16", "knn16_"), ("KNN32", "knn32_"), ("KNN64", "knn64_")]
-                for name, prefix in score_types:
-                    self.logger.info(
-                        f"[Epoch {epoch+1}] {name:6s} | "
-                        f"AUC-ROC: {metric_dict[f'{prefix}rauc']:.4f} | "
-                        f"AUC-PR: {metric_dict[f'{prefix}ap']:.4f} | "
-                        f"F1: {metric_dict[f'{prefix}f1']:.4f}"
-                    )
-                
-                self._log_evaluation(epoch, metric_dict)
-                
-                cur_path = os.path.join(self.path, f"model_{epoch+1}.pth")
-                torch.save(self.model, cur_path)
-
-        print("Training complete.")
-        return metrics
     
     def _log_training(self, epoch, avg_loss):
         if self.writer:

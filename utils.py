@@ -186,6 +186,12 @@ def build_trainer(model_config, train_config):
     
     return Trainer(model_config, train_config)
 
+def build_tester(model_config, train_config):
+    model_type = train_config['model_type']
+    module = __import__(f'models.{model_type}.Tester', fromlist=['Tester'])
+    Tester = module.Tester
+    return Tester(model_config, train_config)
+
 
 def get_input_dim(args, config):
     data_dir = config['data_dir']

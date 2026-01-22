@@ -43,7 +43,7 @@ def train_test(args, model_config, train_config, run):
     if args.plot_input_recon:
         plot_tsne_input_and_recon(train_config, x, x_hat, label, target_name='x_and_x_hat')
         print("Saved input and reconstruction T-SNE")
-    if args.plot_histogram:
+    if args.plot_score_histogram:
         plot_score_hist(train_config, score, label, score_name='Anomaly_Score')
         print("Saved anoamly score histogram.")
     if args.plot_contra_histogram:
@@ -57,7 +57,10 @@ def train_test(args, model_config, train_config, run):
         attn_enc = output['attn_enc']
         attn_dec = output['attn_dec']
         plot_attn_heatmap(train_config, attn_enc, attn_dec, label)
-
+    if args.plot_knn_histogram:
+        knn_score = output['knn_score']
+        for top_k, score in knn_score.items():
+            plot_score_hist(train_config, score, label, score_name=top_k)
 
 def train_test_latte(args, model_config, train_config, analysis_config, run):
     # LATTE analysis
@@ -192,7 +195,6 @@ def train_test_latte(args, model_config, train_config, analysis_config, run):
     return 
 
 
-
 def main(args):
     os.makedirs(args.base_path, exist_ok=True)
     summary_path = os.path.join(args.base_path, 'summary.json')
@@ -237,10 +239,12 @@ if __name__ == "__main__":
     parser.add_argument('--plot_attn', action='store_true')
     parser.add_argument('--plot_recon', action='store_true')
     parser.add_argument('--plot_input_recon', action='store_true')
-    parser.add_argument('--plot_histogram', action='store_true')
+    parser.add_argument('--plot_score_histogram', action='store_true')
     parser.add_argument('--plot_contra_histogram', action='store_true')
     parser.add_argument('--plot_latent_norm_histogram', action='store_true')
-    
+    parser.add_argument('--plot_knn_histogram', action='store_true')
+
+    # LATTE
     parser.add_argument('--plot_memory_weight', action='store_true')
     parser.add_argument('--compare_regresssion_with_attn', action='store_true')
     parser.add_argument('--lambda_attn', type=float, default=1.0)
