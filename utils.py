@@ -61,6 +61,7 @@ def get_parser():
     parser.add_argument('--oe_shuffle_ratio', type=float, default=None)
     parser.add_argument('--oe_lambda_memory', type=float, default=None)
     parser.add_argument('--mixup_alpha', type=float, default=None)
+    parser.add_argument('--mixup_prob', type=float, default=None)
     parser.add_argument('--num_prototypes', type=int, default=None)
     parser.add_argument('--sinkhorn_eps', type=float, default=None)
     parser.add_argument('--reconstruction_loss_weight', type=float, default=None)

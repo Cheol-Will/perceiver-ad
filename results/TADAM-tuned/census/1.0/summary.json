@@ -1,0 +1,71 @@
+{
+    "model_config": {
+        "num_features": 500,
+        "hidden_dim": 128,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": true
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 50,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 256,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "min_delta": 0,
+        "use_amp": true,
+        "model_type": "TADAM",
+        "dataset_name": "census",
+        "base_path": "results/TADAM-tuned/census/1.0",
+        "exp_name": "TADAM-tuned",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "ap": 0.24289680389741963,
+        "rauc": 0.6927810560968146,
+        "avg_abnormal_score": 0.07030400261282921,
+        "f1": 0.30843386471348555,
+        "avg_normal_score": 0.0270536532625556
+    },
+    "std_metrics": {
+        "ap_std": 0.004923545570125268,
+        "rauc_std": 0.008669596399844215,
+        "avg_abnormal_score_std": 0.001702863723039627,
+        "f1_std": 0.00980180956484275,
+        "avg_normal_score_std": 0.006164782680571079
+    },
+    "total_time": 9827.643997192383,
+    "all_seeds": [
+        {
+            "run": 0,
+            "train_time": 4953.091978549957,
+            "test_time": 34.430124044418335,
+            "epochs": 50,
+            "rauc": 0.7014506524966588,
+            "ap": 0.2478203494675449,
+            "f1": 0.31823567427832833,
+            "avg_normal_score": 0.02088887058198452,
+            "avg_abnormal_score": 0.06860113888978958
+        },
+        {
+            "run": 1,
+            "train_time": 4796.2915296554565,
+            "test_time": 33.86620807647705,
+            "epochs": 50,
+            "rauc": 0.6841114596969704,
+            "ap": 0.23797325832729435,
+            "f1": 0.2986320551486428,
+            "avg_normal_score": 0.03321843594312668,
+            "avg_abnormal_score": 0.07200686633586884
+        }
+    ]
+}
