@@ -118,9 +118,14 @@ class Trainer(object):
                         print(f"Best loss: {best_loss:.4f}")
                         if best_model_state is not None:
                             self.model.load_state_dict(best_model_state)
+                            path = os.path.join(self.path, "model.pth")
+                            torch.save(self.model, path)
                         return epoch
+        
         print("Training complete.")
-        return self.epochs            
+        path = os.path.join(self.path, "model.pth")
+        torch.save(self.model, path)
+        return self.epochs
 
     @torch.no_grad()
     def evaluate(self):

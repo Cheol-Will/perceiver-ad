@@ -11,16 +11,19 @@ data_list=(
     # pima  
 
     # cardio cardiotocography thyroid 
-    optdigits 
-    # "satimage-2" 
-    # satellite 
-    # pendigits
-    # mammography 
+    # optdigits 
+    "satimage-2" 
+    satellite 
+    pendigits
+    mammography 
 
-    # campaign 
-    # shuttle 
+    campaign 
+    shuttle 
     # fraud 
-    # nslkdd 
+
+
+    nslkdd 
+
     # census
 ) 
 
@@ -39,7 +42,8 @@ contrastive_loss_weight_list=(0.01)
 for data in "${data_list[@]}"; do
     for temperature in "${temperature_list[@]}"; do
         for contrastive_loss_weight in "${contrastive_loss_weight_list[@]}"; do
-            exp_name="$model_type-temp$temperature-contra$contrastive_loss_weight"
+            exp_name="TAECL"
+            # exp_name="$model_type-temp$temperature-contra$contrastive_loss_weight"
             echo "Running $exp_name on $data."
             python main.py \
                 --dataname "$data" \

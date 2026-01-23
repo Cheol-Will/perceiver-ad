@@ -1,0 +1,148 @@
+{
+    "model_config": {
+        "num_features": 29,
+        "hidden_dim": 64,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.2,
+        "mixup_prob": 0.1
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 2048,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TMLMMixup",
+        "dataset_name": "fraud",
+        "base_path": "results/TMLMMixup-alpha0.2-prob0.1/fraud/1.0",
+        "exp_name": "TMLMMixup-alpha0.2-prob0.1",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "ap": 0.6730060799511781,
+        "f1": 0.7172538392050587,
+        "avg_abnormal_score": 3.2889793846342297,
+        "avg_normal_score": 0.006188178150397208,
+        "rauc": 0.9590523023970187
+    },
+    "std_metrics": {
+        "ap_std": 0.02948349709755309,
+        "f1_std": 0.025358028631649876,
+        "avg_abnormal_score_std": 0.7879259183802665,
+        "avg_normal_score_std": 0.0030237374719214445,
+        "rauc_std": 0.0014402965768343567
+    },
+    "total_time": 4105.739915370941,
+    "all_seeds": [
+        {
+            "run": 0,
+            "train_time": 389.71448373794556,
+            "test_time": 1.7424287796020508,
+            "epochs": 83,
+            "rauc": 0.9587084455553119,
+            "ap": 0.6765493317132252,
+            "f1": 0.709349593495935,
+            "avg_normal_score": 0.009768569841980934,
+            "avg_abnormal_score": 3.8661246299743652
+        },
+        {
+            "run": 1,
+            "train_time": 411.4968011379242,
+            "test_time": 2.269230842590332,
+            "epochs": 85,
+            "rauc": 0.958692589500495,
+            "ap": 0.6772348568299493,
+            "f1": 0.7073170731707317,
+            "avg_normal_score": 0.003221112070605159,
+            "avg_abnormal_score": 3.473008871078491
+        },
+        {
+            "run": 2,
+            "train_time": 550.4122524261475,
+            "test_time": 2.213374376296997,
+            "epochs": 110,
+            "rauc": 0.9590507090072802,
+            "ap": 0.6980637790787144,
+            "f1": 0.7378048780487805,
+            "avg_normal_score": 0.002699514152482152,
+            "avg_abnormal_score": 2.7925827503204346
+        },
+        {
+            "run": 3,
+            "train_time": 550.4373686313629,
+            "test_time": 2.1969408988952637,
+            "epochs": 110,
+            "rauc": 0.9616026402318638,
+            "ap": 0.6568749654879201,
+            "f1": 0.6971544715447154,
+            "avg_normal_score": 0.010409539565443993,
+            "avg_abnormal_score": 2.4749178886413574
+        },
+        {
+            "run": 4,
+            "train_time": 527.1900036334991,
+            "test_time": 2.2694008350372314,
+            "epochs": 106,
+            "rauc": 0.9594761988750179,
+            "ap": 0.6030433278116774,
+            "f1": 0.6666666666666666,
+            "avg_normal_score": 0.007711970712989569,
+            "avg_abnormal_score": 1.624381184577942
+        },
+        {
+            "run": 5,
+            "train_time": 450.1190867424011,
+            "test_time": 2.3293466567993164,
+            "epochs": 90,
+            "rauc": 0.9579854866627846,
+            "ap": 0.6655686709898565,
+            "f1": 0.7276422764227642,
+            "avg_normal_score": 0.00987000297755003,
+            "avg_abnormal_score": 3.973210573196411
+        },
+        {
+            "run": 6,
+            "train_time": 445.5178735256195,
+            "test_time": 2.509019136428833,
+            "epochs": 88,
+            "rauc": 0.956723936620618,
+            "ap": 0.6989745908590926,
+            "f1": 0.7276422764227642,
+            "avg_normal_score": 0.0036850580945611,
+            "avg_abnormal_score": 3.954521417617798
+        },
+        {
+            "run": 7,
+            "train_time": 399.6104185581207,
+            "test_time": 2.2475574016571045,
+            "epochs": 79,
+            "rauc": 0.9611228551719104,
+            "ap": 0.7087749604729473,
+            "f1": 0.7621951219512195,
+            "avg_normal_score": 0.0037547152023762465,
+            "avg_abnormal_score": 4.078824520111084
+        },
+        {
+            "run": 8,
+            "train_time": 355.41943097114563,
+            "test_time": 2.030531406402588,
+            "epochs": 69,
+            "rauc": 0.9581078599478857,
+            "ap": 0.671970236317221,
+            "f1": 0.7195121951219512,
+            "avg_normal_score": 0.0045731207355856895,
+            "avg_abnormal_score": 3.3632426261901855
+        }
+    ]
+}

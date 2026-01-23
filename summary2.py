@@ -703,9 +703,9 @@ def main(args):
         "campaign",
         "shuttle",
 
-        # "fraud",
-        # "nslkdd",
-        # "census"
+        "fraud",
+        "nslkdd",
+        "census"
     ]
     datasets = [
         "wine",
@@ -791,20 +791,23 @@ def main(args):
         
         
         # "LATTE-patience-tuned",
-        # "TAE-tuned",
+        "TAE-tuned",
+        "TAECL-temp0.2-contra0.01",
+        "TAECL",
+        "TAEDACL-bw0.01",
+        "TAEDACL-bw0.1",
         
         # "TADAM-tuned",
         # "TADAM-tuned--recon_weight1.0_cls_knn5",
 
 
-        "TADAM-tuned_knn5",
-        "TADAM-tuned_cls_knn5",
-        "TADAM-tuned--knn5",
+        # "TADAM-tuned_knn5",
+        # "TADAM-tuned_cls_knn5",
+        # "TADAM-tuned--knn5",
 
         # "TADAM-default",
         # "TADAM-comb0.1_1.0_knn5",
         # "TADAM-d64-lr0.001",
-        # "TAECL-temp0.2-contra0.01",
         # "TMLM-tuned-r100",
         # "TMLMSwap-default-swap0.1-r50",
         # "TMLMSwap-default-swap0.3-r50",

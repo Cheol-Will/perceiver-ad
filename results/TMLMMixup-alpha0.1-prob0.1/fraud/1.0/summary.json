@@ -1,0 +1,126 @@
+{
+    "model_config": {
+        "num_features": 29,
+        "hidden_dim": 64,
+        "depth": 4,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": false,
+        "mixup_alpha": 0.1,
+        "mixup_prob": 0.1
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 2048,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TMLMMixup",
+        "dataset_name": "fraud",
+        "base_path": "results/TMLMMixup-alpha0.1-prob0.1/fraud/1.0",
+        "exp_name": "TMLMMixup-alpha0.1-prob0.1",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "rauc": 0.9588562604246975,
+        "avg_normal_score": 0.0066937720070460015,
+        "f1": 0.705574912891986,
+        "ap": 0.6661103661544908,
+        "avg_abnormal_score": 3.1583730493273054
+    },
+    "std_metrics": {
+        "rauc_std": 0.0021547054770863798,
+        "avg_normal_score_std": 0.0032939948727366956,
+        "f1_std": 0.020453387067777377,
+        "ap_std": 0.026028443260138735,
+        "avg_abnormal_score_std": 0.8147421944122878
+    },
+    "total_time": 3443.7939853668213,
+    "all_seeds": [
+        {
+            "run": 0,
+            "train_time": 418.4842219352722,
+            "test_time": 2.377702236175537,
+            "epochs": 83,
+            "rauc": 0.9548854635235249,
+            "ap": 0.6678656057598689,
+            "f1": 0.6890243902439024,
+            "avg_normal_score": 0.009871902875602245,
+            "avg_abnormal_score": 3.5570590496063232
+        },
+        {
+            "run": 1,
+            "train_time": 428.55067682266235,
+            "test_time": 2.36361026763916,
+            "epochs": 85,
+            "rauc": 0.9586865987998925,
+            "ap": 0.6773253403342882,
+            "f1": 0.709349593495935,
+            "avg_normal_score": 0.002983550075441599,
+            "avg_abnormal_score": 3.7549688816070557
+        },
+        {
+            "run": 2,
+            "train_time": 656.9056222438812,
+            "test_time": 2.330888032913208,
+            "epochs": 132,
+            "rauc": 0.960789642110113,
+            "ap": 0.6893664581801957,
+            "f1": 0.725609756097561,
+            "avg_normal_score": 0.0024959647562354803,
+            "avg_abnormal_score": 2.812893867492676
+        },
+        {
+            "run": 3,
+            "train_time": 533.3975892066956,
+            "test_time": 2.2641098499298096,
+            "epochs": 107,
+            "rauc": 0.9616928724788874,
+            "ap": 0.651783241597731,
+            "f1": 0.6849593495934959,
+            "avg_normal_score": 0.010400891304016113,
+            "avg_abnormal_score": 2.2958810329437256
+        },
+        {
+            "run": 4,
+            "train_time": 533.9802153110504,
+            "test_time": 2.275346279144287,
+            "epochs": 106,
+            "rauc": 0.9603757833520175,
+            "ap": 0.614274275496354,
+            "f1": 0.676829268292683,
+            "avg_normal_score": 0.0075273592956364155,
+            "avg_abnormal_score": 1.7589263916015625
+        },
+        {
+            "run": 5,
+            "train_time": 456.39080238342285,
+            "test_time": 2.4318454265594482,
+            "epochs": 90,
+            "rauc": 0.9581695255605323,
+            "ap": 0.661943766421323,
+            "f1": 0.7195121951219512,
+            "avg_normal_score": 0.0099513940513134,
+            "avg_abnormal_score": 4.037126064300537
+        },
+        {
+            "run": 6,
+            "train_time": 394.5455183982849,
+            "test_time": 2.323660135269165,
+            "epochs": 78,
+            "rauc": 0.9573939371479141,
+            "ap": 0.7002138752916757,
+            "f1": 0.733739837398374,
+            "avg_normal_score": 0.0036253416910767555,
+            "avg_abnormal_score": 3.891756057739258
+        }
+    ]
+}
