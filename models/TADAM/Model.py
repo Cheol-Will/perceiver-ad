@@ -128,7 +128,9 @@ class TADAM(nn.Module):
         }
 
     @torch.no_grad()
-    def forward_combined(self, x, use_cls = False):
+    def forward_combined(self, x, use_cls = False, weight_list = None):
+        if weight_list is None:
+            weight_list = [0.01, 0.1, 1.0, ]
         device = x.device
         prefix = 'cls_' if use_cls else ''
         z, attn_enc = self.encoder(x)
@@ -137,7 +139,6 @@ class TADAM(nn.Module):
         knn_scores = self.forward_knn_cls_attn(x) if use_cls else self.forward_knn_attn(x)
         knn_scores = knn_scores[f'{prefix}scores']
         scores = {}
-        weight_list = [0.01, 0.1, 1.0]
         for name, knn_score in knn_scores.items():
             for weight in weight_list:
                 combined = reconstruction_loss + weight * knn_score.to(device)

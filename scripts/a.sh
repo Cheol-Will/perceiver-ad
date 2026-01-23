@@ -8,12 +8,12 @@ data_list=(
     # pima  
     # optdigits 
 
-    # cardio 
-    # cardiotocography 
-    # thyroid 
-    # satellite 
-    # "satimage-2" 
-    # pendigits
+    cardio 
+    cardiotocography 
+    thyroid 
+    satellite 
+    "satimage-2" 
+    pendigits
 
     mammography 
     campaign 
@@ -25,7 +25,8 @@ data_list=(
 )
 
 for data in "${data_list[@]}"; do
-    cp -r results/TADAM-tuned--recon_weight0.01_knn1/$data/ results/TADAM-tuned_knn
+    cp -r results/TADAM-tuned--recon_weight0.1_knn5/$data/ results/TADAM-tuned_knn
+    cp -r results/TADAM-tuned--recon_weight0.1_cls_knn5/$data/ results/TADAM-tuned_cls_knn
     # 
     # rm results_analysis/TADAM-default-knn16_/
     # rm results_analysis/TAECL-temp0.2-contra0.01/$data/1.0/model.pt

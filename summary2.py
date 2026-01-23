@@ -371,10 +371,11 @@ class ResultRenderer:
         use_std: bool = False,
         use_baseline_pr: bool = True,
         use_alias: bool = False,
+        use_sort: bool = False,
         is_synthetic: bool = False,
         synthetic_type: Optional[str] = None,
         is_plot: bool = False,
-        is_print: bool = True,
+        is_print: bool = True
     ) -> pd.DataFrame:
 
         tr, metr = base.split('_')[1], base.split('_')[2]
@@ -440,6 +441,9 @@ class ResultRenderer:
         df_render.T.to_csv(f'metrics/{file_name}_T.csv')
         print(f"file saved in {file_name}")
         
+        if use_sort:
+            df_render = df_render.sort_values(by=['AVG_AUC'])
+                    
         if is_print:
             print(base)
             print(df_render)
@@ -786,18 +790,19 @@ def main(args):
         # "LATTE-patience-tuned",
         # "TAE-tuned",
         
-        "TADAM-tuned",
-        "TADAM-tuned_knn",
-        "TADAM-tuned_cls_knn",
+        # "TADAM-tuned",
+        # "TADAM-tuned--recon_weight1.0_cls_knn5",
+        "TADAM-tuned_knn5",
+        "TADAM-tuned_cls_knn5",
 
         # "TADAM-default",
         # "TADAM-comb0.1_1.0_knn5",
         # "TADAM-d64-lr0.001",
         # "TAECL-temp0.2-contra0.01",
-        "TMLM-tuned-r100",
-        "TMLMSwap-default-swap0.1-r50",
-        "TMLMSwap-default-swap0.3-r50",
-        "TMLMSwap-default-swap0.5-r50",
+        # "TMLM-tuned-r100",
+        # "TMLMSwap-default-swap0.1-r50",
+        # "TMLMSwap-default-swap0.3-r50",
+        # "TMLMSwap-default-swap0.5-r50",
 
         # "TCL-temp0.1-mixup_alpha1.0",
         # "TMLM-tuned",
@@ -835,14 +840,13 @@ def main(args):
         # my_models.append(f"TADAM-default-cls-cls_knn{top_k}")
         pass
     
-    weight_list = [0.01, 0.1, 1.0]
+    # weight_list = [0.01, 0.1, 1.0]
+    weight_list = [0.01, 0.1, 1.0, 2.0, 5.0, 10.0]
     # my_models.append(f"TADAM-default-test")
     for weight in weight_list:
         for top_k in top_k_list:
             # my_models.append(f"TADAM-tuned--recon_weight{weight}_cls_knn{top_k}")
             # my_models.append(f"TADAM-tuned--recon_weight{weight}_knn{top_k}")
-            # my_models.append(f"TADAM-default-test-recon_weight{weight}_cls_knn{top_k}")
-            # my_models.append(f"TADAM-default-test-recon_weight{weight}_knn{top_k}")
             pass
 
 
@@ -981,7 +985,7 @@ def main(args):
         renderer.render(
             pivots, data, models, my_models, base,
             add_avg_rank=True, use_rank=args.use_rank, use_std=args.use_std,
-            use_baseline_pr=True, is_plot=False,
+            use_baseline_pr=True, use_sort=args.use_sort, is_plot=False,
         )
 
     if args.stat_test:
@@ -1144,6 +1148,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='실험 결과 분석 스크립트')
     parser.add_argument('--use_rank', action='store_true', help='show rank.')
     parser.add_argument('--use_std', action='store_true', help='show std.')
+    parser.add_argument('--use_sort', action='store_true', help='sorting.')
     parser.add_argument('--synthetic', action='store_true', help='합성 데이터 분석 수행')
     parser.add_argument('--contamination', action='store_true', help='오염 비율 분석 수행')
     parser.add_argument('--hp_ratio', action='store_true', help='하이퍼파라미터 비율 분석 수행')

@@ -123,7 +123,7 @@ class Trainer(object):
         model = self.model
         model.eval()
         print("Build attention bank for evaluation")
-        model.build_eval_attn_bank(self.train_loader, self.device, False)
+        # model.build_eval_attn_bank(self.train_loader, self.device, False)
 
         recon_list, test_label_list = [], []
         # knn_lists = {k: [] for k in [1, 5, 10, 16, 32, 64]}

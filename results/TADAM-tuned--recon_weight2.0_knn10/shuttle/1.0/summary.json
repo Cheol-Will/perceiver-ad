@@ -1,0 +1,74 @@
+{
+    "model_config": {
+        "num_features": 9,
+        "hidden_dim": 128,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TADAM",
+        "dataset_name": "shuttle",
+        "base_path": "results/TADAM-tuned--recon_weight2.0_knn10/shuttle/1.0",
+        "exp_name": "TADAM-tuned--recon_weight2.0_knn10",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TADAM-tuned/shuttle/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.9991145558625202,
+        "ap": 0.9810697016095429,
+        "f1": 0.980062660210766
+    },
+    "std_metrics": {
+        "rauc_std": 0.0004487017034391048,
+        "ap_std": 0.011842844159727473,
+        "f1_std": 0.0032286482622485156
+    },
+    "total_time": 119.32088541984558,
+    "all_seeds": [
+        {
+            "rauc": 0.9993993968701984,
+            "ap": 0.9875204259559675,
+            "f1": 0.9763600113927656,
+            "run": 0,
+            "test_time": 35.37990069389343
+        },
+        {
+            "rauc": 0.998356038869909,
+            "ap": 0.9617439347889027,
+            "f1": 0.9814867559099971,
+            "run": 1,
+            "test_time": 27.4495050907135
+        },
+        {
+            "rauc": 0.9992159944872069,
+            "ap": 0.981893339876253,
+            "f1": 0.9777841070919966,
+            "run": 2,
+            "test_time": 20.90117049217224
+        },
+        {
+            "rauc": 0.9994867932227666,
+            "ap": 0.9931211058170477,
+            "f1": 0.9846197664483053,
+            "run": 3,
+            "test_time": 32.843220472335815
+        }
+    ]
+}

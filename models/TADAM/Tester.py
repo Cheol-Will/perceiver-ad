@@ -20,6 +20,7 @@ class Tester(Trainer):
         model.build_eval_attn_bank(self.train_loader, self.device, False)
 
         topks = (1, 5, 10, 16, 32, 64)
+        weight_list = [0.01, 0.1, 1.0, 2.0, 5.0, 10.0]
 
         recon_list, test_label_list = [], []
         combined_score_dict = defaultdict(list)
@@ -46,8 +47,8 @@ class Tester(Trainer):
             output = model.forward_knn_cls_attn(x_input)
             _append_scores(cls_knn_lists, output['cls_scores'], 'cls_knn')
 
-            _append_combined(combined_score_dict, model.forward_combined(x_input, use_cls=False)['combined'])
-            _append_combined(combined_score_dict, model.forward_combined(x_input, use_cls=True)['combined'])
+            _append_combined(combined_score_dict, model.forward_combined(x_input, use_cls=False, weight_list=weight_list)['combined'])
+            _append_combined(combined_score_dict, model.forward_combined(x_input, use_cls=True, weight_list=weight_list)['combined'])
 
             test_label_list.append(y_label)
 
