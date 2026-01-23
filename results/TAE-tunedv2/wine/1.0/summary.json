@@ -1,0 +1,71 @@
+{
+    "model_config": {
+        "num_features": 13,
+        "hidden_dim": 64,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "use_flash_attn": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TAE",
+        "dataset_name": "wine",
+        "base_path": "results/TAE-tunedv2/wine/1.0",
+        "exp_name": "TAE-tunedv2",
+        "runs": 10,
+        "train_ratio": 1.0
+    },
+    "mean_metrics": {
+        "f1": 0.8,
+        "ap": 0.8562436174936174,
+        "avg_normal_score": 0.5036702007055283,
+        "avg_abnormal_score": 2.278623878955841,
+        "rauc": 0.9733333333333334
+    },
+    "std_metrics": {
+        "f1_std": 0.10000000000000003,
+        "ap_std": 0.08676864801864798,
+        "avg_normal_score_std": 0.03314872086048126,
+        "avg_abnormal_score_std": 0.33516567945480347,
+        "rauc_std": 0.018333333333333257
+    },
+    "total_time": 30.902604341506958,
+    "all_seeds": [
+        {
+            "run": 0,
+            "train_time": 11.043233871459961,
+            "test_time": 0.015255451202392578,
+            "epochs": 200,
+            "rauc": 0.9550000000000001,
+            "ap": 0.7694749694749694,
+            "f1": 0.7,
+            "avg_normal_score": 0.470521479845047,
+            "avg_abnormal_score": 1.9434581995010376
+        },
+        {
+            "run": 1,
+            "train_time": 10.226034879684448,
+            "test_time": 0.014929056167602539,
+            "epochs": 200,
+            "rauc": 0.9916666666666666,
+            "ap": 0.9430122655122654,
+            "f1": 0.9,
+            "avg_normal_score": 0.5368189215660095,
+            "avg_abnormal_score": 2.6137895584106445
+        }
+    ]
+}

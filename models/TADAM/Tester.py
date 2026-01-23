@@ -1,8 +1,8 @@
 import os
 import torch
-from DataSet.DataLoader import get_dataloader
 from models.TADAM.Trainer import Trainer
 from utils import aucPerformance, F1Performance
+from collections import defaultdict
 
 class Tester(Trainer):
     def __init__(self, model_config: dict, train_config: dict):
@@ -18,41 +18,45 @@ class Tester(Trainer):
         model.eval()
         print("Build attention bank for evaluation")
         model.build_eval_attn_bank(self.train_loader, self.device, False)
+
+        topks = (1, 5, 10, 16, 32, 64)
+
         recon_list, test_label_list = [], []
-        combined_score_dict = {}
-        cls_knn_lists = {top_k: [] for top_k in [1, 5, 10, 16, 32, 64]}
+        combined_score_dict = defaultdict(list)
+        knn_lists = {k: [] for k in topks}
+        cls_knn_lists = {k: [] for k in topks}
+
+        def _append_scores(dst, scores, prefix):
+            for k in topks:
+                dst[k].append(scores[f'{prefix}{k}'].detach().cpu())
+
+        def _append_combined(d, combined):
+            for k, v in combined.items():
+                d[k].append(v.detach().cpu())
+
         for step, (x_input, y_label) in enumerate(self.test_loader):
             x_input = x_input.to(self.device)
 
-            output = model.forward_knn_cls(x_input)
-            cls_scores = output['cls_scores']
-            for top_k in cls_knn_lists.keys():
-                cls_knn_lists[top_k].append(cls_scores[f'cls_knn{top_k}'].detach().cpu())
+            output = model(x_input)
+            recon_list.append(output['reconstruction_loss'].detach().cpu())
 
-            # recon + lambda * knn_score
-            output = model.forward_combined(x_input, use_cls=False)['combined']
-            for k, v in output.items():
-                v = v.detach().cpu()
-                if k in combined_score_dict:
-                    combined_score_dict[k].append(v)
-                else:
-                    combined_score_dict[k] = [v]
+            output = model.forward_knn_attn(x_input)
+            _append_scores(knn_lists, output['scores'], 'knn')
 
-            # recon + lambda * cls_knn_score
-            output = model.forward_combined(x_input, use_cls=True)['combined']
-            for k, v in output.items():
-                v = v.detach().cpu()
-                if k in combined_score_dict:
-                    combined_score_dict[k].append(v)
-                else:
-                    combined_score_dict[k] = [v]
+            output = model.forward_knn_cls_attn(x_input)
+            _append_scores(cls_knn_lists, output['cls_scores'], 'cls_knn')
+
+            _append_combined(combined_score_dict, model.forward_combined(x_input, use_cls=False)['combined'])
+            _append_combined(combined_score_dict, model.forward_combined(x_input, use_cls=True)['combined'])
 
             test_label_list.append(y_label)
 
         model.empty_eval_attn_bank()
         model.train()
 
+        recon_score = torch.cat(recon_list, axis=0).numpy()
         test_label = torch.cat(test_label_list, axis=0).numpy()
+
         def calc_metrics(scores, labels, prefix=''):
             rauc, ap = aucPerformance(scores, labels)
             f1 = F1Performance(scores, labels)
@@ -65,17 +69,19 @@ class Tester(Trainer):
                 f'{prefix}avg_normal_score': float(avg_normal),
                 f'{prefix}avg_abnormal_score': float(avg_abnormal),
             }
-        
-        cls_knn_score = torch.cat(cls_knn_lists[1], axis=0).numpy()
-        metric_dict = calc_metrics(cls_knn_score, test_label, prefix='')
 
-        for k in [1, 5, 10, 16, 32, 64]:
-            knn_score = torch.cat(cls_knn_lists[k], axis=0).numpy()
-            metric_dict.update(calc_metrics(knn_score, test_label, prefix=f'cls_knn{k}_'))
+        metric_dict = calc_metrics(recon_score, test_label, prefix='')
+
+        for k in topks:
+            score = torch.cat(knn_lists[k], axis=0).numpy()
+            metric_dict.update(calc_metrics(score, test_label, prefix=f'knn{k}_'))
+
+        for k in topks:
+            score = torch.cat(cls_knn_lists[k], axis=0).numpy()
+            metric_dict.update(calc_metrics(score, test_label, prefix=f'cls_knn{k}_'))
 
         for k, v in combined_score_dict.items():
             combined_score = torch.cat(v, axis=0).numpy()
             metric_dict.update(calc_metrics(combined_score, test_label, prefix=f'{k}_'))
-
 
         return metric_dict

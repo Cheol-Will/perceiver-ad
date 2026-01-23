@@ -276,89 +276,108 @@ def _plot_heatmap_on_ax(ax, data, vmin, vmax, xticklabels, yticklabels, title=No
         ax.set_ylabel(ylabel, fontsize=20, fontweight='bold')
     if xticklabels:
         ax.set_xticklabels(xticklabels, rotation=90)
-
+        
 def plot_attn_heatmap(train_config, attn_enc, attn_dec, labels, feature_names=None):
     attn_enc = _to_numpy(attn_enc)
     attn_dec = _to_numpy(attn_dec)
     labels = np.array(labels)
 
-    normal_idx = np.where(labels == 'Test-Normal')[0]
-    abnormal_idx = np.where(labels == 'Test-Abnormal')[0]
-
-    if len(normal_idx) == 0 or len(abnormal_idx) == 0:
+    normal_idx = np.where(labels == "Test-Normal")[0]
+    abnormal_idx = np.where(labels == "Test-Abnormal")[0]
+    if len(normal_idx) < 2 or len(abnormal_idx) < 2:
         return
+
+    def _ensure_2d(x):
+        x = np.asarray(x)
+        while x.ndim > 2:
+            x = x.mean(axis=0)
+        return x
 
     seq_len = attn_enc.shape[-1]
     if feature_names is None:
         feature_names = [f"F{i}" for i in range(seq_len - 1)]
-    tick_labels = ['CLS'] + feature_names
+    tick_labels = ["CLS"] + feature_names
 
     layers = []
     for i in range(attn_enc.shape[1]):
-        layers.append((attn_enc[:, i, :, :, :], f"Encoder L{i}"))
+        layers.append((attn_enc[:, i, ...], f"Encoder L{i}"))
     for i in range(attn_dec.shape[1]):
-        layers.append((attn_dec[:, i, :, :, :], f"Decoder L{i}"))
+        layers.append((attn_dec[:, i, ...], f"Decoder L{i}"))
 
     sample_indices = [normal_idx[0], normal_idx[1], abnormal_idx[0], abnormal_idx[1]]
-    row_titles = [
-        "Normal-Avg", "Abnormal-Avg",
-        "Normal-1", "Normal-2", "Abnormal-1", "Abnormal-2"
-    ]
+    row_titles = ["Normal-Avg", "Abnormal-Avg", "Normal-1", "Normal-2", "Abnormal-1", "Abnormal-2"]
 
     num_cols = len(layers)
     num_rows = len(row_titles)
-    
-    fig, axes = plt.subplots(num_rows, num_cols, figsize=(5 * num_cols, 4 * num_rows))
-    if num_cols == 1:
-        axes = axes[:, np.newaxis]
-
-    for col, (layer_data, layer_name) in enumerate(layers):
-        attn_avg_head = layer_data.mean(axis=1)
-
-        means = [
-            attn_avg_head[normal_idx].mean(axis=0),
-            attn_avg_head[abnormal_idx].mean(axis=0)
-        ]
-        samples = list(attn_avg_head[sample_indices])
-        
-        all_maps = means + samples
-        
-        vmin_mean = min(m.min() for m in means)
-        vmax_mean = max(m.max() for m in means)
-        vmin_samp = min(s.min() for s in samples)
-        vmax_samp = max(s.max() for s in samples)
-
-        for row, heatmap_data in enumerate(all_maps):
-            ax = axes[row, col]
-            is_mean_row = row < 2
-            is_first_col = (col == 0)
-            is_first_row = (row == 0)
-            is_last_row = (row == num_rows - 1)
-
-            current_vmin = vmin_mean if is_mean_row else vmin_samp
-            current_vmax = vmax_mean if is_mean_row else vmax_samp
-            
-            title = None
-
-            if is_first_row:
-                # sub_name = "Normal" if row == 0 else "Abnormal"
-                title = layer_name
-            
-            x_ticks = tick_labels if is_last_row else []
-            y_ticks = tick_labels if is_first_col else []
-            y_label = row_titles[row] if is_first_col else None
-
-            _plot_heatmap_on_ax(
-                ax, heatmap_data, current_vmin, current_vmax,
-                x_ticks, y_ticks, title, y_label
-            )
-
     dataset_name = train_config.get("dataset_name", "result")
-    plt.suptitle(f"Attention Heatmaps: {dataset_name}", fontsize=18)
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.92)
+    base_path = train_config["base_path"]
 
-    out_path = os.path.join(train_config['base_path'], "attention_heatmap.png")
-    plt.savefig(out_path, dpi=150, bbox_inches='tight')
+    def _draw_grid(get_map_fn, out_path, suptitle):
+        fig, axes = plt.subplots(num_rows, num_cols, figsize=(5 * num_cols, 4 * num_rows))
+        if num_cols == 1:
+            axes = axes[:, np.newaxis]
+
+        for col, (layer_data, layer_name) in enumerate(layers):
+            means = [
+                _ensure_2d(get_map_fn(layer_data, normal_idx).mean(axis=0)),
+                _ensure_2d(get_map_fn(layer_data, abnormal_idx).mean(axis=0)),
+            ]
+            samples_raw = get_map_fn(layer_data, sample_indices)
+            samples = [_ensure_2d(samples_raw[i]) for i in range(len(sample_indices))]
+            all_maps = means + samples
+
+            vmin_mean = min(m.min() for m in means)
+            vmax_mean = max(m.max() for m in means)
+            vmin_samp = min(s.min() for s in samples)
+            vmax_samp = max(s.max() for s in samples)
+
+            for row, heatmap_data in enumerate(all_maps):
+                ax = axes[row, col]
+                is_mean_row = row < 2
+                is_first_col = (col == 0)
+                is_first_row = (row == 0)
+                is_last_row = (row == num_rows - 1)
+
+                current_vmin = vmin_mean if is_mean_row else vmin_samp
+                current_vmax = vmax_mean if is_mean_row else vmax_samp
+                title = layer_name if is_first_row else None
+
+                x_ticks = tick_labels if is_last_row else []
+                y_ticks = tick_labels if is_first_col else []
+                y_label = row_titles[row] if is_first_col else None
+
+                _plot_heatmap_on_ax(
+                    ax, heatmap_data, current_vmin, current_vmax,
+                    x_ticks, y_ticks, title, y_label
+                )
+
+        plt.suptitle(suptitle, fontsize=18)
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.92)
+        plt.savefig(out_path, dpi=150, bbox_inches="tight")
+        plt.close()
+
+    def _avg_head_map(layer_data, idx):
+        x = layer_data[idx]
+        return x.mean(axis=1)
+
+    out_path = os.path.join(base_path, "attention_heatmap.png")
+    _draw_grid(
+        get_map_fn=_avg_head_map,
+        out_path=out_path,
+        suptitle=f"Attention Heatmaps: {dataset_name}",
+    )
     print(f"Saved combined attention heatmap: {out_path}")
-    plt.close()
+
+    num_heads = min(ld.shape[1] for ld, _ in layers)
+    for h in range(num_heads):
+        def _head_map(layer_data, idx, _h=h):
+            return layer_data[idx, _h]
+
+        head_out = os.path.join(base_path, f"attention_heapmap_head{h+1}.png")
+        _draw_grid(
+            get_map_fn=_head_map,
+            out_path=head_out,
+            suptitle=f"Attention Heatmaps (Head {h+1}): {dataset_name}",
+        )
+        print(f"Saved head attention heatmap: {head_out}")

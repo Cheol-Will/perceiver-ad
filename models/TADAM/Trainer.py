@@ -84,9 +84,9 @@ class Trainer(object):
                 print(f"\n{'='*80}")
                 print(f"[Evaluation at Epoch {epoch+1}]")
                 metrics = self.evaluate()
-
-                score_types = [("Recon", ""), ("KNN1", "knn1_"), ("KNN5", "knn5_"), ("KNN10", "knn10_"),
-                               ("KNN16", "knn16_"), ("KNN32", "knn32_"), ("KNN64", "knn64_")]
+                score_types = [("Recon", "")]
+                # score_types = [("Recon", ""), ("KNN1", "knn1_"), ("KNN5", "knn5_"), ("KNN10", "knn10_"),
+                            #    ("KNN16", "knn16_"), ("KNN32", "knn32_"), ("KNN64", "knn64_")]
                 for name, prefix in score_types:
                     self.logger.info(
                         f"[Epoch {epoch+1}] {name:6s} | "
@@ -126,18 +126,17 @@ class Trainer(object):
         model.build_eval_attn_bank(self.train_loader, self.device, False)
 
         recon_list, test_label_list = [], []
-        knn_lists = {k: [] for k in [1, 5, 10, 16, 32, 64]}
+        # knn_lists = {k: [] for k in [1, 5, 10, 16, 32, 64]}
 
         for step, (x_input, y_label) in enumerate(self.test_loader):
             x_input = x_input.to(self.device)
             output = model(x_input)
 
             recon = output['reconstruction_loss'].detach().cpu()
-            scores = output['scores']
-
+            scores = output['reconstruction_loss']
             recon_list.append(recon)
-            for k in knn_lists.keys():
-                knn_lists[k].append(scores[f'knn{k}'].detach().cpu())
+            # for k in knn_lists.keys():
+            #     knn_lists[k].append(scores[f'knn{k}'].detach().cpu())
 
             test_label_list.append(y_label)
 
@@ -162,9 +161,9 @@ class Trainer(object):
 
         metric_dict = calc_metrics(recon_score, test_label, prefix='')
 
-        for k in [1, 5, 10, 16, 32, 64]:
-            knn_score = torch.cat(knn_lists[k], axis=0).numpy()
-            metric_dict.update(calc_metrics(knn_score, test_label, prefix=f'knn{k}_'))
+        # for k in [1, 5, 10, 16, 32, 64]:
+        #     knn_score = torch.cat(knn_lists[k], axis=0).numpy()
+        #     metric_dict.update(calc_metrics(knn_score, test_label, prefix=f'knn{k}_'))
 
         return metric_dict
     
@@ -176,19 +175,19 @@ class Trainer(object):
     
     def _log_evaluation(self, epoch, metrics):
         if self.writer:
-            score_types = [("Recon", ""), ("KNN1", "knn1_"), ("KNN5", "knn5_"), ("KNN10", "knn10_"),
-                           ("KNN16", "knn16_"), ("KNN32", "knn32_"), ("KNN64", "knn64_")]
-
+            # score_types = [("Recon", ""), ("KNN1", "knn1_"), ("KNN5", "knn5_"), ("KNN10", "knn10_"),
+            #                ("KNN16", "knn16_"), ("KNN32", "knn32_"), ("KNN64", "knn64_")]
+            score_types = [("Recon", "")]
             for name, prefix in score_types:
-                self.writer.add_scalars(f"{self.dataname}/Metrics/{name}_RAUC", 
-                    {f'Run_{self.run}': metrics[f'{prefix}rauc']}, epoch)
                 self.writer.add_scalars(f"{self.dataname}/Metrics/{name}_AP", 
                     {f'Run_{self.run}': metrics[f'{prefix}ap']}, epoch)
-                self.writer.add_scalars(f"{self.dataname}/Metrics/{name}_F1", 
-                    {f'Run_{self.run}': metrics[f'{prefix}f1']}, epoch)
                 self.writer.add_scalars(f"{self.dataname}/Scores/{name}_Normal_Avg", 
                     {f'Run_{self.run}': metrics[f'{prefix}avg_normal_score']}, epoch)
                 self.writer.add_scalars(f"{self.dataname}/Scores/{name}_Abnormal_Avg", 
                     {f'Run_{self.run}': metrics[f'{prefix}avg_abnormal_score']}, epoch)
+                # self.writer.add_scalars(f"{self.dataname}/Metrics/{name}_RAUC", 
+                #     {f'Run_{self.run}': metrics[f'{prefix}rauc']}, epoch)
+                # self.writer.add_scalars(f"{self.dataname}/Metrics/{name}_F1", 
+                #     {f'Run_{self.run}': metrics[f'{prefix}f1']}, epoch)
 
             self.writer.flush()

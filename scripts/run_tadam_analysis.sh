@@ -2,16 +2,16 @@
 set -euo pipefail
 
 data_list=(    
-    # wbc
-    # glass
-    # pima
-    # breastw    
-    # wine
-    # cardiotocography
-    # optdigits 
-    # cardio 
-    # satellite 
-    # pendigits
+    wbc
+    glass
+    pima
+    breastw    
+    wine
+    cardiotocography
+    optdigits 
+    cardio 
+    satellite 
+    pendigits
     campaign
     thyroid 
     ionosphere 
@@ -29,9 +29,9 @@ for data in "${data_list[@]}"; do
         --dataname "$data" \
         --model_type $model_type \
         --exp_name "$exp_name" \
-        --plot_knn_histogram \
-        --plot_score_histogram
-        # --plot_attn \
+        --plot_attn
+        # --plot_knn_histogram \
+        # --plot_score_histogram
         # --plot_recon \
         # --plot_latent \
         # --plot_latent_norm_histogram

@@ -1,32 +1,33 @@
 data_list=(
-    wine 
-    glass 
-    wbc 
-    ionosphere 
-    arrhythmia 
-    breastw 
-    pima  
-    optdigits 
+    # wine 
+    # glass 
+    # wbc 
+    # ionosphere 
+    # arrhythmia 
+    # breastw 
+    # pima  
+    # optdigits 
 
-    cardio 
-    cardiotocography 
-    thyroid 
-    satellite 
-    "satimage-2" 
-    pendigits
+    # cardio 
+    # cardiotocography 
+    # thyroid 
+    # satellite 
+    # "satimage-2" 
+    # pendigits
 
     mammography 
     campaign 
     shuttle 
-    fraud 
-    nslkdd 
-    census
+
+    # fraud 
+    # nslkdd 
+    # census
 )
 
 for data in "${data_list[@]}"; do
-    # cp -r results/TMLM-d64-lr0.001-mask0.3-r50/$data/ results/TMLM-tuned-mask0.3
+    cp -r results/TADAM-tuned--recon_weight0.01_knn1/$data/ results/TADAM-tuned_knn
     # 
-    rm results_analysis/TADAM-default-knn16_/
+    # rm results_analysis/TADAM-default-knn16_/
     # rm results_analysis/TAECL-temp0.2-contra0.01/$data/1.0/model.pt
     # cp -r results/TMLM-d128-lr0.001-mask0.1-r50/$data results/TMLM-tuned/
     # echo "Copying pdf in $data";

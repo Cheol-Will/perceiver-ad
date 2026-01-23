@@ -2,7 +2,8 @@
 set -euo pipefail
 
 data_list=(    
-    optdigits 
+    wine
+    # optdigits 
     # wine 
     # glass 
     # wbc 
@@ -34,7 +35,7 @@ model_type="TAE"
 # learning_rate_list=(0.1)
 
 for data in "${data_list[@]}"; do
-    exp_name="TAE-tuned"
+    exp_name="TAE-tunedv2"
     # exp_name="$model_type-d$hidden_dim-lr$learning_rate"
     echo "Running $exp_name on $data."
     python main.py \
@@ -43,18 +44,18 @@ for data in "${data_list[@]}"; do
         --exp_name "$exp_name"
 done
 
-for data in "${data_list[@]}"; do
-    for hidden_dim in "${hidden_dim_list[@]}"; do
-        for learning_rate in "${learning_rate_list[@]}"; do
-            exp_name="TAE-tuned"
-            # exp_name="$model_type-d$hidden_dim-lr$learning_rate"
-            echo "Running $exp_name on $data."
-            python main.py \
-                --dataname "$data" \
-                --model_type $model_type \
-                --exp_name "$exp_name"
-                # --hidden_dim "$hidden_dim" \
-                # --learning_rate "$learning_rate"
-        done
-    done
-done
+# for data in "${data_list[@]}"; do
+#     for hidden_dim in "${hidden_dim_list[@]}"; do
+#         for learning_rate in "${learning_rate_list[@]}"; do
+#             exp_name="TAE-tuned"
+#             # exp_name="$model_type-d$hidden_dim-lr$learning_rate"
+#             echo "Running $exp_name on $data."
+#             python main.py \
+#                 --dataname "$data" \
+#                 --model_type $model_type \
+#                 --exp_name "$exp_name"
+#                 # --hidden_dim "$hidden_dim" \
+#                 # --learning_rate "$learning_rate"
+#         done
+#     done
+# done

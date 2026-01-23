@@ -108,6 +108,9 @@ class Trainer(object):
                         return epoch
         
         print("Training complete.")
+        path = os.path.join(self.path, "model.pth")
+        torch.save(self.model, path)
+
         return self.epochs
 
     @torch.no_grad()

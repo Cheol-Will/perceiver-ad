@@ -694,7 +694,8 @@ def main(args):
         "pendigits",
         "mammography",
         "campaign",
-        # "shuttle",
+        "shuttle",
+
         # "fraud",
         # "nslkdd",
         # "census"
@@ -782,11 +783,18 @@ def main(args):
         # 251130
         
         
-        # "LATTE-patience-tuned", 
-        "TAE-tuned",
+        # "LATTE-patience-tuned",
+        # "TAE-tuned",
+        
+        # "TADAM-tuned",
+        # "TADAM-tuned_knn",
+        "TADAM-tuned_cls_knn",
+
+        # "TADAM-default",
+        # "TADAM-comb0.1_1.0_knn5",
+        # "TADAM-d64-lr0.001",
         # "TAECL-temp0.2-contra0.01",
         # "TMLM-tuned-r100",
-
         # "TMLMSwap-default-swap0.1-r50",
         # "TMLMSwap-default-swap0.3-r50",
         # "TMLMSwap-default-swap0.5-r50",
@@ -816,20 +824,26 @@ def main(args):
                 # my_models.append(f"TADAM-d{d}-lr{lr}-knn{top_k}")
                 pass
     
-    my_models.append(f"TADAM-default")
+    # my_models.append(f"TADAM-default")
     # my_models.append(f"TADAM-default-cls")
+    # my_models.append(f"TADAM-tuned-")
     for top_k in top_k_list:
-        my_models.append(f"TADAM-default-knn{top_k}")
-        my_models.append(f"TADAM-default-cls-cls_knn{top_k}")
+        # my_models.append(f"TADAM-tuned--knn{top_k}")
+        # my_models.append(f"TADAM-tuned--cls_knn{top_k}")
+        # my_models.append(f"TADAM-d64-lr0.001-knn{top_k}")
         # my_models.append(f"TADAM-default-knn{top_k}")
+        # my_models.append(f"TADAM-default-cls-cls_knn{top_k}")
+        pass
     
     weight_list = [0.01, 0.1, 1.0]
-    my_models.append(f"TADAM-default-test")
+    # my_models.append(f"TADAM-default-test")
     for weight in weight_list:
         for top_k in top_k_list:
-            my_models.append(f"TADAM-default-test-recon_weight{weight}_cls_knn{top_k}")
-            my_models.append(f"TADAM-default-test-recon_weight{weight}_knn{top_k}")
-
+            # my_models.append(f"TADAM-tuned--recon_weight{weight}_cls_knn{top_k}")
+            # my_models.append(f"TADAM-tuned--recon_weight{weight}_knn{top_k}")
+            # my_models.append(f"TADAM-default-test-recon_weight{weight}_cls_knn{top_k}")
+            # my_models.append(f"TADAM-default-test-recon_weight{weight}_knn{top_k}")
+            pass
 
 
     # f_list = [0.5, 1.0, 2.0, 4.0]

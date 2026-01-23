@@ -2,12 +2,12 @@
 set -euo pipefail
 
 data_list=(    
-    wine 
-    glass 
-    wbc 
-    ionosphere 
-    arrhythmia 
-    breastw 
+    # wine 
+    # glass 
+    # wbc 
+    # ionosphere 
+    # arrhythmia 
+    # breastw 
     # pima  
     # optdigits 
     # cardio 
@@ -18,14 +18,14 @@ data_list=(
     # pendigits
     # mammography 
     # campaign 
-    # shuttle 
+    shuttle 
     # fraud 
     # nslkdd 
     # census
 ) 
 model_type="TADAM"
-exp_name="TADAM-default-test"
-pth_dir_name="TADAM-default-reproduce"
+exp_name="TADAM-tuned-"
+pth_dir_name="TADAM-tuned"
 for data in "${data_list[@]}"; do
     echo "Running $exp_name on $data"
     python test.py \

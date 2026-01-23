@@ -66,7 +66,7 @@ class TADAM(nn.Module):
         torch.cuda.empty_cache()
 
     @torch.no_grad()
-    def forward_knn(self, x):
+    def forward_knn_attn(self, x):
         self.eval()
         z, attn_enc = self.encoder(x)
         if isinstance(attn_enc, (list, tuple)):
@@ -95,7 +95,7 @@ class TADAM(nn.Module):
         }
 
     @torch.no_grad()
-    def forward_knn_cls(self, x):
+    def forward_knn_cls_attn(self, x):
         """
         Run KNN with attention weights of <CLS> token.
         """
@@ -134,7 +134,7 @@ class TADAM(nn.Module):
         z, attn_enc = self.encoder(x)
         x_hat, attn_dec = self.decoder(z, self.pos_encoding)
         reconstruction_loss = F.mse_loss(x, x_hat, reduction='none').mean(dim=-1)
-        knn_scores = self.forward_knn_cls(x) if use_cls else self.forward_knn(x)
+        knn_scores = self.forward_knn_cls_attn(x) if use_cls else self.forward_knn_attn(x)
         knn_scores = knn_scores[f'{prefix}scores']
         scores = {}
         weight_list = [0.01, 0.1, 1.0]
@@ -154,12 +154,12 @@ class TADAM(nn.Module):
         if self.training:
             return reconstruction_loss
         else:
-            knn_score = self.forward_knn(x)
+            # knn_score = self.forward_knn(x)
             return {
                 'reconstruction_loss': reconstruction_loss,
                 'latent': z,
                 'x_hat': x_hat,
                 'attn_enc': attn_enc,
                 'attn_dec': attn_dec,
-                **knn_score
+                # **knn_score
             }
