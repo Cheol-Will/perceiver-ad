@@ -397,7 +397,10 @@ class ResultRenderer:
         # df_mean.loc["TMLM-tuned-mask0.3", 'census'] = 0.2358
         
         
-        # df_mean.loc["TAECL-temp0.1-contra0.01", 'census'] = 0.2358
+        # df_mean.loc["TMLMSwap-default-swap0.1-r50", 'shuttle'] = 0.9817
+        # df_mean.loc["TMLMSwap-default-swap0.3-r50", 'shuttle'] = 0.9810
+        # df_mean.loc["TMLMSwap-default-swap0.5-r50", 'shuttle'] = 0.9798
+        # df_mean.loc["TMLMSwap-default-swap0.5-r50", 'campaign'] = 0.4600
         # df_mean.loc["TAECL-temp1.0-contra0.01", 'census'] = 0.2358
 
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
@@ -792,8 +795,11 @@ def main(args):
         
         # "TADAM-tuned",
         # "TADAM-tuned--recon_weight1.0_cls_knn5",
+
+
         "TADAM-tuned_knn5",
         "TADAM-tuned_cls_knn5",
+        "TADAM-tuned--knn5",
 
         # "TADAM-default",
         # "TADAM-comb0.1_1.0_knn5",
@@ -817,6 +823,11 @@ def main(args):
         #64-lr0.001-t0.1",
     ]
 
+    top_k_list = [1, 5, 10, 16, 32, 64]
+    for top_k in top_k_list:
+        # my_models.append(f"TADAM-tuned_knn{top_k}")
+        # my_models.append(f"TADAM-tuned_cls_knn{top_k}")
+        pass
     d_list = [32, 64, 128]
     lr_list = [0.01, 0.001]
     top_k_list = [1, 5]

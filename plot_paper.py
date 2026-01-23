@@ -95,6 +95,15 @@ def plot_hp_sen():
         [0.5, 0.6921],
     ]
 
+    aucpr_vs_top_k_tadam = [
+        [1, 0.7455],
+        [5, 0.7448],
+        [10, 0.7431],
+        [16, 0.7417],
+        [32, 0.7383],
+        [64, 0.7345],
+    ]
+
 
     def _plot_hp_vs_aucpr(metrics, xlabel, color, y_label = ' '):
         fig, ax = plt.subplots(1, 1, figsize=(4, 3))
@@ -138,6 +147,7 @@ def plot_hp_sen():
     _plot_hp_vs_aucpr(aucpr_vs_cont_taecl, 'contrastive weight', color='C1')
     _plot_hp_vs_aucpr(aucpr_vs_temp_taecl, 'temperature weight', color='C2')
     _plot_hp_vs_aucpr(aucpr_vs_mask_tmlm, 'mask ratio', color='C2')
+    _plot_hp_vs_aucpr(aucpr_vs_top_k_tadam, 'Top-k', color='C2')
 
 
     def plot_hp_sen_1x4():
