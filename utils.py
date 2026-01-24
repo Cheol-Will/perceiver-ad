@@ -70,6 +70,7 @@ def get_parser():
     parser.add_argument('--swap_ratio', type=float, default=None)
     parser.add_argument('--num_eval_repeat', type=int, default=None)
     parser.add_argument('--byol_loss_weight', type=float, default=None)
+    parser.add_argument('--imix_loss_weight', type=float, default=None)
     parser.add_argument('--share_mask', action='store_true')
 
     # Train config
