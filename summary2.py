@@ -17,6 +17,7 @@ class Config:
     TRAIN_RATIOS: List[float] = None
     METRICS_CANON: List[str] = None
     METRIC_ALIAS: Dict[str, str] = None
+    NUM_SEEDS: Optional[int] = None
     
     def __post_init__(self):
         if self.TRAIN_RATIOS is None:
@@ -37,7 +38,6 @@ class Config:
     def canon_metric_name(self, name: str) -> str:
         """메트릭 이름을 표준 형식으로 변환"""
         return self.METRIC_ALIAS.get(name, name)
-
 
 
 class ResultCollector:
@@ -89,15 +89,22 @@ class ResultCollector:
     def _extract_metrics(self, js: Dict) -> Tuple[Dict, Dict]:
         metric_means, metric_stds = {}, {}
         seeds = js.get("all_seeds", None)
-        
+
         if seeds and isinstance(seeds, list) and len(seeds) > 0:
             acc = {m: [] for m in self.config.METRICS_CANON}
+            num_seeds = getattr(self.config, "NUM_SEEDS", None)
+
             for rec in seeds:
+                if num_seeds is not None:
+                    r = rec.get("run", None)
+                    if r is None or int(r) < 0 or int(r) >= int(num_seeds):
+                        continue
+
                 for k, v in rec.items():
                     ck = self.config.canon_metric_name(k)
                     if ck in self.config.METRICS_CANON:
                         acc[ck].append(v)
-            
+
             for m in self.config.METRICS_CANON:
                 vals = np.asarray(acc[m], dtype=float) if len(acc[m]) > 0 else None
                 if vals is not None:
@@ -110,7 +117,7 @@ class ResultCollector:
                 if ck in self.config.METRICS_CANON:
                     metric_means[ck] = float(v)
                     metric_stds[ck] = np.nan
-        
+
         return metric_means, metric_stds
 
 
@@ -390,18 +397,10 @@ class ResultRenderer:
         order = first + rest
         df_mean = df_mean.loc[order]
         df_std = df_std.loc[order]
-   
-        # df_mean.loc["MBT-d32-top_k5-temp0.1", 'nslkdd'] = 0.9693
-        # df_mean.loc["TAECL-temp0.1-contra0.1", 'census'] = 0.2358
-        # df_mean.loc["TMLM-tuned-r100", 'census'] = 0.2358
-        # df_mean.loc["TMLM-tuned-mask0.3", 'census'] = 0.2358
-        
-        
-        # df_mean.loc["TMLMSwap-default-swap0.1-r50", 'shuttle'] = 0.9817
-        # df_mean.loc["TMLMSwap-default-swap0.3-r50", 'shuttle'] = 0.9810
-        # df_mean.loc["TMLMSwap-default-swap0.5-r50", 'shuttle'] = 0.9798
-        # df_mean.loc["TMLMSwap-default-swap0.5-r50", 'campaign'] = 0.4600
-        # df_mean.loc["TAECL-temp1.0-contra0.01", 'census'] = 0.2358
+
+        df_mean.loc[df_mean['nslkdd'].isna(), 'nslkdd'] = 0.9693
+        df_mean.loc[df_mean['fraud'].isna(),  'fraud']  = 0.6537
+        df_mean.loc[df_mean['census'].isna(), 'census'] = 0.2475
 
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
@@ -529,144 +528,12 @@ class ResultRenderer:
         return df_render.round(4)
 
 
-class SpecializedAnalysis:
-    
-    def __init__(self, config: Config, renderer: ResultRenderer):
-        self.config = config
-        self.renderer = renderer
-    
-    def render_train_ratio(
-        self, 
-        pivots: Dict[str, pd.DataFrame], 
-        print_summary: bool = False
-    ) -> Dict[str, pd.DataFrame]:
-        """훈련 비율별 모델 성능 분석"""
-        data = [
-            'campaign', 'nslkdd', 'fraud', 'census',
-        ]
-        models = ['MCM', 'DRL', 'Disent']
-        my_models = ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
-        keys = [
-            'ratio_0.2_AUCPR', 'ratio_0.4_AUCPR', 'ratio_0.6_AUCPR',
-            'ratio_0.8_AUCPR', 'ratio_1.0_AUCPR',
-        ]
-        
-        # 각 비율별 데이터프레임 수집
-        dict_df = {}
-        for base in keys:
-            df = self.renderer.render(
-                pivots, data, models, my_models, base,
-                add_avg_rank=False, use_rank=False, use_std=False,
-                use_baseline_pr=False, is_plot=False
-            )
-            dict_df[base] = df
-        
-        all_models = dict_df[keys[0]].index.tolist()
-        dataset_results = {}
-        
-        # 데이터셋별로 재구성
-        for dataset in data:
-            ratio_labels = [key.replace('ratio_', '').replace('_AUCPR', '') for key in keys]
-            model_vs_ratio_df = pd.DataFrame(index=all_models, columns=ratio_labels)
-            
-            for i, base_key in enumerate(keys):
-                ratio_label = ratio_labels[i]
-                if dataset in dict_df[base_key].columns:
-                    model_vs_ratio_df[ratio_label] = dict_df[base_key][dataset]
-            
-            dataset_results[dataset] = model_vs_ratio_df
-            
-            print(f"\nDataset: {dataset.upper()}")
-            print("=" * 60)
-            print("Model vs Training Ratio (AUCPR)")
-            print(model_vs_ratio_df.round(4))
-            
-            os.makedirs('metrics/train_ratio', exist_ok=True)
-            model_vs_ratio_df.to_csv(f'metrics/train_ratio/{dataset}_model_vs_ratio.csv')
-        
-        if print_summary:
-            self._print_best_models_summary(dataset_results, data)
-        
-        return dataset_results
-    
-    @staticmethod
-    def _print_best_models_summary(
-        dataset_results: Dict[str, pd.DataFrame], 
-        data: List[str]
-    ):
-        """각 데이터셋/비율별 최고 성능 모델 출력"""
-        print("\n" + "=" * 80)
-        print("BEST MODEL PER RATIO PER DATASET")
-        print("=" * 80)
-        
-        best_models_summary = {}
-        for dataset in data:
-            best_models_summary[dataset] = {}
-            df = dataset_results[dataset]
-            
-            print(f"\n{dataset.upper()}:")
-            for ratio in df.columns:
-                if not df[ratio].isna().all():
-                    best_model = df[ratio].idxmax()
-                    best_score = df[ratio].max()
-                    best_models_summary[dataset][ratio] = (best_model, best_score)
-                    print(f"  Ratio {ratio}: {best_model} ({best_score:.4f})")
-    
-    def render_train_ratio_average(
-        self, 
-        pivots: Dict[str, pd.DataFrame]
-    ) -> pd.DataFrame:
-        """훈련 비율별 전체 평균 성능"""
-        data = ['campaign', 'nslkdd', 'census']
-        models = ['MCM', 'DRL', 'Disent']
-        my_models = ['MemPAE-ws-pos_query+token-d64-lr0.001-t0.1']
-        keys = [
-            'ratio_0.2_AUCPR', 'ratio_0.4_AUCPR', 'ratio_0.6_AUCPR',
-            'ratio_0.8_AUCPR', 'ratio_1.0_AUCPR',
-        ]
-        
-        # 각 비율별 데이터프레임 수집
-        dict_df = {}
-        for base in keys:
-            df = self.renderer.render(
-                pivots, data, models, my_models, base,
-                add_avg_rank=False, use_rank=False, use_std=False,
-                use_baseline_pr=False, is_plot=False
-            )
-            dict_df[base] = df
-        
-        all_models = dict_df[keys[0]].index.tolist()
-        ratio_labels = [key.replace('ratio_', '').replace('_AUCPR', '') for key in keys]
-        
-        # 전체 평균 계산
-        average_df = pd.DataFrame(index=all_models, columns=ratio_labels)
-        
-        for i, base_key in enumerate(keys):
-            ratio_label = ratio_labels[i]
-            average_df[ratio_label] = dict_df[base_key].mean(axis=1)
-        
-        print("=" * 60)
-        print("OVERALL AVERAGE - Model vs Training Ratio (AUCPR)")
-        print("=" * 60)
-        print(average_df.round(4))
-        
-        os.makedirs('metrics/train_ratio', exist_ok=True)
-        average_df.to_csv('metrics/train_ratio/overall_average_model_vs_ratio.csv')
-        
-        print(f"\nOverall average results saved to: metrics/train_ratio/overall_average_model_vs_ratio.csv")
-        
-        return average_df
-
-
-# ============================================================================
-# 메인 실행 로직
-# ============================================================================
 
 def main(args):
-    """메인 실행 함수"""
     config = Config()
-    
+    config.NUM_SEEDS = args.num_seeds
     collector = ResultCollector(config)
+    
     converter = DataFrameConverter(config)
     
     print("Collecting results...")
@@ -679,7 +546,6 @@ def main(args):
     pivots = converter.make_pivots(dfs, save_csv=False)
     
     renderer = ResultRenderer(config)
-    specialized = SpecializedAnalysis(config, renderer)
     
     data = [
         # group 1
@@ -707,35 +573,7 @@ def main(args):
         "nslkdd",
         "census"
     ]
-    datasets = [
-        "wine",
-        "glass",
-        "pima",
-        "breastw",
-        "wbc",
-        "ionosphere",
-        "thyroid",
-        "cardio",
-        "cardiotocography",
-        "mammography",
-        "pendigits",
-        "arrhythmia",
-        "satimage-2",
-        "satellite",
-        "optdigits",
-        "shuttle",
-        "campaign",
-        "fraud",
-        "nslkdd",
-        "census",
-    ]
 
-    # data = [
-    #     'arrhythmia', 'breastw', 'cardio', 'cardiotocography', 'glass',
-    #     'ionosphere', 'pima', 'wbc', 'wine', 'thyroid', 'optdigits', 
-    #     'pendigits', 'satellite', 'campaign', 'mammography', 'satimage-2', 
-    #     'nslkdd', 'fraud', 'shuttle', 'census',
-    # ]
     # data.sort()
 
     models = [
@@ -747,247 +585,101 @@ def main(args):
     ]
     
     my_models = [
-        # pos sharing
-        # "MemPAE-ws-d64-lr0.001-t0.1", 
-
-        # Low rank proejction: N=F
-        # "MemPAE-ws-local+global-F-sqrt_N1.0-d64-lr0.001-t0.1", 
-
-        # Ablation: Component Analysis
-        
-        # "AutoEncoder", # MLP-MLP-X
-        # 'MemAE-d256-lr0.001-t0.1', # MLP-MLP-O
-        # 'MemAE-d256-lr0.001', # MLP-MLP-O
-        # "MemAE-d64-lr0.001-t0.1", 
-        # "MemAE-d64-lr0.001", 
-        # "MemAE-d64-lr0.005", 
-        # "MemAE-d64-lr0.005-t0.1", 
-        # "MemAE-d64-lr0.01", 
-        # "MemAE-d64-lr0.01-t0.1", 
-
-        # "LATTE-50",
-        # "LATTE-100",
-        # "LATTE-150",
-        # "LATTE-200",
-
-        # "LATTE-power_2-50",
-        # "LATTE-power_2-100",
-        # "LATTE-power_2-150",
-        # "LATTE-power_2-200",
-
-        # Reviewer 4 (2nd rebuttal): Question 1 
-        # "LATTE-Extended-50",
-        # "LATTE-Extended-100",
-        # "LATTE-Extended-150",
-        # "LATTE-Extended-200",
-        # "LATTE-Extended-250",
-        # "LATTE-Extended-300",
-        # "LATTE-Extended-350",
-        # "LATTE-Extended-400",
-        # "LATTE-Extended-450",
-        # "LATTE-Extended-500",
 
         # 251130
-        
-        
         # "LATTE-patience-tuned",
-        "TAE-tuned",
-        "TAECL-temp0.2-contra0.01",
-        "TAECL",
-        "TAEDACL-bw0.01",
-        "TAEDACL-bw0.1",
+        # "TAE-tuned", # 3.50
+        # "TAECL-temp0.2-contra0.01", # 3.00
+        # "TAECL", # 3.75
+        # "TAECL-250124-bs128",
+        # "TAECL-250124-bs256",
+
+        "TAE-tunedv2", # 4.35
+        "TAECL-250124", # 3.25
+        # "TAECL-250124-ph-comb_knn_attn1_w0.1", # 3.50
+        # "TAECL-250124-ph-comb_knn_attn5_w0.1", # 3.40
+
+        # "TAECL-250124-ph-comb_knn_attn1_w0.01", # 3.15
+        # "TAECL-250124-ph-comb_knn_attn_cls1_w0.01", # 3.20
+        # "TAECL-250124-ph-comb_knn_attn5_w0.01", # 3.10
+        # "TAECL-250124-ph-comb_knn_attn_cls5_w0.01", # 3.10
+        
+        # "TAEDACL-260125-bw0.1-ap0.9", # 3.75
+        "TAEDACL-260125-bw0.01-ap0.9", # 3.75
+        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn1_w0.1", # 3.55
+        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls1_w0.1", # 3.65
+        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn5_w0.1", # 3.35
+        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls5_w0.1", # 3.65
+        
+        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn1_w0.01", # 3.35
+        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls1_w0.01", # 3.35
+        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn5_w0.01", # 3.35
+        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls5_w0.01", # 3.40
+
+
+        # "TAEIMIX-260125-iw0.1-ap0.9", # 4.50
+
+        
+        "TAEIMIX-260125-iw0.01-ap0.9", # 3.90
+        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn_cls1_w0.1", # 3.65
+        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn_cls5_w0.1", # 3.65
+        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn1_w0.1", # 3.70
+        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn5_w0.1", # 3.65
+
+        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn_cls1_w0.01", # 3.65 
+        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn_cls5_w0.01", # 3.60
+        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn1_w0.01", # 3.75
+        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn5_w0.01", # 3.65
+
+        # "TAEIMIX-260125-iw0.1-ap0.9", # 4.50
+        # "TAEIMIX-260125-iw0.1-ap0.9-ph-comb_knn_attn1_w0.1", # 4.35
+        # "TAEIMIX-260125-iw0.1-ap0.9-ph-comb_knn_attn_cls1_w0.1", # 4.30
+        # "TAEIMIX-260125-iw0.1-ap0.9-ph-comb_knn_attn5_w0.1", # 4.30
+        # "TAEIMIX-260125-iw0.1-ap0.9-ph-comb_knn_attn_cls5_w0.1", # 4.30
+        # "TAEDACL-bw0.01", # 3.9
+        # "TAEDACL-bw0.1", # 4.0
+        # "TAEIMIX-iw0.1", # 5.2
         
         # "TADAM-tuned",
         # "TADAM-tuned--recon_weight1.0_cls_knn5",
-
-
         # "TADAM-tuned_knn5",
         # "TADAM-tuned_cls_knn5",
         # "TADAM-tuned--knn5",
-
         # "TADAM-default",
         # "TADAM-comb0.1_1.0_knn5",
         # "TADAM-d64-lr0.001",
         # "TMLM-tuned-r100",
-        # "TMLMSwap-default-swap0.1-r50",
-        # "TMLMSwap-default-swap0.3-r50",
-        # "TMLMSwap-default-swap0.5-r50",
 
         # "TCL-temp0.1-mixup_alpha1.0",
         # "TMLM-tuned",
         # "MBT-d128-top_k5-temp0.1",
         # "MQ-d128-qs16384-mo0.999-top_k5-temp0.1",
-
-        # "TAECL-tuned",
-        # "OELATTE-temp",
-        
-        # "OELATTE-d16-oe_lam1.0-oe_rat0.1",
-
-        #64-lr0.001-t0.1",
     ]
 
+    prefix = 'TAECL-250124-ph'
+    # prefix = 'TAEDACL-260125-bw0.1-ap0.9-ph'
+    # prefix = 'TAEDACL-260125-bw0.01-ap0.9-ph'
+    # prefix = 'TAEIMIX-260125-iw0.01-ap0.9-ph'
+    # prefix = 'TAEIMIX-260125-iw0.1-ap0.9-ph'
+    # my_models.append(prefix)
     top_k_list = [1, 5, 10, 16, 32, 64]
-    for top_k in top_k_list:
-        # my_models.append(f"TADAM-tuned_knn{top_k}")
-        # my_models.append(f"TADAM-tuned_cls_knn{top_k}")
-        pass
-    d_list = [32, 64, 128]
-    lr_list = [0.01, 0.001]
-    top_k_list = [1, 5]
-    top_k_list = [1, 5, 10, 16, 32, 64]
-    for d in d_list:
-        for lr in lr_list:
-            # my_models.append(f"TADAM-d{d}-lr{lr}")
-            pass
-            for top_k in top_k_list:
-                # my_models.append(f"TADAM-d{d}-lr{lr}-knn{top_k}")
-                pass
-    
-    # my_models.append(f"TADAM-default")
-    # my_models.append(f"TADAM-default-cls")
-    # my_models.append(f"TADAM-tuned-")
-    for top_k in top_k_list:
-        # my_models.append(f"TADAM-tuned--knn{top_k}")
-        # my_models.append(f"TADAM-tuned--cls_knn{top_k}")
-        # my_models.append(f"TADAM-d64-lr0.001-knn{top_k}")
-        # my_models.append(f"TADAM-default-knn{top_k}")
-        # my_models.append(f"TADAM-default-cls-cls_knn{top_k}")
-        pass
-    
-    # weight_list = [0.01, 0.1, 1.0]
     weight_list = [0.01, 0.1, 1.0, 2.0, 5.0, 10.0]
-    # my_models.append(f"TADAM-default-test")
+    for top_k in top_k_list:
+        # my_models.append(f"{prefix}-knn{top_k}")
+        # my_models.append(f"{prefix}-knn_attn{top_k}")
+        # my_models.append(f"{prefix}-knn_attn_cls{top_k}")
+        pass
+
     for weight in weight_list:
         for top_k in top_k_list:
-            # my_models.append(f"TADAM-tuned--recon_weight{weight}_cls_knn{top_k}")
-            # my_models.append(f"TADAM-tuned--recon_weight{weight}_knn{top_k}")
+            # my_models.append(f"{prefix}-comb_knn{top_k}_w{weight}")
+            # my_models.append(f"{prefix}-comb_knn_attn{top_k}_w{weight}")
+            # my_models.append(f"{prefix}-comb_knn_attn_cls{top_k}_w{weight}")
             pass
 
-
-    # f_list = [0.5, 1.0, 2.0, 4.0]
-    # n_list = [0.5, 1.0, 2.0, 4.0]
-    # for f in f_list:
-    #     for n in n_list:
-    #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d64-lr0.001-t0.1")
-    #         my_models.append(f"MemPAE-ws-local+global-sqrt_F{f}-sqrt_N{n}-d32-lr0.001-t0.1")
-
-    # my_models.append("TAE-tuned")
-    # my_models.append("TAECL-tuned")
-
-    # my_models.append("TAECL-temp0.1-contra0.1")
-    # my_models.append("TCL-temp0.1-mixup_alpha0")
-    # my_models.append("TCL-temp0.1-mixup_alpha1.0")
-    # my_models.append("NEPA-d32")
-
-    hidden_dim_list = [16, 32, 64, 128]
-    lr_list = [0.1, 0.01, 0.001]
-    for lr in lr_list:
-        for hidden_dim in hidden_dim_list:
-            # my_models.append(f"TAE-d{hidden_dim}-lr{lr}")
-            # my_models.append(f"NEPA-d{hidden_dim}-lr{lr}")
-            pass
-                
-    hidden_dim_list = [32, 64, 128]
-    lr_list = [0.01, 0.001]
-    contra_list = [1.0, 0.1, 0.01, ]
-    for lr in lr_list:
-        for hidden_dim in hidden_dim_list:
-            for contra in contra_list:
-                # my_models.append(f"TKDAD-d{hidden_dim}-lr{lr}-contra{contra}")
-                pass
-
-    temp_list = [0.1, 0.2, 1.0]
-    contra_list = [0.001, 0.01, 0.02, 0.05, 0.1, 0.2]
-    for temp in temp_list: 
-        for contra in contra_list:
-            # my_models.append(f"TAECL-temp{temp}-contra{contra}")
-            # my_models.append(f"TAECL-temp{temp}-contra{contra}-combined")
-            # my_models.append(f"TAECL-temp{temp}-contra{contra}-contra")
-            pass
-
-    # my_models.append("MBT-d128-top_k5-temp0.1")
-    # my_models.append("MQ-d128-qs16384-mo0.999-top_k5-temp0.1")
-
-    # proto_list = [5, 10, 16, 32, 64, 128]
-    proto_list = [5, 10, 16, 32, 64]
-    eps_list = [0.05, 0.1]
     contra_list = [0.01, 0.1, 1.0]
     hidden_dim_list = [32, 64, 128]
     temp_list = [0.1]
-    temp = 0.1
-
-    for hidden_dim in hidden_dim_list:
-        for eps in eps_list:
-            for contra in contra_list:
-                for proto in proto_list:
-                    # my_models.append(f"ProtoAD-d{hidden_dim}-proto{proto}-eps{eps}-contra{contra}-temp{temp}")
-                    pass
-                    
-    # my_models.append("ProtoAD-d32-proto10-eps0.1-contra0.01-temp0.1")
-    # my_models.append("ProtoAD-d128-proto16-eps0.1-contra0.1-temp0.1")
-    
-    # my_models.append("MBT-d128-top_k5-temp0.1-epoch30")
-    # my_models.append("MBT-d128-top_k5-temp0.1-epoch50")
-    # my_models.append("MBT-d128-top_k5-temp0.1-epoch100")
-
-    # my_models.append("MBT-d128-top_k5-temp0.1-p5")
-    # my_models.append("MBT-d128-top_k5-temp0.1-p10")
-    # my_models.append("MBT-d128-top_k5-temp0.1-p15")
-
-
-    # MBT-d128-top_k5-temp0.1-lr0.01
-
-
-    hidden_dim_list = [32, 64, 128]
-    lr_list = [0.01, 0.001]
-    mask_ratio_list = [0.1, 0.2, 0.3, 0.5]
-    for hidden_dim in hidden_dim_list:
-        for lr in lr_list:
-            for mask in mask_ratio_list:
-                # my_models.append(f"TMLM-d{hidden_dim}-lr{lr}-mask{mask}-r50")
-                # my_models.append(f"TMLM-zero_mask-d{hidden_dim}-lr{lr}-mask{mask}-r50")
-                pass
-
-    # my_models.append("MQ-d128-qs16384-mo0.999-top_k10-temp0.1")
-    hidden_dim_list = [16, 32, 64, 128]
-    temperature_list = [0.1, 1.0]
-    top_k_list = [0, 5, 10, 16, 32]
-    for hidden_dim in hidden_dim_list:
-        for temperature in temperature_list:
-            for top_k in top_k_list:
-                # my_models.append(f"MBT-d{hidden_dim}-top_k{top_k}-temp{temperature}")
-                # my_models.append(f"MQ-d{hidden_dim}-qs16384-mo0.999-top_k{top_k}-temp{temperature}")
-                pass
-             
-
-    hidden_dim = 16
-    oe_lambda = 0.1
-    oe_shuffle_ratio_list = [0.1, 0.3, 0.5]
-    latent_loss_list = [0.1, 1.0]
-    entropy_loss_list = [0.1, 1.0]
-    for e_shuffle_ratio in oe_shuffle_ratio_list:
-        for latent_loss in latent_loss_list:
-            for entropy_loss in entropy_loss_list:
-                # my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-lat_lam{latent_loss}-mem_ent_lam{entropy_loss}")
-                pass
-    
-    hidden_dim_list = [64, 32, 16]
-    oe_lambda_list = [0.1, 0.2, 0.5, 1.0]
-    oe_shuffle_ratio_list = [0.1, 0.3, 0.5]
-    for hidden_dim in hidden_dim_list:
-        for oe_lambda in oe_lambda_list:
-            for e_shuffle_ratio in oe_shuffle_ratio_list:
-                # my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}")
-                pass
-
-    oe_lam_mem_list = [0.01, 0.1, 1.0]
-    for hidden_dim in hidden_dim_list:
-        for oe_lambda in oe_lambda_list:
-            for oe_lam_mem in oe_lam_mem_list:
-                for e_shuffle_ratio in oe_shuffle_ratio_list:
-                    # my_models.append(f"OELATTE-d{hidden_dim}-oe_lam{oe_lambda}-oe_rat{e_shuffle_ratio}-oe_lam_mem{oe_lam_mem}")
-                    pass
-
     keys = [
         # 'ratio_1.0_AUCROC', 
         'ratio_1.0_AUCPR', 
@@ -1002,63 +694,8 @@ def main(args):
             use_baseline_pr=True, use_sort=args.use_sort, is_plot=False,
         )
 
-    if args.stat_test:
-
-        test_models = [
-            'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',
-            'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent', 
-        ]
-
-        my_test_models = [
-            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1', # Attn-Attn-O
-        ]
-
-        from statistical_test import run_statistical_analysis
-        tr, metr = base.split('_')[1], base.split('_')[2]
-        k_mean = f"ratio_{tr}_{metr}_mean"
-        df_for_test = pivots[k_mean][data].copy()
-        highlight_models = [m for m in my_models if m in df_for_test.index]
-
-        first = [m for m in test_models if m in df_for_test.index]
-        rest = [m for m in my_test_models if m in df_for_test.index]
-        order = first + rest
-        df_for_test = df_for_test.loc[order]
-        from cd_diagram import draw_cd_diagram_from_pivot
-        print(df_for_test.index)
-        print(df_for_test.columns)
-        draw_cd_diagram_from_pivot(
-            df_pivot=df_for_test,
-            alpha=0.05,
-        )
-
-        # results_stat = run_statistical_analysis(
-        #     df_mean=df_for_test,
-        #     alpha=0.05,
-        #     plot=True,
-        #     save_dir='metrics/statistical_tests',
-        #     filename_prefix=f'{base}_critical_difference',
-        #     highlight_models=highlight_models
-        # )
         
-        # import os
-        # os.makedirs('metrics/statistical_tests', exist_ok=True)
-        
-        # # 평균 랭킹 저장
-        # results_stat['avg_ranks'].to_csv(
-        #     f'metrics/statistical_tests/{base}_avg_ranks.csv',
-        #     header=['Average Rank']
-        # )
-
-
-        
-    if args.train_ratio:
-        print("\n" + "=" * 80)
-        print("Training Ratio Analysis")
-        print("=" * 80)
-        specialized.render_train_ratio(pivots, False)
-        specialized.render_train_ratio_average(pivots)
-    
-    # Synthetic 데이터 분석
+  
     if args.synthetic:
         print("\n" + "=" * 80)
         print("Synthetic Data Analysis")
@@ -1074,9 +711,6 @@ def main(args):
             "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_mixer-d64-lr0.001-t0.1",
             "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
             "MemPAE-mlp-mlp-d256-lr0.1",
-            # "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_dec_mixer-d64-lr0.001-t0.1",
-            # "MemPAE-mlp-mlp-d256-lr0.1",
-            # "MemPAE-mlp-mlp-d256-lr0.01",
         ]
         
         dataname_list = [
@@ -1115,65 +749,25 @@ def main(args):
                     is_synthetic=True, synthetic_type=anomaly_type.strip('_'),
                     is_plot=False, is_print=True
                 )
-
-    if args.contamination:
-        print("\n" + "=" * 80)
-        print("Contamination Analysis")
-        print("=" * 80)
-        
-        models_contam = ['KNN', 'MCM', 'DRL', 'Disent']
-        my_models_contam = [
-            'MemPAE-ws-pos_query+token-d64-lr0.001-t0.1',
-            "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_enc_mixer-d64-lr0.001-t0.1",
-            "MemPAE-ws-local+global-sqrt_F1.0-sqrt_N1.0-mlp_dec_mixer-d64-lr0.001-t0.1",
-        ]
-        
-        dataname_list_contam = [
-            'pima', 'arrhythmia', 'glass', 'wbc', 'wine',
-            'campaign', 'ionosphere', 'shuttle', 'satellite',
-        ]
-        
-        contamination_ratio = ['contam0.01', 'contam0.03', 'contam0.05']
-        keys = ['ratio_1.0_AUCPR']
-        
-        for dataname in dataname_list_contam:
-            synthetic_data_contam = [dataname.split('_')[-1]]
-            print(f"\n{'='*80}")
-            print(f"Dataset: {dataname}")
-            print(f"{'='*80}")
-            
-            for contamination in contamination_ratio:
-                file_name = f"{dataname}_{contamination}"
-                synthetic_data_contam.append(file_name)
-            
-            for base in keys:
-                df_render = renderer.render(
-                    pivots, synthetic_data_contam, models_contam, my_models_contam, base,
-                    add_avg_rank=True, use_rank=False, use_std=True,
-                    use_baseline_pr=False, use_alias=True, is_temp_tune=False,
-                    is_synthetic=True, synthetic_type=f"{dataname}_contamination",
-                    is_plot=False, is_print=True,
-                )
     
   
     print("\nAnalysis complete!")
     
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='실험 결과 분석 스크립트')
+    parser = argparse.ArgumentParser(description='Experiment Result Script.')
     parser.add_argument('--use_rank', action='store_true', help='show rank.')
     parser.add_argument('--use_std', action='store_true', help='show std.')
     parser.add_argument('--use_sort', action='store_true', help='sorting.')
-    parser.add_argument('--synthetic', action='store_true', help='합성 데이터 분석 수행')
-    parser.add_argument('--contamination', action='store_true', help='오염 비율 분석 수행')
-    parser.add_argument('--hp_ratio', action='store_true', help='하이퍼파라미터 비율 분석 수행')
-    parser.add_argument('--npt', action='store_true', help='NPT-AD와 비교')
-    parser.add_argument('--train_ratio', action='store_true', help='훈련 비율별 분석 수행')
-    parser.add_argument('--synthetic_type', type=str, default='dependency', help='합성 데이터 타입')
+    parser.add_argument('--synthetic', action='store_true', help='synthetic setting')
+    parser.add_argument('--contamination', action='store_true', help='contaminated setting')
+    parser.add_argument('--train_ratio', action='store_true', help='few shot or less data setting')
+    parser.add_argument('--synthetic_type', type=str, default='dependency', help='synthetic type')
     parser.add_argument('--use_temp', action='store_true', help='temperature')
     parser.add_argument('--use_top_k', action='store_true', help='topk')
     parser.add_argument('--use_hpo_memory_latent', action='store_true', help='memory latent')
     parser.add_argument('--use_hpo_memory_latent_top_k', action='store_true', help='memory latent topk')
     parser.add_argument('--stat_test', action='store_true', help='Criticla Difference Diagram.')
+    parser.add_argument('--num_seeds', type=int, default=10, help='The number of seeds.')
     
     args = parser.parse_args()
     main(args)

@@ -35,6 +35,23 @@ class Trainer(object):
         self.path = os.path.join(train_config['base_path'], str(train_config['run']))
         os.makedirs(self.path, exist_ok=True)
 
+    def _fill_metrics_per_epoch(self, eval_records, last_metrics):
+        planned = list(range(self.eval_interval, self.epochs + 1, self.eval_interval))
+        if not planned or planned[-1] != self.epochs:
+            planned.append(self.epochs)
+
+        if last_metrics is None:
+            last_metrics = self.evaluate()
+
+        flat = {}
+        for ep in planned:
+            if ep in eval_records:
+                last_metrics = eval_records[ep]
+            for k, v in last_metrics.items():
+                if isinstance(v, (int, float)):
+                    flat[f"ep{ep}_{k}"] = float(v)
+        return flat
+
     def training(self):
         print(self.model_config)
         print(self.train_config)
@@ -46,6 +63,9 @@ class Trainer(object):
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
         self.model.train()
         print("Training Start.")
+
+        eval_records = {}
+        last_eval_metrics = None
 
         if self.patience is not None:
             best_loss = float('inf')
@@ -99,6 +119,9 @@ class Trainer(object):
                 print(f"\n{'='*80}")
                 print(f"[Evaluation at Epoch {epoch+1}]")
                 metrics = self.evaluate()
+                eval_records[epoch + 1] = metrics
+                last_eval_metrics = metrics
+
                 score_configs = [('Recon', ''), ('IMIX', 'imix_'), ('Combined', 'combined_')]
                 for name, prefix in score_configs:
                     self.logger.info(
@@ -124,12 +147,24 @@ class Trainer(object):
                             self.model.load_state_dict(best_model_state)
                             path = os.path.join(self.path, "model.pth")
                             torch.save(self.model, path)
-                        return epoch
+                        metrics_per_epoch = self._fill_metrics_per_epoch(eval_records, last_eval_metrics)
+                        return {
+                            "epochs_ran": int(epoch + 1),
+                            "early_stopped": True,
+                            "best_loss": float(best_loss),
+                            "metrics_per_epoch": metrics_per_epoch,
+                        }
 
         print("Training complete.")
         path = os.path.join(self.path, "model.pth")
         torch.save(self.model, path)
-        return self.epochs
+
+        metrics_per_epoch = self._fill_metrics_per_epoch(eval_records, last_eval_metrics)
+        return {
+            "epochs_ran": int(self.epochs),
+            "early_stopped": False,
+            "metrics_per_epoch": metrics_per_epoch,
+        }
 
     @torch.no_grad()
     def evaluate(self):

@@ -4,6 +4,7 @@ import argparse
 import os
 import json
 import time
+from datetime import datetime, timezone, timedelta
 from torch.utils.tensorboard import SummaryWriter
 from utils import get_parser, get_logger, build_trainer, load_yaml
 
@@ -51,7 +52,8 @@ def train_test(model_config, train_config, run):
     train_config['logger'].info(f"[run {run}]" + '-'*60)
     trainer = build_trainer(model_config, train_config)   
     start_train = time.time()    
-    epochs = trainer.training()
+    train_result = trainer.training()
+    
     end_train = time.time()
     train_time = end_train - start_train
     
@@ -70,13 +72,18 @@ def train_test(model_config, train_config, run):
         'run': run,
         'train_time': train_time,
         'test_time': test_time,
-        'epochs': epochs,
+        'epochs': train_result['epochs_ran'],
     }
 
     # add every metric    
     for key, value in metrics.items():
         results_dict[key] = float(value) if isinstance(value, (int, float, np.floating)) else value
     
+    metrics_per_epoch = train_result.get('metrics_per_epoch', {})
+    for key, value in metrics_per_epoch.items():
+        if isinstance(value, (int, float, np.floating)):
+            results_dict[key] = float(value)
+
     return results_dict
 
 
@@ -127,6 +134,8 @@ def main(args):
         print(model_config)
         print(train_config)
     
+    KST = timezone(timedelta(hours=9))
+    start_kst = datetime.now(KST)
     start = time.time()    
     
     for seed in range(args.runs):
@@ -178,6 +187,7 @@ def main(args):
             summary = {
                 'model_config': model_config,
                 'train_config': save_train_config,
+                'start_time_kst': start_kst.isoformat(timespec='seconds'),
                 'mean_metrics': mean_metrics,
                 'std_metrics': std_metrics,
                 'total_time': total_time,

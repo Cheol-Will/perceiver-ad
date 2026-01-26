@@ -3,25 +3,25 @@ set -euo pipefail
 
 data_list=(    
     wine
-    # optdigits 
-    # wine 
-    # glass 
-    # wbc 
-    # ionosphere 
-    # arrhythmia 
-    # breastw 
-    # pima  
-    # cardio cardiotocography thyroid 
+    optdigits 
+    wine 
+    glass 
+    wbc 
+    ionosphere 
+    arrhythmia 
+    breastw 
+    pima  
+    cardio cardiotocography thyroid 
     
-    # satellite 
-    # "satimage-2" 
-    # pendigits
+    satellite 
+    "satimage-2" 
+    pendigits
 
-    # mammography 
-    # campaign 
-    # shuttle 
-    # fraud 
-    # nslkdd 
+    mammography 
+    campaign 
+    shuttle 
+    fraud 
+    nslkdd 
     census
 ) 
 

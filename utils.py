@@ -33,6 +33,7 @@ def get_parser():
     parser.add_argument('--exp_name', type=str, default=None)
     parser.add_argument('--runs', type=int, default=10)
     parser.add_argument('--train_ratio', type=float, default=1.0)
+    parser.add_argument('--batch_size', type=int, default=None)
 
     # Model config
     parser.add_argument('--num_heads', type=int, default=None)
@@ -70,6 +71,7 @@ def get_parser():
     parser.add_argument('--swap_ratio', type=float, default=None)
     parser.add_argument('--num_eval_repeat', type=int, default=None)
     parser.add_argument('--byol_loss_weight', type=float, default=None)
+    parser.add_argument('--dacl_alpha', type=float, default=None)
     parser.add_argument('--imix_loss_weight', type=float, default=None)
     parser.add_argument('--share_mask', action='store_true')
 

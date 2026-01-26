@@ -2,7 +2,7 @@
 set -euo pipefail
 
 data_list=(    
-    # wine 
+    wine 
     # glass 
     # wbc 
     # ionosphere 
@@ -10,20 +10,22 @@ data_list=(
     # breastw 
     # pima  
 
-    # cardio cardiotocography thyroid 
+    # cardio 
+    # cardiotocography
+
+    #  thyroid 
     # optdigits 
-    "satimage-2" 
-    satellite 
-    pendigits
-    mammography 
+    # "satimage-2" 
+    # satellite 
+    
+    # pendigits
+    # mammography 
+    # campaign 
 
-    campaign 
     shuttle 
-    # fraud 
+    fraud 
 
-
-    nslkdd 
-
+    # nslkdd 
     # census
 ) 
 
@@ -31,18 +33,14 @@ model_type="TAECL"
 temperature_list=(0.2)
 # temperature_list=(0.1)
 # temperature_list=(1.0)
-# contrastive_loss_weight_list=(0.001)
-# contrastive_loss_weight_list=(0.05)
 contrastive_loss_weight_list=(0.01)
-# contrastive_loss_weight_list=(0.01)
-# contrastive_loss_weight_list=(0.1)
-# contrastive_loss_weight_list=(0.2)
-
-
+# epoch_list=(10 30 50 100 200)
+contrastive_loss_weight=0.01
+batch_size_list=(128 256)
 for data in "${data_list[@]}"; do
     for temperature in "${temperature_list[@]}"; do
-        for contrastive_loss_weight in "${contrastive_loss_weight_list[@]}"; do
-            exp_name="TAECL"
+        for batch_size in "${batch_size_list[@]}"; do
+            exp_name="TAECL-250124-bs$batch_size"
             # exp_name="$model_type-temp$temperature-contra$contrastive_loss_weight"
             echo "Running $exp_name on $data."
             python main.py \
@@ -50,7 +48,8 @@ for data in "${data_list[@]}"; do
                 --model_type $model_type \
                 --exp_name "$exp_name" \
                 --temperature "$temperature" \
-                --contrastive_loss_weight "$contrastive_loss_weight"
+                --contrastive_loss_weight "$contrastive_loss_weight" \
+                --batch_size $batch_size
         done
     done
 done

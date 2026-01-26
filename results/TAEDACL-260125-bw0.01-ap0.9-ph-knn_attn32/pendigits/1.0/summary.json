@@ -1,0 +1,121 @@
+{
+    "model_config": {
+        "num_features": 16,
+        "hidden_dim": 128,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.2,
+        "byol_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "projector_dim": null,
+        "byol_momentum": 0.99,
+        "use_flash_attn": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 128,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TAEDACL",
+        "dataset_name": "pendigits",
+        "base_path": "results/TAEDACL-260125-bw0.01-ap0.9-ph-knn_attn32/pendigits/1.0",
+        "exp_name": "TAEDACL-260125-bw0.01-ap0.9-ph-knn_attn32",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACL-260125-bw0.01-ap0.9/pendigits/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.9915941049319066,
+        "ap": 0.8489498009562737,
+        "f1": 0.7961538461538462
+    },
+    "std_metrics": {
+        "rauc_std": 0.004997758692764487,
+        "ap_std": 0.08987590800981944,
+        "f1_std": 0.10450094293494785
+    },
+    "total_time": 44.431989669799805,
+    "all_seeds": [
+        {
+            "rauc": 0.9891539301726969,
+            "ap": 0.9074372095592286,
+            "f1": 0.8461538461538461,
+            "run": 0,
+            "test_time": 4.5087103843688965
+        },
+        {
+            "rauc": 0.9910309876797812,
+            "ap": 0.8463277774646025,
+            "f1": 0.7756410256410257,
+            "run": 1,
+            "test_time": 5.289550304412842
+        },
+        {
+            "rauc": 0.9986251460782292,
+            "ap": 0.9576784573405763,
+            "f1": 0.9615384615384616,
+            "run": 2,
+            "test_time": 4.43428111076355
+        },
+        {
+            "rauc": 0.9967366314551301,
+            "ap": 0.9425241994211713,
+            "f1": 0.8846153846153846,
+            "run": 3,
+            "test_time": 2.370041608810425
+        },
+        {
+            "rauc": 0.9856213194014802,
+            "ap": 0.7417590367627936,
+            "f1": 0.7051282051282052,
+            "run": 4,
+            "test_time": 2.4450721740722656
+        },
+        {
+            "rauc": 0.985180220434912,
+            "ap": 0.7402175945699205,
+            "f1": 0.6794871794871795,
+            "run": 5,
+            "test_time": 4.0378851890563965
+        },
+        {
+            "rauc": 0.9986155984815501,
+            "ap": 0.9680776986073379,
+            "f1": 0.9230769230769231,
+            "run": 6,
+            "test_time": 4.4369800090789795
+        },
+        {
+            "rauc": 0.9936584862858322,
+            "ap": 0.8530107485758324,
+            "f1": 0.7948717948717948,
+            "run": 7,
+            "test_time": 4.081265211105347
+        },
+        {
+            "rauc": 0.9918234382041353,
+            "ap": 0.8189881718053503,
+            "f1": 0.7756410256410257,
+            "run": 8,
+            "test_time": 4.7935471534729
+        },
+        {
+            "rauc": 0.985495291125318,
+            "ap": 0.7134771154559236,
+            "f1": 0.6153846153846154,
+            "run": 9,
+            "test_time": 4.022813320159912
+        }
+    ]
+}
