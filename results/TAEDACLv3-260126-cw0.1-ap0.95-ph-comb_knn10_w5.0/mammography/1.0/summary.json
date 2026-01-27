@@ -1,0 +1,120 @@
+{
+    "model_config": {
+        "num_features": 6,
+        "hidden_dim": 128,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.2,
+        "contra_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "use_flash_attn": false,
+        "use_swap": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 128,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TAEDACLv3",
+        "dataset_name": "mammography",
+        "base_path": "results/TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn10_w5.0/mammography/1.0",
+        "exp_name": "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn10_w5.0",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACLv3-260126-cw0.1-ap0.95/mammography/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.5034166126806185,
+        "ap": 0.08415944430892672,
+        "f1": 0.07232075792169879
+    },
+    "std_metrics": {
+        "rauc_std": 0.1595039793101671,
+        "ap_std": 0.09947160458837596,
+        "f1_std": 0.12169237945109439
+    },
+    "total_time": 33.90182852745056,
+    "all_seeds": [
+        {
+            "rauc": 0.5728005379827057,
+            "ap": 0.056334182569382676,
+            "f1": 0.058823529411764705,
+            "run": 0,
+            "test_time": 3.956719160079956
+        },
+        {
+            "rauc": 0.372593161141312,
+            "ap": 0.032866316096713144,
+            "f1": 0.0,
+            "run": 1,
+            "test_time": 3.1355538368225098
+        },
+        {
+            "rauc": 0.4564631862096161,
+            "ap": 0.08146802152828048,
+            "f1": 0.138328530259366,
+            "run": 2,
+            "test_time": 2.9985811710357666
+        },
+        {
+            "rauc": 0.4204560178013126,
+            "ap": 0.03842710418397427,
+            "f1": 0.03076923076923077,
+            "run": 3,
+            "test_time": 2.851672649383545
+        },
+        {
+            "rauc": 0.19138981212855252,
+            "ap": 0.02587751643968949,
+            "f1": 0.0,
+            "run": 4,
+            "test_time": 3.084216356277466
+        },
+        {
+            "rauc": 0.5214013604484128,
+            "ap": 0.07654738869818234,
+            "f1": 0.06474820143884892,
+            "run": 5,
+            "test_time": 2.853851795196533
+        },
+        {
+            "rauc": 0.6294101906881109,
+            "ap": 0.06083386702627583,
+            "f1": 0.007662835249042145,
+            "run": 6,
+            "test_time": 3.2549057006835938
+        },
+        {
+            "rauc": 0.5537690476861111,
+            "ap": 0.04683625096110068,
+            "f1": 0.0,
+            "run": 7,
+            "test_time": 3.1837873458862305
+        },
+        {
+            "rauc": 0.8304949581725487,
+            "ap": 0.3781909401172622,
+            "f1": 0.4153846153846154,
+            "run": 8,
+            "test_time": 3.189687490463257
+        },
+        {
+            "rauc": 0.48538785454750305,
+            "ap": 0.044212855468406004,
+            "f1": 0.00749063670411985,
+            "run": 9,
+            "test_time": 2.8499906063079834
+        }
+    ]
+}

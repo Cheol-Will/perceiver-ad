@@ -134,7 +134,7 @@ def main(args):
         print(model_config)
         print(train_config)
     
-    KST = timezone(timedelta(hours=9))
+    KST = timezone(timedelta(hours=9)) # remove for submission
     start_kst = datetime.now(KST)
     start = time.time()    
     

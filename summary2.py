@@ -36,24 +36,28 @@ class Config:
             }
     
     def canon_metric_name(self, name: str) -> str:
-        """메트릭 이름을 표준 형식으로 변환"""
         return self.METRIC_ALIAS.get(name, name)
 
 
 class ResultCollector:
     
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, models: List[str]):
         self.config = config
+        self.models = models
     
     def collect_results(self) -> List[Dict]:
         rows = []
-        pattern = os.path.join(self.config.BASE_DIR, "*", "*", "*", "summary.json")
-        
-        for path in glob.glob(pattern):
-            row = self._parse_result_file(path)
-            if row:
-                rows.append(row)
-        
+
+        base = self.config.BASE_DIR
+        model_pats = self.models if (self.models and len(self.models) > 0) else ["*"]
+
+        for m in model_pats:
+            pattern = os.path.join(base, m, "*", "*", "summary.json")
+            for path in glob.glob(pattern):
+                row = self._parse_result_file(path)
+                if row:
+                    rows.append(row)
+
         return rows
     
     def _parse_result_file(self, path: str) -> Optional[Dict]:
@@ -445,12 +449,7 @@ class ResultRenderer:
         
         if use_sort:
             df_render = df_render.sort_values(by=['AVG_AUC'])
-                    
-        if is_print:
-            print(base)
-            print(df_render)
-            print()
-        
+                            
         return df_render
     
    
@@ -530,22 +529,6 @@ class ResultRenderer:
 
 
 def main(args):
-    config = Config()
-    config.NUM_SEEDS = args.num_seeds
-    collector = ResultCollector(config)
-    
-    converter = DataFrameConverter(config)
-    
-    print("Collecting results...")
-    results = collector.collect_results()
-    
-    print("Converting to DataFrames...")
-    df_all, dfs = converter.convert_results_to_csv(results, save_csv=False)
-    
-    print("Creating pivot tables...")
-    pivots = converter.make_pivots(dfs, save_csv=False)
-    
-    renderer = ResultRenderer(config)
     
     data = [
         # group 1
@@ -573,15 +556,12 @@ def main(args):
         "nslkdd",
         "census"
     ]
-
     # data.sort()
 
     models = [
         'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',
         'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent', 
         'NPTAD', ####
-        # 'RetAugv2', ####
-        # 'RetAug',  
     ]
     
     my_models = [
@@ -594,19 +574,31 @@ def main(args):
         # "TAECL-250124-bs128",
         # "TAECL-250124-bs256",
 
-        "TAE-tunedv2", # 4.35
-        "TAECL-250124", # 3.25
-        # "TAECL-250124-ph-comb_knn_attn1_w0.1", # 3.50
-        # "TAECL-250124-ph-comb_knn_attn5_w0.1", # 3.40
+        # "TAE-tunedv2", # 0.7123 (4.35)
+        # "TAECL-250124", # 0.7267 (3.25)
+        # "TAEDACLv3-260126-cw0.1-ap0.95", # 0.7302 (3.05)
+        # "TAEIMIXv2-260126-cw0.1-ap0.05", # 0.7279 (3.40)
+        # "TAEDACLv3-swap-260127-cw0.1-ap0.95", # 0.7289 (3.30)
+        # "TAEDACLv3-swap-260127-cw0.1-ap0.90", # 0.7256 (3.35)
+
+        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn10_w1.0",
+        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn5_w0.1", # 0.7312 (3.25)
+        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn5_w0.01", # 0.7312 (3.10)
 
         # "TAECL-250124-ph-comb_knn_attn1_w0.01", # 3.15
         # "TAECL-250124-ph-comb_knn_attn_cls1_w0.01", # 3.20
-        # "TAECL-250124-ph-comb_knn_attn5_w0.01", # 3.10
+        # "TAECL-250124-ph-comb_knn_attn5_w0.01", # 0.7284 (3.10)
         # "TAECL-250124-ph-comb_knn_attn_cls5_w0.01", # 3.10
         
         # "TAEDACL-260125-bw0.1-ap0.9", # 3.75
-        "TAEDACL-260125-bw0.01-ap0.9", # 3.75
-        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn1_w0.1", # 3.55
+        # "TAEDACL-260126-bw0.1-ap0.95",
+        # "TAEDACLv2-260126-cw0.1-ap0.9",
+        # "TAEDACLv3-260126-cw0.1-ap0.9",
+        # "TAEDACLv3-260126-cw0.1-ap0.95", # 3.10
+
+
+        # "TAEDACL-260125-bw0.01-ap0.9", # 0.7262 (3.75)
+        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn1_w0.1", # 0.7307 (3.55)
         # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls1_w0.1", # 3.65
         # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn5_w0.1", # 3.35
         # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls5_w0.1", # 3.65
@@ -617,40 +609,13 @@ def main(args):
         # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls5_w0.01", # 3.40
 
 
-        # "TAEIMIX-260125-iw0.1-ap0.9", # 4.50
-
-        
-        "TAEIMIX-260125-iw0.01-ap0.9", # 3.90
-        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn_cls1_w0.1", # 3.65
-        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn_cls5_w0.1", # 3.65
-        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn1_w0.1", # 3.70
-        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn5_w0.1", # 3.65
-
-        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn_cls1_w0.01", # 3.65 
-        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn_cls5_w0.01", # 3.60
-        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn1_w0.01", # 3.75
-        # "TAEIMIX-260125-iw0.01-ap0.9-ph-comb_knn_attn5_w0.01", # 3.65
+        # "TAEDACLv2-260126-bw0.01-ap0.9", # 
+        # "TAEDACLv2-260126-cw0.01-ap0.9",
+        # "TAEDACLv3-260126-cw0.01-ap0.9",
 
         # "TAEIMIX-260125-iw0.1-ap0.9", # 4.50
-        # "TAEIMIX-260125-iw0.1-ap0.9-ph-comb_knn_attn1_w0.1", # 4.35
-        # "TAEIMIX-260125-iw0.1-ap0.9-ph-comb_knn_attn_cls1_w0.1", # 4.30
-        # "TAEIMIX-260125-iw0.1-ap0.9-ph-comb_knn_attn5_w0.1", # 4.30
-        # "TAEIMIX-260125-iw0.1-ap0.9-ph-comb_knn_attn_cls5_w0.1", # 4.30
-        # "TAEDACL-bw0.01", # 3.9
-        # "TAEDACL-bw0.1", # 4.0
-        # "TAEIMIX-iw0.1", # 5.2
-        
-        # "TADAM-tuned",
-        # "TADAM-tuned--recon_weight1.0_cls_knn5",
-        # "TADAM-tuned_knn5",
-        # "TADAM-tuned_cls_knn5",
-        # "TADAM-tuned--knn5",
-        # "TADAM-default",
-        # "TADAM-comb0.1_1.0_knn5",
-        # "TADAM-d64-lr0.001",
-        # "TMLM-tuned-r100",
-
-        # "TCL-temp0.1-mixup_alpha1.0",
+        # "TAEIMIXv2-260126-cw0.1-ap0.1",
+                
         # "TMLM-tuned",
         # "MBT-d128-top_k5-temp0.1",
         # "MQ-d128-qs16384-mo0.999-top_k5-temp0.1",
@@ -661,6 +626,7 @@ def main(args):
     # prefix = 'TAEDACL-260125-bw0.01-ap0.9-ph'
     # prefix = 'TAEIMIX-260125-iw0.01-ap0.9-ph'
     # prefix = 'TAEIMIX-260125-iw0.1-ap0.9-ph'
+    prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ph'
     # my_models.append(prefix)
     top_k_list = [1, 5, 10, 16, 32, 64]
     weight_list = [0.01, 0.1, 1.0, 2.0, 5.0, 10.0]
@@ -676,10 +642,18 @@ def main(args):
             # my_models.append(f"{prefix}-comb_knn_attn{top_k}_w{weight}")
             # my_models.append(f"{prefix}-comb_knn_attn_cls{top_k}_w{weight}")
             pass
+    
+    config = Config()
+    config.NUM_SEEDS = args.num_seeds
+    collector = ResultCollector(config, models+my_models)
+    converter = DataFrameConverter(config)
+    
+    results = collector.collect_results()
+    df_all, dfs = converter.convert_results_to_csv(results, save_csv=False)
+    pivots = converter.make_pivots(dfs, save_csv=False)
+    renderer = ResultRenderer(config)
 
-    contra_list = [0.01, 0.1, 1.0]
-    hidden_dim_list = [32, 64, 128]
-    temp_list = [0.1]
+    
     keys = [
         # 'ratio_1.0_AUCROC', 
         'ratio_1.0_AUCPR', 
@@ -688,15 +662,19 @@ def main(args):
     
     for base in keys:
         print(f"\nRendering {base}...")
-        renderer.render(
+        result_df = renderer.render(
             pivots, data, models, my_models, base,
             add_avg_rank=True, use_rank=args.use_rank, use_std=args.use_std,
             use_baseline_pr=True, use_sort=args.use_sort, is_plot=False,
         )
-
+        # rename prefix
+        prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ph'
+        result_df.index = result_df.index.map(lambda x: x.replace(prefix, 'TAEDACLv3'))
+        print(result_df)
         
   
     if args.synthetic:
+        # need to be changed
         print("\n" + "=" * 80)
         print("Synthetic Data Analysis")
         print("=" * 80)

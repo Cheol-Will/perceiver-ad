@@ -67,6 +67,7 @@ def get_parser():
     parser.add_argument('--sinkhorn_eps', type=float, default=None)
     parser.add_argument('--reconstruction_loss_weight', type=float, default=None)
     parser.add_argument('--contrastive_loss_weight', type=float, default=None)
+    parser.add_argument('--contra_loss_weight', type=float, default=None)
     parser.add_argument('--mask_ratio', type=float, default=None)
     parser.add_argument('--swap_ratio', type=float, default=None)
     parser.add_argument('--num_eval_repeat', type=int, default=None)
@@ -74,6 +75,7 @@ def get_parser():
     parser.add_argument('--dacl_alpha', type=float, default=None)
     parser.add_argument('--imix_loss_weight', type=float, default=None)
     parser.add_argument('--share_mask', action='store_true')
+    parser.add_argument('--use_swap', action='store_true')
 
     # Train config
     parser.add_argument('--learning_rate', type=float, default=None)

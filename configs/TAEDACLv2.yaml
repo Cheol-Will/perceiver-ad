@@ -1,0 +1,191 @@
+default: 
+  train_config:
+    data_dir: 'Data/'
+    epochs: 200
+    learning_rate: 0.01
+    sche_gamma: 0.95
+    batch_size: 512
+    random_seed: 42
+    num_workers: 0
+    preprocess: 'standard'
+    patience: 20
+    min_delta: 0
+    use_amp: false
+  model_config:
+    num_features: null
+    hidden_dim: 16
+    depth: 4
+    depth_enc: null
+    depth_dec: null
+    num_heads: 4
+    mlp_ratio: 4.0
+    dropout_prob: 0.0
+    temperature: 0.2
+    contra_loss_weight: 0.01
+    dacl_alpha: 0.9
+    use_flash_attn: false
+
+wine:
+  epochs: 200
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  byol_loss_weight: 0.1
+  batch_size: 64
+
+glass:
+  epochs: 200
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  byol_loss_weight: 0.1
+  batch_size: 64
+
+wbc:
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  byol_loss_weight: 0.1
+
+ionosphere:
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  byol_loss_weight: 0.1
+
+arrhythmia:  
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  byol_loss_weight: 0.1
+
+breastw: 
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  byol_loss_weight: 0.1
+  batch_size: 128
+
+pima: 
+  patience: 10
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  byol_loss_weight: 0.1
+  batch_size: 128
+
+optdigits:
+  # preprocess: 'none'
+  patience: 50
+  hidden_dim: 64
+  learning_rate: 0.01
+  temperature: 0.1
+  byol_loss_weight: 0.1
+  batch_size: 128
+
+cardio: 
+  patience: 50
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
+  batch_size: 128
+
+cardiotocography: 
+  patience: 50
+  hidden_dim: 128
+  temperature: 0.2
+  byol_loss_weight: 0.01
+  learning_rate: 0.001
+  batch_size: 128
+ 
+thyroid:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
+  batch_size: 128
+
+satellite:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
+  batch_size: 128
+
+satimage-2:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
+  batch_size: 128
+
+pendigits:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
+  batch_size: 128
+
+mammography:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
+  batch_size: 128
+
+campaign:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
+  batch_size: 128
+
+shuttle:
+  patience: 10
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
+
+fraud:
+  batch_size: 2048
+  patience: 20
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
+
+nslkdd:
+  batch_size: 1024
+  patience: 20
+  epochs: 50
+  use_amp: true
+  use_flash_attn: true
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
+
+census:
+  batch_size: 128
+  patience: 20
+  epochs: 50
+  use_amp: true
+  use_flash_attn: true
+  hidden_dim: 128
+  learning_rate: 0.001
+  temperature: 0.2
+  byol_loss_weight: 0.01
