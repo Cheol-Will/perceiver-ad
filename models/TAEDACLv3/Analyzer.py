@@ -3,12 +3,7 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import json
-from models.TAECL.Trainer import Trainer 
-from sklearn.manifold import TSNE 
+from models.TAEDACLv3.Trainer import Trainer 
 
 class Analyzer(Trainer):
     def __init__(self, model_config: dict, train_config: dict):
@@ -17,24 +12,34 @@ class Analyzer(Trainer):
         self.train_config = train_config
 
     def get_score_and_latent(self):
-        parameter_path = os.path.join(self.train_config['base_path'], 'model.pt')
-        
-        if os.path.exists(parameter_path):
-            print("Load parameters")
-            self.model.load_state_dict(torch.load(parameter_path)) 
+        path = os.path.join(self.path, "model.pth")
+        path2 = path.replace('results_analysis', 'results') # replace results_analysis with results
+        print(path)
+        print(path2)
+        if os.path.exists(path):
+            print(f"Load parameters from {path}")
+            obj = torch.load(path, map_location=self.device)
+            state = obj if isinstance(obj, dict) else obj.state_dict()
+            self.model.load_state_dict(state)
+            self.model.eval()
+        elif os.path.exists(path2):
+            print(f"Load parameters from {path2}")
+            obj = torch.load(path2, map_location=self.device)
+            state = obj if isinstance(obj, dict) else obj.state_dict()
+            self.model.load_state_dict(state)
             self.model.eval()
         else:
             print("Parameter does not exist. Start training")
             self.training()
-            torch.save(self.model.state_dict(), parameter_path)
-
+            torch.save(self.model.state_dict(), path)
+        
         model = self.model
         model.eval() 
         print("Build memory bank for evaluation")
         model.build_eval_memory_bank(self.train_loader, self.device, False)
 
         score, latent = [], []
-        x, x_hat, contrastive_score = [], [], []
+        x, x_hat, contra_score = [], [], []
         attn_enc, attn_dec = [], []
         label = []
         with torch.no_grad():
@@ -42,8 +47,8 @@ class Analyzer(Trainer):
                 x_input = x_input.to(self.device)
                 output = model(x_input)
                 
-                score.append(output['reconstruction_loss'].data.cpu()) 
-                contrastive_score.append(output['contrastive_score'].data.cpu()) 
+                score.append(output['recon_loss'].data.cpu()) 
+                contra_score.append(output['contra_score'].data.cpu()) 
                 latent.append(output['latent'].data.cpu())
                 x.append(x_input.data.cpu())
                 x_hat.append(output['x_hat'].data.cpu())
@@ -57,8 +62,8 @@ class Analyzer(Trainer):
                 x_input = x_input.to(self.device)
                 output = model(x_input)
                 
-                score.append(output['reconstruction_loss'].data.cpu()) 
-                contrastive_score.append(output['contrastive_score'].data.cpu()) 
+                score.append(output['recon_loss'].data.cpu()) 
+                contra_score.append(output['contra_score'].data.cpu()) 
                 latent.append(output['latent'].data.cpu())
                 x.append(x_input.data.cpu())
                 x_hat.append(output['x_hat'].data.cpu())
@@ -72,7 +77,7 @@ class Analyzer(Trainer):
                 label.extend(batch_labels)
 
         score = torch.cat(score, axis=0).numpy()
-        contrastive_score = torch.cat(contrastive_score, axis=0).numpy()
+        contra_score = torch.cat(contra_score, axis=0).numpy()
         latent = torch.cat(latent, axis=0) 
         x = torch.cat(x, axis=0) 
         x_hat = torch.cat(x_hat, axis=0) 
@@ -81,7 +86,7 @@ class Analyzer(Trainer):
 
         return {
             'score': score,
-            'contrastive_score': contrastive_score,
+            'contra_score': contra_score,
             'label': label,
             'latent': latent,
             'x': x,

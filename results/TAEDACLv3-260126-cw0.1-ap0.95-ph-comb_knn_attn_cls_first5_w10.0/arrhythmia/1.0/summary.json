@@ -1,0 +1,120 @@
+{
+    "model_config": {
+        "num_features": 274,
+        "hidden_dim": 64,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.1,
+        "contra_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "use_flash_attn": false,
+        "use_swap": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TAEDACLv3",
+        "dataset_name": "arrhythmia",
+        "base_path": "results/TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_cls_first5_w10.0/arrhythmia/1.0",
+        "exp_name": "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_cls_first5_w10.0",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACLv3-260126-cw0.1-ap0.95/arrhythmia/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.7899748783168473,
+        "ap": 0.5996065798174162,
+        "f1": 0.543939393939394
+    },
+    "std_metrics": {
+        "rauc_std": 0.03316493796906297,
+        "ap_std": 0.04604458789333932,
+        "f1_std": 0.03859920970562728
+    },
+    "total_time": 73.96583938598633,
+    "all_seeds": [
+        {
+            "rauc": 0.8112733553148062,
+            "ap": 0.6115258018419176,
+            "f1": 0.5606060606060606,
+            "run": 0,
+            "test_time": 8.4296875
+        },
+        {
+            "rauc": 0.7943947244465379,
+            "ap": 0.5898158244703027,
+            "f1": 0.5454545454545454,
+            "run": 1,
+            "test_time": 5.996914863586426
+        },
+        {
+            "rauc": 0.7752394410425499,
+            "ap": 0.5997319028759975,
+            "f1": 0.5151515151515151,
+            "run": 2,
+            "test_time": 6.960130214691162
+        },
+        {
+            "rauc": 0.821400533835767,
+            "ap": 0.6854834416718729,
+            "f1": 0.5757575757575758,
+            "run": 3,
+            "test_time": 7.162714958190918
+        },
+        {
+            "rauc": 0.699246349505417,
+            "ap": 0.4940625850593858,
+            "f1": 0.45454545454545453,
+            "run": 4,
+            "test_time": 6.890655994415283
+        },
+        {
+            "rauc": 0.7840320301460199,
+            "ap": 0.5642043688459397,
+            "f1": 0.5303030303030303,
+            "run": 5,
+            "test_time": 6.23879075050354
+        },
+        {
+            "rauc": 0.8137070183702309,
+            "ap": 0.6262029542258425,
+            "f1": 0.5909090909090909,
+            "run": 6,
+            "test_time": 6.381218910217285
+        },
+        {
+            "rauc": 0.7947872507458,
+            "ap": 0.618324939544029,
+            "f1": 0.5454545454545454,
+            "run": 7,
+            "test_time": 6.7738916873931885
+        },
+        {
+            "rauc": 0.8111163447951013,
+            "ap": 0.5959564409596241,
+            "f1": 0.5909090909090909,
+            "run": 8,
+            "test_time": 7.293323278427124
+        },
+        {
+            "rauc": 0.7945517349662428,
+            "ap": 0.6107575386792508,
+            "f1": 0.5303030303030303,
+            "run": 9,
+            "test_time": 7.5185227394104
+        }
+    ]
+}

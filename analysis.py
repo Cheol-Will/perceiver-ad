@@ -47,8 +47,8 @@ def train_test(args, model_config, train_config, run):
         plot_score_hist(train_config, score, label, score_name='Anomaly_Score')
         print("Saved anoamly score histogram.")
     if args.plot_contra_histogram:
-        contrastive_score = output['contrastive_score']
-        plot_score_hist(train_config, contrastive_score, label, score_name='Contrastive_Score')
+        contra_score = output['contra_score']
+        plot_score_hist(train_config, contra_score, label, score_name='Contrastive_Score')
         print("Saved contrastive anoamly score histogram.")
     if args.plot_latent_norm_histogram:
         latent_norm = np.linalg.norm(latent, axis=1)

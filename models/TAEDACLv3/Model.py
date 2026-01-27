@@ -199,6 +199,7 @@ class TAEDACLv3(nn.Module):
         """
         self.eval()
         z, attn_enc = self.encoder(x)
+        z = F.normalize(z, dim=-1)
         bank = self.memory_bank
         ab = torch.einsum("bd,nd->bn", z, bank)
         aa = torch.einsum("bd,bd->b", z, z).unsqueeze(1)
@@ -221,7 +222,6 @@ class TAEDACLv3(nn.Module):
         self, 
         train_loader, 
         device, 
-        use_penultimate=False,
         use_amp=False,
     ):
         self.eval()
@@ -237,8 +237,6 @@ class TAEDACLv3(nn.Module):
             # attn_enc: (depth, batch, head, token, token)                
             if isinstance(attn_enc, (list, tuple)):
                 stacked = torch.stack([a.detach().cpu() for a in attn_enc], dim=0)
-                if use_penultimate:
-                    stacked = stacked[-1, :, :, :, :].unsqueeze(0)
                 all_attns.append(stacked)
             else:
                 # depth = 1 case
@@ -255,48 +253,64 @@ class TAEDACLv3(nn.Module):
 
     @torch.no_grad()
     def forward_knn_attn(
-        self, 
-        x, 
-        use_cls = False,    
-        use_penultimate = False,
+        self,
+        x,
+        use_cls=False,
+        use_first=False,
+        use_penul=False,
     ):
-        if use_cls:
-            prefix = 'knn_attn_cls'
-        else:
-            prefix = 'knn_attn'
-        if use_penultimate:
-            prefix += '_penul'
+        prefix = "knn_attn_cls" if use_cls else "knn_attn"
+        if use_penul:
+            prefix += "_penul"
+        if use_first:
+            prefix += "_first"
 
         self.eval()
-        z, attn_enc = self.encoder(x)
-        if isinstance(attn_enc, (list, tuple)):
-            attn_enc = torch.stack([a.detach().cpu() for a in attn_enc], dim=0)
-            if use_penultimate:
-                attn_enc = attn_enc[-1, :, :, :, :].unsqueeze(0)
-        else:
-            attn_enc = attn_enc.detach().cpu()
-        attn_enc = attn_enc.permute(1, 0, 2, 3, 4).contiguous() # (B, L, H, F, F)
-        bank = self.attn_bank # (N, L, H, F, F)
+        _, attn_enc = self.encoder(x)
 
+        if isinstance(attn_enc, (list, tuple)):
+            L = len(attn_enc)
+            if use_penul:
+                idx = -2 if L >= 2 else -1
+            elif use_first:
+                idx = 0
+            else:
+                idx = None
+
+            if idx is None:
+                attn_enc = torch.stack(attn_enc, dim=0) # (L,B,H,F,F)
+            else:
+                attn_enc = attn_enc[idx].unsqueeze(0) # (1,B,H,F,F)
+        
         if use_cls:
-            attn_enc = attn_enc[:, :, :, 0, :].unsqueeze(3)
-            bank = bank[:, :, :, 0, :].unsqueeze(3)
-        ab = torch.einsum("blhij,nlhij->bn", attn_enc, bank) # (B, N)
-        aa = torch.einsum("blhij,blhij->b", attn_enc, attn_enc).unsqueeze(1) # (B, 1)
-        bb = torch.einsum("nlhij,nlhij->n", bank, bank).unsqueeze(0) # (1, N)
+            attn_enc = attn_enc[:, :, :, 0, :].unsqueeze(3) # (L,B,H,1,F)
+
+        attn_enc = attn_enc.detach().to("cpu", non_blocking=True)
+        attn_enc = attn_enc.permute(1, 0, 2, 3, 4).contiguous()  # (B,L,H,*,F)
+
+        bank = self.attn_bank  # (N,L,H,F,F)
+        if use_penul:
+            bank = bank[:, -1:, :, :, :]  # (N,1,H,F,F)
+        elif use_first:
+            bank = bank[:, 0:1, :, :, :]  # (N,1,H,F,F)
+        if use_cls:
+            bank = bank[:, :, :, 0, :].unsqueeze(3)  # (N,L,H,1,T)
+
+        ab = torch.einsum("blhij,nlhij->bn", attn_enc, bank)
+        aa = torch.einsum("blhij,blhij->b", attn_enc, attn_enc).unsqueeze(1)
+        bb = torch.einsum("nlhij,nlhij->n", bank, bank).unsqueeze(0)
         dist = (aa + bb - 2.0 * ab).clamp_min_(0.0)
 
         top_k_list = [1, 5, 10, 16, 32, 64]
-        scores = {}
-        nn_dists, _ = torch.topk(dist, k=min(max(top_k_list), dist.shape[1]), dim=1, largest=False)
-        for top_k in top_k_list:
-            kk = min(top_k, nn_dists.shape[1])
-            scores[f"{prefix}{top_k}"] = nn_dists[:, :kk].mean(dim=1)
+        Kmax = min(max(top_k_list), dist.shape[1])
+        nn_dists, _ = torch.topk(dist, k=Kmax, dim=1, largest=False)
 
-        return {
-            "scores": scores,
-            "nn_dists": nn_dists,
-        }
+        scores = {}
+        for k in top_k_list:
+            kk = min(k, Kmax)
+            scores[f"{prefix}{k}"] = nn_dists[:, :kk].mean(dim=1)
+
+        return {"scores": scores, "nn_dists": nn_dists}
     
     @torch.no_grad()
     def forward_combined(
@@ -308,13 +322,15 @@ class TAEDACLv3(nn.Module):
         assert keyword is not None
         if keyword == 'knn':
             knn_scores = self.forward_knn(x)
-        elif keyword == 'knn_attn':
-            use_cls= 'cls' in keyword
-            use_penul= 'penul' in keyword
+        elif 'knn_attn' in keyword:
+            use_cls = 'cls' in keyword
+            use_penul = 'penul' in keyword
+            use_first = 'first' in keyword
             knn_scores = self.forward_knn_attn(
                 x, 
                 use_cls=use_cls,
-                use_penultimate=use_penul
+                use_penul=use_penul,
+                use_first=use_first,
             )
         else:
             raise ValueError(f"Unknown keyword: {keyword}")

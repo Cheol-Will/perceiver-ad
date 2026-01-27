@@ -1,0 +1,120 @@
+{
+    "model_config": {
+        "num_features": 21,
+        "hidden_dim": 128,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.2,
+        "contra_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "use_flash_attn": false,
+        "use_swap": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 128,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 50,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TAEDACLv3",
+        "dataset_name": "cardiotocography",
+        "base_path": "results/TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_cls_first10_w0.01/cardiotocography/1.0",
+        "exp_name": "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_cls_first10_w0.01",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACLv3-260126-cw0.1-ap0.95/cardiotocography/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.7881931278386599,
+        "ap": 0.720070515544025,
+        "f1": 0.6283948682251307
+    },
+    "std_metrics": {
+        "rauc_std": 0.014879951831268093,
+        "ap_std": 0.015106575802746032,
+        "f1_std": 0.018272139708391776
+    },
+    "total_time": 39.52714133262634,
+    "all_seeds": [
+        {
+            "rauc": 0.7964081836743198,
+            "ap": 0.7160521122127136,
+            "f1": 0.6416309012875536,
+            "run": 0,
+            "test_time": 3.728816032409668
+        },
+        {
+            "rauc": 0.7677767823659318,
+            "ap": 0.7140460250624052,
+            "f1": 0.6158798283261803,
+            "run": 1,
+            "test_time": 3.332139015197754
+        },
+        {
+            "rauc": 0.7844962290095421,
+            "ap": 0.7229317505462145,
+            "f1": 0.628755364806867,
+            "run": 2,
+            "test_time": 3.9930942058563232
+        },
+        {
+            "rauc": 0.8041923621817576,
+            "ap": 0.739991434691946,
+            "f1": 0.640171858216971,
+            "run": 3,
+            "test_time": 4.325991868972778
+        },
+        {
+            "rauc": 0.784967602816784,
+            "ap": 0.7254891063934982,
+            "f1": 0.630901287553648,
+            "run": 4,
+            "test_time": 3.2802443504333496
+        },
+        {
+            "rauc": 0.8113593274719779,
+            "ap": 0.7456763353099408,
+            "f1": 0.648068669527897,
+            "run": 5,
+            "test_time": 3.4813575744628906
+        },
+        {
+            "rauc": 0.758730832534689,
+            "ap": 0.6876294673312224,
+            "f1": 0.5793991416309013,
+            "run": 6,
+            "test_time": 3.3041980266571045
+        },
+        {
+            "rauc": 0.790473040543356,
+            "ap": 0.7194395683952165,
+            "f1": 0.6330472103004292,
+            "run": 7,
+            "test_time": 3.6180005073547363
+        },
+        {
+            "rauc": 0.7944445601900079,
+            "ap": 0.7108763151805525,
+            "f1": 0.6351931330472103,
+            "run": 8,
+            "test_time": 3.4957773685455322
+        },
+        {
+            "rauc": 0.7890823575982333,
+            "ap": 0.71857304031654,
+            "f1": 0.630901287553648,
+            "run": 9,
+            "test_time": 3.7459652423858643
+        }
+    ]
+}

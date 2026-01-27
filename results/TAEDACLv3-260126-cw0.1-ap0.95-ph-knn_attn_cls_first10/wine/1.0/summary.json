@@ -1,0 +1,120 @@
+{
+    "model_config": {
+        "num_features": 13,
+        "hidden_dim": 64,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.1,
+        "contra_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "use_flash_attn": false,
+        "use_swap": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 64,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TAEDACLv3",
+        "dataset_name": "wine",
+        "base_path": "results/TAEDACLv3-260126-cw0.1-ap0.95-ph-knn_attn_cls_first10/wine/1.0",
+        "exp_name": "TAEDACLv3-260126-cw0.1-ap0.95-ph-knn_attn_cls_first10",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACLv3-260126-cw0.1-ap0.95/wine/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.7776666666666666,
+        "ap": 0.4098357502291604,
+        "f1": 0.35000000000000003
+    },
+    "std_metrics": {
+        "rauc_std": 0.1827052878879597,
+        "ap_std": 0.2101083910685505,
+        "f1_std": 0.23769728648009428
+    },
+    "total_time": 19.5658221244812,
+    "all_seeds": [
+        {
+            "rauc": 0.885,
+            "ap": 0.45067568849782996,
+            "f1": 0.4,
+            "run": 0,
+            "test_time": 2.405768871307373
+        },
+        {
+            "rauc": 0.79,
+            "ap": 0.3059613188743624,
+            "f1": 0.2,
+            "run": 1,
+            "test_time": 1.653010368347168
+        },
+        {
+            "rauc": 0.8733333333333333,
+            "ap": 0.7371428571428571,
+            "f1": 0.6,
+            "run": 2,
+            "test_time": 1.4857170581817627
+        },
+        {
+            "rauc": 0.6266666666666667,
+            "ap": 0.21786940340086888,
+            "f1": 0.2,
+            "run": 3,
+            "test_time": 1.6205992698669434
+        },
+        {
+            "rauc": 0.7883333333333333,
+            "ap": 0.31495532117945907,
+            "f1": 0.3,
+            "run": 4,
+            "test_time": 1.1103875637054443
+        },
+        {
+            "rauc": 0.97,
+            "ap": 0.795588023088023,
+            "f1": 0.8,
+            "run": 5,
+            "test_time": 1.3543050289154053
+        },
+        {
+            "rauc": 0.8283333333333334,
+            "ap": 0.3314131974628932,
+            "f1": 0.3,
+            "run": 6,
+            "test_time": 2.4500181674957275
+        },
+        {
+            "rauc": 0.9133333333333333,
+            "ap": 0.5402483913239061,
+            "f1": 0.6,
+            "run": 7,
+            "test_time": 1.1519970893859863
+        },
+        {
+            "rauc": 0.29666666666666663,
+            "ap": 0.10772768804579103,
+            "f1": 0.0,
+            "run": 8,
+            "test_time": 1.7996182441711426
+        },
+        {
+            "rauc": 0.805,
+            "ap": 0.2967756132756133,
+            "f1": 0.1,
+            "run": 9,
+            "test_time": 1.3535573482513428
+        }
+    ]
+}

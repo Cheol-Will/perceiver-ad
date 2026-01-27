@@ -559,27 +559,26 @@ def main(args):
     # data.sort()
 
     models = [
-        'IForest', 'LOF', 'OCSVM', 'ECOD', 'KNN', 'PCA',
+        'IForest', 'LOF', 'OCSVM', 
+        'ECOD', 
+        'KNN', 'PCA',
         'DeepSVDD', 'GOAD', 'NeuTraL', 'ICL', 'MCM', 'DRL', 'Disent', 
         'NPTAD', ####
     ]
     
     my_models = [
-
         # 251130
         # "LATTE-patience-tuned",
         # "TAE-tuned", # 3.50
         # "TAECL-temp0.2-contra0.01", # 3.00
-        # "TAECL", # 3.75
-        # "TAECL-250124-bs128",
-        # "TAECL-250124-bs256",
-
-        # "TAE-tunedv2", # 0.7123 (4.35)
-        # "TAECL-250124", # 0.7267 (3.25)
-        # "TAEDACLv3-260126-cw0.1-ap0.95", # 0.7302 (3.05)
-        # "TAEIMIXv2-260126-cw0.1-ap0.05", # 0.7279 (3.40)
-        # "TAEDACLv3-swap-260127-cw0.1-ap0.95", # 0.7289 (3.30)
-        # "TAEDACLv3-swap-260127-cw0.1-ap0.90", # 0.7256 (3.35)
+        
+        "TAE-tunedv2", # 0.7123 (4.35)
+        "TAECL-250124", # 0.7267 (3.25)
+        "TAEDACLv3-260126-cw0.1-ap0.95", # 0.7302 (3.05)
+        "TAEIMIXv2-260126-cw0.1-ap0.05", # 0.7279 (3.40)
+        
+        "TAEDACLv3-swap-260127-cw0.1-ap0.95", # 0.7285 (3.30)
+        "TAEDACLv3-swap-260127-cw0.1-ap0.90", # 0.7249 (3.40)
 
         # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn10_w1.0",
         # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn5_w0.1", # 0.7312 (3.25)
@@ -596,27 +595,6 @@ def main(args):
         # "TAEDACLv3-260126-cw0.1-ap0.9",
         # "TAEDACLv3-260126-cw0.1-ap0.95", # 3.10
 
-
-        # "TAEDACL-260125-bw0.01-ap0.9", # 0.7262 (3.75)
-        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn1_w0.1", # 0.7307 (3.55)
-        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls1_w0.1", # 3.65
-        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn5_w0.1", # 3.35
-        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls5_w0.1", # 3.65
-        
-        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn1_w0.01", # 3.35
-        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls1_w0.01", # 3.35
-        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn5_w0.01", # 3.35
-        # "TAEDACL-260125-bw0.01-ap0.9-ph-comb_knn_attn_cls5_w0.01", # 3.40
-
-
-        # "TAEDACLv2-260126-bw0.01-ap0.9", # 
-        # "TAEDACLv2-260126-cw0.01-ap0.9",
-        # "TAEDACLv3-260126-cw0.01-ap0.9",
-
-        # "TAEIMIX-260125-iw0.1-ap0.9", # 4.50
-        # "TAEIMIXv2-260126-cw0.1-ap0.1",
-                
-        # "TMLM-tuned",
         # "MBT-d128-top_k5-temp0.1",
         # "MQ-d128-qs16384-mo0.999-top_k5-temp0.1",
     ]
@@ -634,6 +612,10 @@ def main(args):
         # my_models.append(f"{prefix}-knn{top_k}")
         # my_models.append(f"{prefix}-knn_attn{top_k}")
         # my_models.append(f"{prefix}-knn_attn_cls{top_k}")
+        # my_models.append(f"{prefix}-knn_attn_penul{top_k}")
+        # my_models.append(f"{prefix}-knn_attn_cls_penul{top_k}")
+        # my_models.append(f"{prefix}-knn_attn_first{top_k}")
+        # my_models.append(f"{prefix}-knn_attn_cls_first{top_k}")
         pass
 
     for weight in weight_list:
@@ -641,6 +623,10 @@ def main(args):
             # my_models.append(f"{prefix}-comb_knn{top_k}_w{weight}")
             # my_models.append(f"{prefix}-comb_knn_attn{top_k}_w{weight}")
             # my_models.append(f"{prefix}-comb_knn_attn_cls{top_k}_w{weight}")
+            # my_models.append(f"{prefix}-comb_knn_attn_penul{top_k}_w{weight}")
+            # my_models.append(f"{prefix}-comb_knn_attn_cls_penul{top_k}_w{weight}")
+            # my_models.append(f"{prefix}-comb_knn_attn_first{top_k}_w{weight}")
+            # my_models.append(f"{prefix}-comb_knn_attn_cls_first{top_k}_w{weight}")
             pass
     
     config = Config()
@@ -668,8 +654,7 @@ def main(args):
             use_baseline_pr=True, use_sort=args.use_sort, is_plot=False,
         )
         # rename prefix
-        prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ph'
-        result_df.index = result_df.index.map(lambda x: x.replace(prefix, 'TAEDACLv3'))
+        result_df.index = result_df.index.map(lambda x: x.replace(prefix, prefix[:10]))
         print(result_df)
         
   

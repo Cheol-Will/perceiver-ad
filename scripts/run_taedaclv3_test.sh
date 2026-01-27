@@ -17,10 +17,10 @@ data_list=(
     "satimage-2" 
     pendigits
     mammography 
-    campaign 
-    shuttle 
-    fraud 
-    nslkdd 
+    # campaign 
+    # shuttle 
+    # fraud 
+    # nslkdd 
     # census
 ) 
 model_type="TAEDACLv3"

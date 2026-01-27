@@ -23,8 +23,16 @@ class Tester(Trainer):
         model.build_eval_memory_bank(self.train_loader, self.device, False)
         model.build_eval_attn_bank(self.train_loader, self.device, False)
 
-        topks = (1, 5, 10, 16, 32, 64)
         weight_list = [0.01, 0.1, 1.0, 2.0, 5.0, 10.0]
+        keyword_list = [
+            'knn', 
+            'knn_attn_cls', 
+            'knn_attn', 
+            'knn_attn_penul', 
+            'knn_attn_cls_penul',
+            'knn_attn_first', 
+            'knn_attn_cls_first',
+        ]
 
         recon_list, test_label_list = [], []
         combined_score_dict = defaultdict(list)
@@ -39,7 +47,6 @@ class Tester(Trainer):
             output = model(x_input)
             recon_list.append(output['recon_loss'].detach().cpu())
 
-            keyword_list = ['knn', 'knn_attn', 'knn_attn_penul', 'knn_attn_cls']
             for keyword in keyword_list:
                 output = model.forward_combined(x_input, keyword, weight_list)
                 _append_combined(combined_score_dict, output['combined'])
