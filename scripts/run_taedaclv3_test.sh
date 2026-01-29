@@ -17,14 +17,14 @@ data_list=(
     "satimage-2" 
     pendigits
     mammography 
-    # campaign 
-    # shuttle 
-    # fraud 
-    # nslkdd 
+    campaign 
+    shuttle 
+    fraud 
+    nslkdd 
     # census
 ) 
 model_type="TAEDACLv3"
-exp_name="TAEDACLv3-260126-cw0.1-ap0.95-ph"
+exp_name="TAEDACLv3-260126-cw0.1-ap0.95-repeat_recon"
 pth_dir_name="TAEDACLv3-260126-cw0.1-ap0.95"
 for data in "${data_list[@]}"; do
     echo "Running $exp_name on $data"
@@ -34,3 +34,5 @@ for data in "${data_list[@]}"; do
         --exp_name $exp_name \
         --pth_dir_name $pth_dir_name
 done
+
+python results_helper/parse.py --target $exp_name

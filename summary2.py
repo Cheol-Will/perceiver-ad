@@ -6,9 +6,6 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import argparse
-import matplotlib.pyplot as plt
-import seaborn as sns
-from statistical_test import StatisticalTester
 
 pd.set_option('display.max_rows', None)
 @dataclass
@@ -125,7 +122,6 @@ class ResultCollector:
         return metric_means, metric_stds
 
 
-
 class DataFrameConverter:
     
     def __init__(self, config: Config):
@@ -219,7 +215,6 @@ class DataFrameConverter:
         return pivots
 
 
-
 class ResultAnalyzer:
     """rank"""
     
@@ -243,60 +238,6 @@ class ResultAnalyzer:
         return df_with_avg_rank
     
     @staticmethod
-    def add_tier_columns(
-        df_mean: pd.DataFrame,
-        df_std: pd.DataFrame,
-    ) -> pd.DataFrame:
-        dfm = df_mean.copy()
-        cols = [c for c in dfm.columns if c in df_std.columns]
-        
-        tier_cols = []
-        for c in cols:
-            tiers = ResultAnalyzer._tier_one_column(dfm[c], df_std[c])
-            tcol = f"{c}_tier"
-            dfm[tcol] = tiers
-            tier_cols.append(tcol)
-        
-        dfm['AVG_TIER'] = dfm[tier_cols].mean(axis=1, skipna=True)
-        dfm.drop(columns=tier_cols, inplace=True)
-        
-        return dfm
-    
-    @staticmethod
-    def _tier_one_column(s_mean: pd.Series, s_std: pd.Series) -> pd.Series:
-        s_std = s_std.fillna(0.0)
-        order = s_mean.sort_values(ascending=False, na_position="last").index.tolist()
-        
-        tiers = {idx: np.nan for idx in s_mean.index}
-        ref_idx = next((idx for idx in order if not pd.isna(s_mean.loc[idx])), None)
-        
-        if ref_idx is None:
-            return pd.Series(tiers)
-        
-        curr_tier = 1
-        ref_mean = float(s_mean.loc[ref_idx])
-        ref_std = float(s_std.loc[ref_idx])
-        tiers[ref_idx] = curr_tier
-        
-        for idx in order[order.index(ref_idx) + 1:]:
-            m = s_mean.loc[idx]
-            if pd.isna(m):
-                tiers[idx] = np.nan
-                continue
-            
-            sd = float(s_std.loc[idx])
-            same_tier = (float(m) <= ref_mean + ref_std)
-            
-            if same_tier:
-                tiers[idx] = curr_tier
-            else:
-                curr_tier += 1
-                ref_mean, ref_std = float(m), sd
-                tiers[idx] = curr_tier
-        
-        return pd.Series(tiers)
-    
-    @staticmethod
     def add_baseline_pr(df: pd.DataFrame, data: List[str]) -> pd.DataFrame:
         dataset_properties = pd.read_csv("Data/dataset_mcm.csv")
         dataset_properties['Dataset'] = dataset_properties['Dataset'].str.lower()
@@ -313,61 +254,12 @@ class ResultAnalyzer:
         
         return df
 
-class Visualizer:
-    
-    @staticmethod
-    def plot_avg_rank(df_with_rank: pd.DataFrame, base: str, filename: str):
-        rank_data = df_with_rank[['AVG_RANK']].sort_values(by='AVG_RANK', ascending=False)
-        
-        new_index = [
-            'MemPAE' if 'MemPAE' in model_name
-            else 'PAE' if 'PAE' in model_name
-            else 'PDRL' if 'PDRL' in model_name
-            else model_name
-            for model_name in rank_data.index
-        ]
-        rank_data.index = new_index
-        
-        plt.figure(figsize=(12, 8))
-        ax = sns.barplot(
-            x=rank_data.index, 
-            y=rank_data['AVG_RANK'], 
-            hue=rank_data.index, 
-            palette='viridis', 
-            legend=False
-        )
-        
-        # 막대 위에 값 표시
-        for p in ax.patches:
-            ax.annotate(
-                f'{p.get_height():.2f}',
-                (p.get_x() + p.get_width() / 2., p.get_height()),
-                ha='center', va='center',
-                xytext=(0, 9),
-                fontsize=12,
-                textcoords='offset points'
-            )
-        
-        plt.title(f'Model Average Rank ({filename})', fontsize=20)
-        plt.xlabel('Model', fontsize=15)
-        plt.ylabel('Average Rank', fontsize=15)
-        plt.xticks(rotation=45, ha='right', fontsize=12)
-        plt.ylim(0, rank_data['AVG_RANK'].max() * 1.15)
-        plt.tight_layout()
-        
-        save_path = f'metrics/{filename}_rank_plot.png'
-        plt.savefig(save_path)
-        print(f"Rank plot saved to {save_path}")
-        plt.close()
-
 
 class ResultRenderer:
-    """결과를 다양한 형식으로 렌더링"""
     
     def __init__(self, config: Config):
         self.config = config
         self.analyzer = ResultAnalyzer()
-        self.visualizer = Visualizer()
     
     def render(
         self,
@@ -402,9 +294,15 @@ class ResultRenderer:
         df_mean = df_mean.loc[order]
         df_std = df_std.loc[order]
 
-        df_mean.loc[df_mean['nslkdd'].isna(), 'nslkdd'] = 0.9693
-        df_mean.loc[df_mean['fraud'].isna(),  'fraud']  = 0.6537
-        df_mean.loc[df_mean['census'].isna(), 'census'] = 0.2475
+        default_value = {
+            'fraud': 0.6537,
+            'nslkdd': 0.9717,
+            'census': 0.2558,
+        }
+
+        if 'nslkdd' in df_mean.columns:
+            for dataname, value in default_value.items():
+                df_mean.loc[df_mean[dataname].isna(), dataname] = value
 
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
@@ -501,32 +399,6 @@ class ResultRenderer:
         df_return = df.rename(columns=alias)
         return df_return
 
-    @staticmethod
-    def _apply_aliases(df_render: pd.DataFrame) -> pd.DataFrame:
-        """Apply alias"""
-        aliases = {
-            'global': 'G', 'cluster': 'C', 'local': 'L', 'dependency': 'D',
-            '_anomalies': '', 'irrelevant_features': 'if',
-            '32_shuttle_42': 'stl', '29_pima_42': 'pm', '38_thyroid_42': 'thy',
-            '6_cardio_42': 'car', '31_satimage-2_42': 'sati', '18_ionosphere_42': 'ion',
-            '4_breastw_42': 'bre', '45_wine_42': 'wi', '23_mammography_42': 'mam',
-            '30_satellite_42': 'satl', '7_cardiotocography_42': 'cart', '13_fraud_42': 'fr',
-            '5_campaign_42': 'camp', '9_census_42': 'cen', '14_glass_42': 'gls',
-            '26_optdigits_42': 'opt', '42_WBC_42': 'wbd',
-        }
-        
-        def apply_aliases_to_name(column_name, aliases_dict):
-            new_name = column_name
-            for keyword, alias in aliases_dict.items():
-                new_name = new_name.replace(keyword, alias)
-            return new_name
-        
-        df_render = df_render.rename(
-            columns=lambda c: apply_aliases_to_name(c, aliases)
-        )
-        return df_render.round(4)
-
-
 
 def main(args):
     
@@ -551,7 +423,6 @@ def main(args):
         "mammography",
         "campaign",
         "shuttle",
-
         "fraud",
         "nslkdd",
         "census"
@@ -572,17 +443,54 @@ def main(args):
         # "TAE-tuned", # 3.50
         # "TAECL-temp0.2-contra0.01", # 3.00
         
-        "TAE-tunedv2", # 0.7123 (4.35)
-        "TAECL-250124", # 0.7267 (3.25)
-        "TAEDACLv3-260126-cw0.1-ap0.95", # 0.7302 (3.05)
-        "TAEIMIXv2-260126-cw0.1-ap0.05", # 0.7279 (3.40)
+        # "TAE-tunedv2", # 0.7123 (4.35)
+        # "TAECL-250124", # 0.7267 (3.25)
+        # "TAEIMIXv2-260126-cw0.1-ap0.05", # 0.7279 (3.40)
         
-        "TAEDACLv3-swap-260127-cw0.1-ap0.95", # 0.7285 (3.30)
-        "TAEDACLv3-swap-260127-cw0.1-ap0.90", # 0.7249 (3.40)
+        # "TAEDACLv3-swap-260127-cw0.1-ap0.95", # 0.7285 (3.30)
+        # "TAEDACLv3-swap-260127-cw0.1-ap0.90", # 0.7249 (3.40)
 
-        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn10_w1.0",
-        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn5_w0.1", # 0.7312 (3.25)
-        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn5_w0.01", # 0.7312 (3.10)
+        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn5_w1.0",
+
+
+        "TAE-tuned", # 0.7240 (3.85)
+        "TAECL-250124", # 0.7273 (3.40)
+        "TAEDACLv3-260126-cw0.1-ap0.95", # 0.7316 (3.15)
+        "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8", # 0.7391 (3.00)
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-bs256", # 0.
+
+
+
+        # 250128: alpha-beta tuning
+        # "TAEDACLv3-260126-cw0.1-ap0.8", # 
+        # "TAEDACLv4-260126-cw0.1-ap0.8", # 
+
+        # "TAEDACLv3-260126-cw0.1-ap0.9", # 
+        # "TAEDACLv4-260126-cw0.1-ap0.9", # 
+
+        # "TAEDACLv3-260126-cw0.1-ap0.95", # 0.7302 (3.05) current best
+        # "TAEDACLv4-260126-cw0.1-ap0.95", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bs32", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9-bs32", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9-bs64", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9-bs128", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9-bs256", # 0.
+
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-bs32", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-bs64", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-bs128", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-bs256", # 0.
+
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.7", # 0.
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.7-bs256", # 0.
+
+        # "TAEDACLv4-beta-tuned",
+        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_first1_w0.01",
+        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_first1_w0.1", # 0.7104 (4.65)
+        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_first10_w1.0",
+        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_first10_w5.0",
 
         # "TAECL-250124-ph-comb_knn_attn1_w0.01", # 3.15
         # "TAECL-250124-ph-comb_knn_attn_cls1_w0.01", # 3.20
@@ -592,30 +500,39 @@ def main(args):
         # "TAEDACL-260125-bw0.1-ap0.9", # 3.75
         # "TAEDACL-260126-bw0.1-ap0.95",
         # "TAEDACLv2-260126-cw0.1-ap0.9",
-        # "TAEDACLv3-260126-cw0.1-ap0.9",
-        # "TAEDACLv3-260126-cw0.1-ap0.95", # 3.10
 
         # "MBT-d128-top_k5-temp0.1",
         # "MQ-d128-qs16384-mo0.999-top_k5-temp0.1",
     ]
 
-    prefix = 'TAECL-250124-ph'
+    # prefix = 'TAECL-250124-ph'
     # prefix = 'TAEDACL-260125-bw0.1-ap0.9-ph'
     # prefix = 'TAEDACL-260125-bw0.01-ap0.9-ph'
     # prefix = 'TAEIMIX-260125-iw0.01-ap0.9-ph'
     # prefix = 'TAEIMIX-260125-iw0.1-ap0.9-ph'
-    prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ph'
+    # prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ph'
+    prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ret'
+    prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-repeat_recon'
     # my_models.append(prefix)
-    top_k_list = [1, 5, 10, 16, 32, 64]
+    top_k_list = [
+        1, 5, 10, 
+        16, 32, 64
+    ]
     weight_list = [0.01, 0.1, 1.0, 2.0, 5.0, 10.0]
-    for top_k in top_k_list:
+    for k in range(1, 6):
+        # my_models.append(f"{prefix}-{k}th_recon_score")
+        pass
+
+    for top_k in top_k_list:    
+        # my_models.append(f"{prefix}-ret_kth_top{top_k}")
+        # my_models.append(f"{prefix}-comb_ret_kth_top{top_k}")
         # my_models.append(f"{prefix}-knn{top_k}")
         # my_models.append(f"{prefix}-knn_attn{top_k}")
         # my_models.append(f"{prefix}-knn_attn_cls{top_k}")
-        # my_models.append(f"{prefix}-knn_attn_penul{top_k}")
-        # my_models.append(f"{prefix}-knn_attn_cls_penul{top_k}")
         # my_models.append(f"{prefix}-knn_attn_first{top_k}")
         # my_models.append(f"{prefix}-knn_attn_cls_first{top_k}")
+        # my_models.append(f"{prefix}-knn_attn_penul{top_k}")
+        # my_models.append(f"{prefix}-knn_attn_cls_penul{top_k}")
         pass
 
     for weight in weight_list:
@@ -623,10 +540,10 @@ def main(args):
             # my_models.append(f"{prefix}-comb_knn{top_k}_w{weight}")
             # my_models.append(f"{prefix}-comb_knn_attn{top_k}_w{weight}")
             # my_models.append(f"{prefix}-comb_knn_attn_cls{top_k}_w{weight}")
-            # my_models.append(f"{prefix}-comb_knn_attn_penul{top_k}_w{weight}")
-            # my_models.append(f"{prefix}-comb_knn_attn_cls_penul{top_k}_w{weight}")
             # my_models.append(f"{prefix}-comb_knn_attn_first{top_k}_w{weight}")
             # my_models.append(f"{prefix}-comb_knn_attn_cls_first{top_k}_w{weight}")
+            # my_models.append(f"{prefix}-comb_knn_attn_penul{top_k}_w{weight}")
+            # my_models.append(f"{prefix}-comb_knn_attn_cls_penul{top_k}_w{weight}")
             pass
     
     config = Config()

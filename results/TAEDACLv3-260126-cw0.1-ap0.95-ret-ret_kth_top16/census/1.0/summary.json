@@ -1,0 +1,71 @@
+{
+    "model_config": {
+        "num_features": 500,
+        "hidden_dim": 128,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.2,
+        "contra_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "use_flash_attn": true,
+        "use_swap": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 50,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 128,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "min_delta": 0,
+        "use_amp": true,
+        "model_type": "TAEDACLv3",
+        "dataset_name": "census",
+        "base_path": "results/TAEDACLv3-260126-cw0.1-ap0.95-ret-ret_kth_top16/census/1.0",
+        "exp_name": "TAEDACLv3-260126-cw0.1-ap0.95-ret-ret_kth_top16",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACLv3-260126-cw0.1-ap0.95/census/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.7192594620880856,
+        "ap": 0.2124109677133017,
+        "f1": 0.2267700703719661
+    },
+    "std_metrics": {
+        "rauc_std": 0.001633563077168606,
+        "ap_std": 0.004284961264566927,
+        "f1_std": 0.005284548952100878
+    },
+    "total_time": 510.6639609336853,
+    "all_seeds": [
+        {
+            "rauc": 0.7185601546602174,
+            "ap": 0.20936676465474444,
+            "f1": 0.22253339077983628,
+            "run": 0,
+            "test_time": 165.4830002784729
+        },
+        {
+            "rauc": 0.7215159507009107,
+            "ap": 0.21847079558536053,
+            "f1": 0.2342201637225334,
+            "run": 1,
+            "test_time": 166.7798044681549
+        },
+        {
+            "rauc": 0.7177022809031284,
+            "ap": 0.2093953428998001,
+            "f1": 0.22355665661352866,
+            "run": 2,
+            "test_time": 164.05043029785156
+        }
+    ]
+}

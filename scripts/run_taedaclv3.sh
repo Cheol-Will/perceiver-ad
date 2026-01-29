@@ -2,32 +2,32 @@
 set -euo pipefail
 
 data_list=(    
-    # wine
-    # glass 
-    # wbc 
-    # ionosphere 
-    # arrhythmia 
-    # breastw 
-    # pima  
-    # optdigits 
-    # cardio 
-    # cardiotocography 
-    # thyroid 
-    # satellite 
-    # "satimage-2" 
-    # pendigits
+    wine
+    glass 
+    wbc 
+    ionosphere 
+    arrhythmia 
+    breastw 
+    pima  
+    optdigits 
+    cardio 
+    cardiotocography 
+    thyroid 
+    satellite 
+    "satimage-2" 
+    pendigits
     
-    # mammography 
-    # campaign 
-    # shuttle 
+    mammography 
+    campaign 
+    shuttle 
 
-    # fraud 
-    # nslkdd 
+    fraud 
+    nslkdd 
     census
 ) 
 
 model_type="TAEDACLv3"
-dacl_alpha=0.95
+dacl_alpha=0.9
 contra_loss_weight_list=(0.1)
 # contra_loss_weight_list=(0.01)
 for data in "${data_list[@]}"; do

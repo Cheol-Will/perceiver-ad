@@ -3,8 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.cuda.amp import autocast
-from models.layers import BaseEncoder, BaseDecoder
-
+from models.layers import BaseEncoder
 
 class TDACL(nn.Module):
     def __init__(
@@ -16,7 +15,6 @@ class TDACL(nn.Module):
         mlp_ratio,
         dropout_prob,
         temperature,
-        contra_loss_weight,
         use_flash_attn: bool = False,
         depth_dec: int = None,
         depth_enc: int = None,
@@ -39,7 +37,6 @@ class TDACL(nn.Module):
 
         self.memory_bank = None
         self.temperature = float(temperature)
-        self.contra_loss_weight = contra_loss_weight
         self.dacl_alpha = float(dacl_alpha)
         self.use_bn = bool(use_bn)
 
@@ -60,7 +57,6 @@ class TDACL(nn.Module):
         )
 
     def reset_parameters(self):
-        nn.init.trunc_normal_(self.pos_encoding, std=0.02)
         self._init_mlp(self.projector)
 
     def _init_mlp(self, mlp: nn.Module):

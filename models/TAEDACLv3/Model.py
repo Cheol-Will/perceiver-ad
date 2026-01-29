@@ -353,3 +353,73 @@ class TAEDACLv3(nn.Module):
             "combined": scores,
             "knn_scores": knn_scores,
         }
+    
+    @torch.no_grad()
+    def forward_retrieval(self, x, top_k_list=(1, 5, 10, 16, 32, 64), pool="kth"):
+        self.eval()
+
+        bank = self.memory_bank
+        if bank is None:
+            raise RuntimeError("memory_bank is None. Call build_eval_memory_bank() first.")
+
+        z, attn_enc = self.encoder(x)
+        z = F.normalize(z.float(), dim=-1)
+        x_hat, attn_dec = self.decoder(z, self.pos_encoding)
+        recon = F.mse_loss(x_hat.float(), x.float(), reduction='none').mean(dim=-1)
+
+        bank = bank.to(z.device, non_blocking=True)
+        sim = torch.matmul(z, bank.T)  # reverse order with L2
+
+        Kmax = min(max(top_k_list), sim.shape[1])
+        nn_sim, nn_idx = torch.topk(sim, k=Kmax, dim=1, largest=True)  # nearest = largest sim
+
+        scores = {}
+        recons = {}
+        retrieved_latents = {}
+
+        for k in top_k_list:
+            kk = min(k, Kmax)
+            idx_k = nn_idx[:, :kk]
+            lat_k = bank[idx_k]
+
+            if pool == "mean":
+                z_ret = lat_k.mean(dim=1)
+            elif pool == "kth":
+                z_ret = lat_k[:, -1, :]
+            else:
+                raise ValueError(f"Unknown pool: {pool}")
+
+            x_hat_k, _ = self.decoder(z_ret, self.pos_encoding)
+            recon_k = F.mse_loss(x_hat_k.float(), x.float(), reduction="none").mean(dim=-1)
+
+            key = f"ret_{pool}_top{k}"
+            scores[key] = recon_k
+            recons[key] = x_hat_k
+            scores["comb_" + key] = recon + recon_k
+            retrieved_latents[key] = z_ret
+
+        return {
+            "scores": scores,
+            "nn_idx": nn_idx,
+            "nn_sim": nn_sim,
+            "retrieved_latents": retrieved_latents,
+            "x_hat": recons,
+        }
+    
+    @torch.no_grad()
+    def forward_repeat(self, x, max_n = 5):
+        self.eval()
+        scores = {}
+        x_hat = x
+        cum = None
+        for i in range(1, max_n+1):
+            z, _ = self.encoder(x_hat)
+            x_hat, _ = self.decoder(z, self.pos_encoding)
+            recon_loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=-1)
+            
+            cum = cum + recon_loss if cum is not None else recon_loss
+            scores[f"{i}th_recon_score"] = cum
+
+        return {
+            "scores": scores,
+        }

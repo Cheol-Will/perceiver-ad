@@ -73,6 +73,7 @@ def get_parser():
     parser.add_argument('--num_eval_repeat', type=int, default=None)
     parser.add_argument('--byol_loss_weight', type=float, default=None)
     parser.add_argument('--dacl_alpha', type=float, default=None)
+    parser.add_argument('--dacl_beta', type=float, default=None)
     parser.add_argument('--imix_loss_weight', type=float, default=None)
     parser.add_argument('--share_mask', action='store_true')
     parser.add_argument('--use_swap', action='store_true')

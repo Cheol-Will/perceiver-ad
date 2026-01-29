@@ -163,18 +163,32 @@ class Trainer(object):
         model.build_eval_memory_bank(self.train_loader, self.device, False)
 
         score_list, test_label_list = [], []
+        contra_score_list, combined_score_list = [], []
+        
+        def _to_safe_cpu_1d(x: torch.Tensor):
+            x = x.detach()
+            if x.dim() > 1:
+                x = x.view(-1)
+            x = x.to(torch.float64).cpu()
+            x = torch.nan_to_num(x, nan=0.0, posinf=1e12, neginf=-1e12)
+            x = torch.clamp(x, -1e12, 1e12)
+
+            return x
 
         for step, (x_input, y_label) in enumerate(self.test_loader):
             x_input = x_input.to(self.device)
             output = model(x_input)
-            knn = output['score'].data.cpu()
-            score_list.append(knn)
+
+            score = _to_safe_cpu_1d(output['score'])
+            score_list.append(score)
+            test_label_list.append(y_label)
+
+        score = torch.cat(score_list, axis=0).numpy()
+        test_label = torch.cat(test_label_list, axis=0).numpy()
 
         model.empty_eval_memory_bank()
         model.train()
 
-        score = torch.cat(score_list, axis=0).numpy()
-        test_label = torch.cat(test_label_list, axis=0).numpy()
 
         def calc_metrics(scores, labels, prefix=''):
             rauc, ap = aucPerformance(scores, labels)

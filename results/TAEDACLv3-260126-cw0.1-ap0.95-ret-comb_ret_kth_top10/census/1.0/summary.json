@@ -1,0 +1,71 @@
+{
+    "model_config": {
+        "num_features": 500,
+        "hidden_dim": 128,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.2,
+        "contra_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "use_flash_attn": true,
+        "use_swap": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 50,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 128,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "min_delta": 0,
+        "use_amp": true,
+        "model_type": "TAEDACLv3",
+        "dataset_name": "census",
+        "base_path": "results/TAEDACLv3-260126-cw0.1-ap0.95-ret-comb_ret_kth_top10/census/1.0",
+        "exp_name": "TAEDACLv3-260126-cw0.1-ap0.95-ret-comb_ret_kth_top10",
+        "runs": 10,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACLv3-260126-cw0.1-ap0.95/census/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.7193645597324013,
+        "ap": 0.21545527781736343,
+        "f1": 0.22906793048973143
+    },
+    "std_metrics": {
+        "rauc_std": 0.001934645440837215,
+        "ap_std": 0.0041418369349847375,
+        "f1_std": 0.0044924579404328835
+    },
+    "total_time": 510.6639609336853,
+    "all_seeds": [
+        {
+            "rauc": 0.7185710023130538,
+            "ap": 0.21283658180440412,
+            "f1": 0.22339508832399826,
+            "run": 0,
+            "test_time": 165.4830002784729
+        },
+        {
+            "rauc": 0.7220289317564234,
+            "ap": 0.22130214091338152,
+            "f1": 0.23438173201206378,
+            "run": 1,
+            "test_time": 166.7798044681549
+        },
+        {
+            "rauc": 0.7174937451277267,
+            "ap": 0.21222711073430467,
+            "f1": 0.22942697113313226,
+            "run": 2,
+            "test_time": 164.05043029785156
+        }
+    ]
+}
