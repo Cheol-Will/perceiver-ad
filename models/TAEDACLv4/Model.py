@@ -23,6 +23,7 @@ class TAEDACLv4(nn.Module):
         dacl_alpha: float = 0.9,
         dacl_beta: float = None,
         use_bn: bool = False,
+        use_bn_proj: bool = False,
         use_swap: bool = False,
     ):
         super().__init__()
@@ -49,14 +50,16 @@ class TAEDACLv4(nn.Module):
         self.dacl_alpha = float(dacl_alpha)
         self.dacl_beta = float(dacl_beta)
         self.use_bn = bool(use_bn)
-        self.use_swap = use_swap
+        self.use_bn_proj = bool(use_bn_proj)
 
-        self.projector = self._make_mlp(hidden_dim, projector_dim, projector_dim, use_bn=self.use_bn)
+        self.use_swap = use_swap
+        self.latent_bn = nn.BatchNorm1d(hidden_dim) if self.use_bn else None
+        self.projector = self._make_mlp(hidden_dim, projector_dim, projector_dim, use_bn_proj=self.use_bn_proj)
 
         self.reset_parameters()
 
-    def _make_mlp(self, in_dim, hid_dim, out_dim, use_bn: bool):
-        if use_bn:
+    def _make_mlp(self, in_dim, hid_dim, out_dim, use_bn_proj: bool):
+        if use_bn_proj:
             norm1 = nn.BatchNorm1d(hid_dim)
         else:
             norm1 = nn.LayerNorm(hid_dim)
@@ -136,8 +139,9 @@ class TAEDACLv4(nn.Module):
     def forward(self, x):
         batch_size = x.shape[0]
 
-        z, _ = self.encoder(x)
-
+        z, attn_enc = self.encoder(x)
+        z = self.latent_bn(z) if self.use_bn else z
+        
         if self.training:
             z_mix = self._latent_mix(z)
             x_hat, _ = self.decoder(z_mix, self.pos_encoding)
@@ -145,7 +149,8 @@ class TAEDACLv4(nn.Module):
 
             x_aug = self._dacl_views(x) if not self.use_swap else self._swap_views(x)
             z_aug, _ = self.encoder(x_aug)
-
+            z_aug = self.latent_bn(z_aug) if self.use_bn else z_aug
+            
             p = self.projector(z)
             p_aug = self.projector(z_aug)
 
@@ -162,9 +167,7 @@ class TAEDACLv4(nn.Module):
                 "contra_loss": contra_loss.mean(),
             }
 
-        z, attn_enc = self.encoder(x)
         x_hat, attn_dec = self.decoder(z, self.pos_encoding)
-
         x = x.float()
         x_hat = x_hat.float()
         recon_loss = F.mse_loss(x_hat, x, reduction="none").mean(dim=-1)
@@ -193,7 +196,7 @@ class TAEDACLv4(nn.Module):
         self.memory_bank = None
 
     @torch.no_grad()
-    def build_eval_memory_bank(self, train_loader, device, use_amp=False):
+    def build_eval_memory_bank(self, train_loader, device, use_amp=False, use_norm=True):
         self.eval()
         all_keys = []
         for (x_input, _) in train_loader:
@@ -207,7 +210,8 @@ class TAEDACLv4(nn.Module):
             all_keys.append(z.cpu())
 
         all_keys = torch.cat(all_keys, dim=0).to(device)
-        self.memory_bank = F.normalize(all_keys, dim=-1)
+        all_keys = F.normalize(all_keys, dim=1) if use_norm else all_keys
+        self.memory_bank = all_keys
         del all_keys
         torch.cuda.empty_cache()
 
@@ -374,53 +378,76 @@ class TAEDACLv4(nn.Module):
         }
     
     @torch.no_grad()
-    def forward_retrieval(self, x, top_k_list=(1, 5, 10, 16, 32, 64), pool="kth"):
+    def forward_retrieval(
+        self, 
+        x, 
+        top_k_list=(1, 5, 10, 16, 32, 64),
+        tau_list=(0.01, 0.05, 0.1, 0.2, 1.0,),
+    ):
         self.eval()
-
         bank = self.memory_bank
+        bank = bank.to(x.device, non_blocking=True)
         if bank is None:
             raise RuntimeError("memory_bank is None. Call build_eval_memory_bank() first.")
 
-        z, attn_enc = self.encoder(x)
-        z = F.normalize(z.float(), dim=-1)
-        x_hat, attn_dec = self.decoder(z, self.pos_encoding)
+        z, _ = self.encoder(x)
+        x_hat, _ = self.decoder(z, self.pos_encoding)
         recon = F.mse_loss(x_hat.float(), x.float(), reduction='none').mean(dim=-1)
 
-        bank = bank.to(z.device, non_blocking=True)
-        sim = torch.matmul(z, bank.T)  # reverse order with L2
-
-        Kmax = min(max(top_k_list), sim.shape[1])
-        nn_sim, nn_idx = torch.topk(sim, k=Kmax, dim=1, largest=True)  # nearest = largest sim
+        # get L2 distance
+        ab = torch.matmul(z, bank.T) # (B, N)
+        aa = z.pow(2).sum(dim=1).unsqueeze(1) # (B, 1)
+        bb = bank.pow(2).sum(dim=1).unsqueeze(0) # (1, B)
+        dist = (aa + bb - 2.0 * ab).clamp_min_(0.0)
+        
+        # find top-k latent
+        k_max = min(max(top_k_list), dist.shape[1]) 
+        nn_dist, nn_idx = torch.topk(dist, k=k_max, dim=1, largest=False) 
 
         scores = {}
         recons = {}
         retrieved_latents = {}
 
         for k in top_k_list:
-            kk = min(k, Kmax)
+            kk = min(k, k_max)
             idx_k = nn_idx[:, :kk]
             lat_k = bank[idx_k]
+            dist_k = dist[:, :kk]
+            
+            # top-k latents mean
+            z_k_mean = lat_k.mean(dim=1)
+            x_hat_k_mean, _ = self.decoder(z_k_mean, self.pos_encoding)
+            recon_k_mean = F.mse_loss(x_hat_k_mean.float(), x.float(), reduction='none').mean(dim=-1)
 
-            if pool == "mean":
-                z_ret = lat_k.mean(dim=1)
-            elif pool == "kth":
-                z_ret = lat_k[:, -1, :]
-            else:
-                raise ValueError(f"Unknown pool: {pool}")
+            # kth latent only
+            z_k_ret = lat_k[:, -1, :]
+            x_hat_k_ret, _ = self.decoder(z_k_ret, self.pos_encoding)
+            recon_k_ret = F.mse_loss(x_hat_k_ret.float(), x.float(), reduction='none').mean(dim=-1)
 
-            x_hat_k, _ = self.decoder(z_ret, self.pos_encoding)
-            recon_k = F.mse_loss(x_hat_k.float(), x.float(), reduction="none").mean(dim=-1)
+            # top-k latents weight sum
+            for tau in tau_list:
+                weight = torch.softmax(-dist_k / tau, dim=1) # (B, K)
+                z_k_ws = torch.sum(lat_k * weight.unsqueeze(-1), dim=1) # (B, D)
+                x_hat_ws, _ = self.decoder(z_k_ws, self.pos_encoding)
+                recon_k_ws = F.mse_loss(x_hat_ws.float(), x.float(), reduction='none').mean(dim=-1)
+                
+                scores[f"k_ws_tau{tau}_{k}"] = recon_k_ws 
+                scores[f"comb_k_ws_tau{tau}_{k}"] = recon + recon_k_ws
+                retrieved_latents[f"k_ws_tau{tau}_{k}"] = z_k_ws
 
-            key = f"ret_{pool}_top{k}"
-            scores[key] = recon_k
-            recons[key] = x_hat_k
-            scores["comb_" + key] = recon + recon_k
-            retrieved_latents[key] = z_ret
+            scores[f"k_mean{k}"] = recon_k_mean
+            scores[f"k_ret{k}"] = recon_k_ret
+
+            scores[f"comb_k_mean{k}"] = recon + recon_k_mean
+            scores[f"comb_k_ret{k}"] = recon + recon_k_ret
+
+            retrieved_latents[f"k_mean{k}"] = z_k_mean
+            retrieved_latents[f"k_ret{k}"] = z_k_ret
 
         return {
             "scores": scores,
             "nn_idx": nn_idx,
-            "nn_sim": nn_sim,
+            "nn_dist": nn_dist,
             "retrieved_latents": retrieved_latents,
             "x_hat": recons,
         }
@@ -431,13 +458,13 @@ class TAEDACLv4(nn.Module):
         scores = {}
         x_hat = x
         cum = None
-        for i in range(1, max_n+1):
+        for i in range(max_n):
             z, _ = self.encoder(x_hat)
-            x_hat, _ = self.decoder(z, self.pos_encoding)
+            x_hat, _ = self.decoder(z, self.pos_encoding) # ith reconstruction
             recon_loss = F.mse_loss(x_hat, x, reduction='none').mean(dim=-1)
             
             cum = cum + recon_loss if cum is not None else recon_loss
-            scores[f"{i}th_recon_score"] = cum
+            scores[f"{i+1}th_recon_score"] = cum
 
         return {
             "scores": scores,

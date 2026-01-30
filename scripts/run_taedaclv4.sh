@@ -2,37 +2,41 @@
 set -euo pipefail
 
 data_list=(    
-    # wine
-    # glass 
-    # wbc 
-    # ionosphere 
-    # arrhythmia 
-    # breastw 
-    # pima  
-    # optdigits 
-    # cardio 
-    # cardiotocography 
-    # thyroid 
-    # satellite 
-    # "satimage-2" 
-    # pendigits
+    wine
+    glass 
+    wbc 
+    ionosphere 
+    arrhythmia 
+    breastw 
+    pima  
+    optdigits 
+    cardio 
+    cardiotocography 
+    thyroid 
+    satellite 
+    "satimage-2" 
+    pendigits
     
-    # mammography 
-    # campaign 
-    # shuttle 
+    mammography 
+    campaign 
+    shuttle 
 
-    # fraud 
-    # nslkdd 
+    fraud 
+    nslkdd 
     census
 ) 
 
 model_type="TAEDACLv4"
 dacl_alpha=0.95
 dacl_beta=0.8
+temperature=0.05
+# temperature=0.1
+# temperature=0.2
+
 contra_loss_weight_list=(0.1)
 for data in "${data_list[@]}"; do
     for contra_loss_weight in "${contra_loss_weight_list[@]}"; do
-        exp_name="$model_type-260126-cw$contra_loss_weight-ap$dacl_alpha-bt$dacl_beta"
+        exp_name="$model_type-260130-cw$contra_loss_weight-ap$dacl_alpha-bt$dacl_beta-temp$temperature"
         echo "Running $exp_name on $data."
         python main.py \
             --dataname "$data" \
@@ -41,6 +45,7 @@ for data in "${data_list[@]}"; do
             --contra_loss_weight "$contra_loss_weight" \
             --dacl_alpha $dacl_alpha \
             --dacl_beta $dacl_beta \
+            --temperature $temperature\
             --runs 5
     done
 done

@@ -23,8 +23,10 @@ default:
     temperature: 0.2
     contra_loss_weight: 0.01
     dacl_alpha: 0.9
-    dacl_beta: null
+    dacl_beta: 0.8
     use_flash_attn: false
+    use_bn: false
+    use_bn_proj: false
     use_swap: false
 
 wine:
@@ -33,7 +35,7 @@ wine:
   hidden_dim: 64
   learning_rate: 0.01
   temperature: 0.1
-  batch_size: 64
+  batch_size: 32
 
 glass:
   epochs: 200
@@ -48,18 +50,21 @@ wbc:
   hidden_dim: 64
   learning_rate: 0.01
   temperature: 0.1
+  batch_size: 128
 
 ionosphere:
   patience: 10
   hidden_dim: 64
   learning_rate: 0.01
   temperature: 0.1
+  batch_size: 128
 
 arrhythmia:  
   patience: 10
   hidden_dim: 64
   learning_rate: 0.01
   temperature: 0.1
+  batch_size: 512
 
 breastw: 
   patience: 10
@@ -81,7 +86,7 @@ optdigits:
   hidden_dim: 64
   learning_rate: 0.01
   temperature: 0.1
-  batch_size: 128
+  batch_size: 256
 
 cardio: 
   patience: 50
@@ -102,7 +107,7 @@ thyroid:
   hidden_dim: 128
   learning_rate: 0.001
   temperature: 0.2
-  batch_size: 128
+  batch_size: 256
 
 satellite:
   patience: 10
@@ -116,7 +121,7 @@ satimage-2:
   hidden_dim: 128
   learning_rate: 0.001
   temperature: 0.2
-  batch_size: 128
+  batch_size: 256
 
 pendigits:
   patience: 10
@@ -130,7 +135,7 @@ mammography:
   hidden_dim: 128
   learning_rate: 0.001
   temperature: 0.2
-  batch_size: 128
+  batch_size: 256
 
 campaign:
   patience: 10
@@ -144,6 +149,7 @@ shuttle:
   hidden_dim: 128
   learning_rate: 0.001
   temperature: 0.2
+  batch_size: 512
 
 fraud:
   batch_size: 2048

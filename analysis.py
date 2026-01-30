@@ -41,8 +41,15 @@ def train_test(args, model_config, train_config, run):
         plot_tsne(train_config, x_hat, label, target_name='x_hat')
         print("Saved x_hat T-SNE")
     if args.plot_input_recon:
-        plot_tsne_input_and_recon(train_config, x, x_hat, label, target_name='x_and_x_hat')
-        print("Saved input and reconstruction T-SNE")
+        # Train Normal and Test Abnormal
+        label_arr = np.array(label)
+        idx = np.isin(label_arr, ['Train-Normal', 'Test-Abnormal'])
+        x_, x_hat_, label_ = x[idx], x_hat[idx], label_arr[idx]
+        plot_tsne_input_and_recon(train_config, x_, x_hat_, label_, target_name='x_and_x_hat_train_test_ab')
+
+        # Both train and test
+        # plot_tsne_input_and_recon(train_config, x, x_hat, label, target_name='x_and_x_hat')
+        
     if args.plot_score_histogram:
         plot_score_hist(train_config, score, label, score_name='Anomaly_Score')
         print("Saved anoamly score histogram.")
@@ -61,6 +68,10 @@ def train_test(args, model_config, train_config, run):
         knn_score = output['knn_score']
         for top_k, score in knn_score.items():
             plot_score_hist(train_config, score, label, score_name=top_k)
+    if args.plot_repeat_recon_historgram:
+        for k, v in output['repeat_recon_score'].items():
+            plot_score_hist(train_config, v, label, score_name=f'{k}_Anomaly_Score')
+
 
 def train_test_latte(args, model_config, train_config, analysis_config, run):
     # LATTE analysis
@@ -214,7 +225,7 @@ def main(args):
 
     
     start = time.time()    
-    for seed in range(1, 2):
+    for seed in range(2):
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         np.random.seed(seed)
@@ -243,6 +254,7 @@ if __name__ == "__main__":
     parser.add_argument('--plot_contra_histogram', action='store_true')
     parser.add_argument('--plot_latent_norm_histogram', action='store_true')
     parser.add_argument('--plot_knn_histogram', action='store_true')
+    parser.add_argument('--plot_repeat_recon_historgram', action='store_true')
 
     # LATTE
     parser.add_argument('--plot_memory_weight', action='store_true')

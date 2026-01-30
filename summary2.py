@@ -295,14 +295,15 @@ class ResultRenderer:
         df_std = df_std.loc[order]
 
         default_value = {
-            'fraud': 0.6537,
-            'nslkdd': 0.9717,
-            'census': 0.2558,
+            'fraud': 0.6475,
+            'nslkdd': 0.9736,
+            'census': 0.2542,
         }
-
-        if 'nslkdd' in df_mean.columns:
-            for dataname, value in default_value.items():
+        for dataname, value in default_value.items():
+            if dataname in df_mean.columns:
                 df_mean.loc[df_mean[dataname].isna(), dataname] = value
+
+        # df_mean.loc['TAEML-260129-bt0.8', 'census'] = 0.2558
 
         df_mean.loc[:, 'AVG_AUC'] = df_mean.mean(axis=1, numeric_only=True)
         df_std.loc[:, 'AVG_AUC'] = df_std.mean(axis=1, numeric_only=True)
@@ -438,6 +439,17 @@ def main(args):
     ]
     
     my_models = [
+        # Ablation
+        # "TAE-tuned", # 0.7240 (3.85)
+        # "TAECL-250124", # 0.7273 (3.40)
+        # "TAEDACLv3-260126-cw0.1-ap0.95", # 0.7316 (3.15)
+        "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8", # 0.7391 (3.00) SOTA
+        "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-temp0.1",
+        "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-temp0.2",
+        "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-temp0.05",
+        # "TAEML-260129-bt0.8",  # 0.7310 (3.65)
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-use_bn",
+
         # 251130
         # "LATTE-patience-tuned",
         # "TAE-tuned", # 3.50
@@ -447,62 +459,14 @@ def main(args):
         # "TAECL-250124", # 0.7267 (3.25)
         # "TAEIMIXv2-260126-cw0.1-ap0.05", # 0.7279 (3.40)
         
-        # "TAEDACLv3-swap-260127-cw0.1-ap0.95", # 0.7285 (3.30)
-        # "TAEDACLv3-swap-260127-cw0.1-ap0.90", # 0.7249 (3.40)
-
-        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn5_w1.0",
-
-
-        "TAE-tuned", # 0.7240 (3.85)
-        "TAECL-250124", # 0.7273 (3.40)
-        "TAEDACLv3-260126-cw0.1-ap0.95", # 0.7316 (3.15)
-        "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8", # 0.7391 (3.00)
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-bs256", # 0.
-
-
+        # Hyperparameter sensitivity: Beta
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.95", # 0.7309 (3.20)
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9", # 0.7322 (3.35)
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.7", # 0.7309 (3.55)
 
         # 250128: alpha-beta tuning
-        # "TAEDACLv3-260126-cw0.1-ap0.8", # 
         # "TAEDACLv4-260126-cw0.1-ap0.8", # 
-
-        # "TAEDACLv3-260126-cw0.1-ap0.9", # 
         # "TAEDACLv4-260126-cw0.1-ap0.9", # 
-
-        # "TAEDACLv3-260126-cw0.1-ap0.95", # 0.7302 (3.05) current best
-        # "TAEDACLv4-260126-cw0.1-ap0.95", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bs32", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9-bs32", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9-bs64", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9-bs128", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.9-bs256", # 0.
-
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-bs32", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-bs64", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-bs128", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-bs256", # 0.
-
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.7", # 0.
-        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.7-bs256", # 0.
-
-        # "TAEDACLv4-beta-tuned",
-        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_first1_w0.01",
-        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_first1_w0.1", # 0.7104 (4.65)
-        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_first10_w1.0",
-        # "TAEDACLv3-260126-cw0.1-ap0.95-ph-comb_knn_attn_first10_w5.0",
-
-        # "TAECL-250124-ph-comb_knn_attn1_w0.01", # 3.15
-        # "TAECL-250124-ph-comb_knn_attn_cls1_w0.01", # 3.20
-        # "TAECL-250124-ph-comb_knn_attn5_w0.01", # 0.7284 (3.10)
-        # "TAECL-250124-ph-comb_knn_attn_cls5_w0.01", # 3.10
-        
-        # "TAEDACL-260125-bw0.1-ap0.9", # 3.75
-        # "TAEDACL-260126-bw0.1-ap0.95",
-        # "TAEDACLv2-260126-cw0.1-ap0.9",
-
-        # "MBT-d128-top_k5-temp0.1",
-        # "MQ-d128-qs16384-mo0.999-top_k5-temp0.1",
     ]
 
     # prefix = 'TAECL-250124-ph'
@@ -513,17 +477,26 @@ def main(args):
     # prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ph'
     prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ret'
     prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-repeat_recon'
+    prefix = 'TAEDACLv4-260130-2-cw0.1-ap0.95-bt0.8-ret'
     # my_models.append(prefix)
     top_k_list = [
         1, 5, 10, 
         16, 32, 64
     ]
+    tau_list=(0.01, 0.05, 0.1, 0.2, 1.0,)
     weight_list = [0.01, 0.1, 1.0, 2.0, 5.0, 10.0]
+    
     for k in range(1, 6):
         # my_models.append(f"{prefix}-{k}th_recon_score")
         pass
 
-    for top_k in top_k_list:    
+    for k in top_k_list:    
+        # my_models.append(f"{prefix}-k_mean{k}")
+        # my_models.append(f"{prefix}-k_ret{k}")
+        # my_models.append(f"{prefix}-comb_k_mean{k}")
+        # my_models.extend([f"{prefix}-k_ws_tau{tau}_{k}" for tau in tau_list])
+        # my_models.append(f"{prefix}-comb_k_ret{k}")
+
         # my_models.append(f"{prefix}-ret_kth_top{top_k}")
         # my_models.append(f"{prefix}-comb_ret_kth_top{top_k}")
         # my_models.append(f"{prefix}-knn{top_k}")
@@ -647,7 +620,7 @@ if __name__ == "__main__":
     parser.add_argument('--use_hpo_memory_latent', action='store_true', help='memory latent')
     parser.add_argument('--use_hpo_memory_latent_top_k', action='store_true', help='memory latent topk')
     parser.add_argument('--stat_test', action='store_true', help='Criticla Difference Diagram.')
-    parser.add_argument('--num_seeds', type=int, default=10, help='The number of seeds.')
+    parser.add_argument('--num_seeds', type=int, default=5, help='The number of seeds.')
     
     args = parser.parse_args()
     main(args)

@@ -1,0 +1,86 @@
+{
+    "model_config": {
+        "num_features": 21,
+        "hidden_dim": 128,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.2,
+        "contra_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "dacl_beta": null,
+        "use_flash_attn": false,
+        "use_swap": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 128,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 50,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TAEDACLv4",
+        "dataset_name": "cardiotocography",
+        "base_path": "results/TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-ret-comb_k_mean32/cardiotocography/1.0",
+        "exp_name": "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-ret-comb_k_mean32",
+        "runs": 5,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACLv4-260126-cw0.1-ap0.95-bt0.8/cardiotocography/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.7446680070002917,
+        "ap": 0.679068207154417,
+        "f1": 0.592274678111588
+    },
+    "std_metrics": {
+        "rauc_std": 0.008908215148489692,
+        "ap_std": 0.00815311922388394,
+        "f1_std": 0.014554356186964065
+    },
+    "total_time": 4.203273296356201,
+    "all_seeds": [
+        {
+            "rauc": 0.7463540147506147,
+            "ap": 0.677605221759627,
+            "f1": 0.5965665236051502,
+            "run": 0,
+            "test_time": 1.0193767547607422
+        },
+        {
+            "rauc": 0.7288923496812367,
+            "ap": 0.6658735971866225,
+            "f1": 0.572961373390558,
+            "run": 1,
+            "test_time": 0.2846639156341553
+        },
+        {
+            "rauc": 0.7515365223550982,
+            "ap": 0.6770199076629374,
+            "f1": 0.5987124463519313,
+            "run": 2,
+            "test_time": 0.2817211151123047
+        },
+        {
+            "rauc": 0.7422861369223718,
+            "ap": 0.6849322075468148,
+            "f1": 0.5793991416309013,
+            "run": 3,
+            "test_time": 0.309429407119751
+        },
+        {
+            "rauc": 0.7542710112921371,
+            "ap": 0.6899101016160829,
+            "f1": 0.6137339055793991,
+            "run": 4,
+            "test_time": 0.2837498188018799
+        }
+    ]
+}

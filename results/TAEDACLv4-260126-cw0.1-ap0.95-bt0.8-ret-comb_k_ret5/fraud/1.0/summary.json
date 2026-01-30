@@ -1,0 +1,86 @@
+{
+    "model_config": {
+        "num_features": 29,
+        "hidden_dim": 128,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.2,
+        "contra_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "dacl_beta": null,
+        "use_flash_attn": false,
+        "use_swap": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.001,
+        "sche_gamma": 0.95,
+        "batch_size": 2048,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 20,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TAEDACLv4",
+        "dataset_name": "fraud",
+        "base_path": "results/TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-ret-comb_k_ret5/fraud/1.0",
+        "exp_name": "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-ret-comb_k_ret5",
+        "runs": 5,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACLv4-260126-cw0.1-ap0.95-bt0.8/fraud/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.9586168707622585,
+        "ap": 0.35632898593634754,
+        "f1": 0.47073170731707314
+    },
+    "std_metrics": {
+        "rauc_std": 0.0006531650141306111,
+        "ap_std": 0.016894367333918928,
+        "f1_std": 0.018342299467769895
+    },
+    "total_time": 71.17993664741516,
+    "all_seeds": [
+        {
+            "rauc": 0.958777881921604,
+            "ap": 0.35526149844171623,
+            "f1": 0.483739837398374,
+            "run": 0,
+            "test_time": 13.040460586547852
+        },
+        {
+            "rauc": 0.957959879634672,
+            "ap": 0.3737572038489346,
+            "f1": 0.4695121951219512,
+            "run": 1,
+            "test_time": 13.393649101257324
+        },
+        {
+            "rauc": 0.9577728668330452,
+            "ap": 0.3740860821837241,
+            "f1": 0.49796747967479676,
+            "run": 2,
+            "test_time": 13.652592658996582
+        },
+        {
+            "rauc": 0.9591059764373021,
+            "ap": 0.34987404387829574,
+            "f1": 0.4532520325203252,
+            "run": 3,
+            "test_time": 13.334481954574585
+        },
+        {
+            "rauc": 0.9594677489846691,
+            "ap": 0.328666101329067,
+            "f1": 0.4491869918699187,
+            "run": 4,
+            "test_time": 13.117769241333008
+        }
+    ]
+}

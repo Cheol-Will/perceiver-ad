@@ -29,9 +29,9 @@ def plot_tsne(train_config, target, label, target_name='latent'):
     df_plot = pd.DataFrame(z_embedded, columns=['Dim1', 'Dim2'])
     df_plot['Label'] = label
     colors_dict = {
-        'Train-Normal': 'lightgray',
-        'Test-Normal': 'blue',
-        'Test-Abnormal': 'red',
+        'Train-Normal': '#7F7F7F',
+        'Test-Normal': '#1F77B4',
+        'Test-Abnormal': '#FF7F0E',
     }
     plt.figure(figsize=(10, 8))
     sns.scatterplot(
@@ -48,7 +48,8 @@ def plot_tsne(train_config, target, label, target_name='latent'):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
 
-    base_path = train_config['base_path']
+    base_path = os.path.join(train_config['base_path'], str(train_config['run']))
+
     os.makedirs(base_path, exist_ok=True) 
     
     out_path = os.path.join(base_path, f'{target_name}_tsne_{train_config.get("dataset_name", "result")}.png')
@@ -100,19 +101,21 @@ def plot_tsne_input_and_recon(train_config, target1, target2, base_labels, targe
     final_labels = labels_input + labels_recon
     
     colors_dict = {
-        'Train-Normal-Input': 'lightgray', 
-        'Test-Normal-Input': 'blue',
-        'Test-Abnormal-Input': 'red',
+        'Train-Normal-Input':  '#8EC5FF',  # light gray
+        'Train-Normal-Recon':  'blue', 
 
-        'Train-Normal-Recon': 'lightgray',       
-        'Test-Normal-Recon': 'blue',
-        'Test-Abnormal-Recon': 'red',
+        'Test-Normal-Input':   '#D3D3D3', 
+        'Test-Normal-Recon':   '#808080',
+
+        'Test-Abnormal-Input': '#FF9E9E',  # light red
+        'Test-Abnormal-Recon': 'red',  # red
     }
+
     
     alpha_dict = {
-        'Train-Normal-Input': 0.3, 
-        'Test-Normal-Input': 0.3,
-        'Test-Abnormal-Input': 0.3,
+        'Train-Normal-Input': 0.6, 
+        'Test-Normal-Input': 0.6,
+        'Test-Abnormal-Input': 0.6,
 
         'Train-Normal-Recon': 0.8,
         'Test-Normal-Recon': 0.8,
@@ -128,8 +131,7 @@ def plot_tsne_input_and_recon(train_config, target1, target2, base_labels, targe
         'Test-Normal-Recon': 'X',
         'Test-Abnormal-Recon': 'X',
     }
-
-    base_path = train_config['base_path']
+    base_path = os.path.join(train_config['base_path'], str(train_config['run']))
     os.makedirs(base_path, exist_ok=True) 
 
     print(f"Running t-SNE on shape {target.shape}...")
@@ -139,7 +141,7 @@ def plot_tsne_input_and_recon(train_config, target1, target2, base_labels, targe
     df_plot = pd.DataFrame(z_embedded, columns=['Dim1', 'Dim2'])
     df_plot['Label'] = final_labels
     
-    plt.figure(figsize=(12, 10))
+    plt.figure(figsize=(15, 10))
     
     for label in df_plot['Label'].unique():
         df_subset = df_plot[df_plot['Label'] == label]
@@ -212,7 +214,8 @@ def plot_score_hist(train_config, target, label, score_name='Score'):
         'Test-Abnormal': 'red',
     }
     
-    base_path = train_config['base_path']
+    base_path = os.path.join(train_config['base_path'], str(train_config['run']))
+
     dataset_name = train_config.get("dataset_name", "result")
     os.makedirs(base_path, exist_ok=True) 
 
@@ -310,7 +313,8 @@ def plot_attn_heatmap(train_config, attn_enc, attn_dec, labels, feature_names=No
     num_cols = len(layers)
     num_rows = len(row_titles)
     dataset_name = train_config.get("dataset_name", "result")
-    base_path = train_config["base_path"]
+    base_path = os.path.join(train_config['base_path'], str(train_config['run']))
+
 
     def _draw_grid(get_map_fn, out_path, suptitle):
         fig, axes = plt.subplots(num_rows, num_cols, figsize=(5 * num_cols, 4 * num_rows))

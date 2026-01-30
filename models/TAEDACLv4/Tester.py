@@ -1,6 +1,6 @@
 import os
 import torch
-from models.TAEDACLv3.Trainer import Trainer
+from models.TAEDACLv4.Trainer import Trainer
 from utils import aucPerformance, F1Performance
 from collections import defaultdict
 
@@ -20,7 +20,8 @@ class Tester(Trainer):
         model = self.model
         model.eval()
         print("Build attention bank for evaluation")
-        model.build_eval_memory_bank(self.train_loader, self.device, False)
+        model.build_eval_memory_bank(self.train_loader, self.device, False, False)
+        # model.empty_eval_memory_bank()
         # model.build_eval_attn_bank(self.train_loader, self.device, False)
 
         weight_list = [0.01, 0.1, 1.0, 2.0, 5.0, 10.0]
@@ -47,11 +48,11 @@ class Tester(Trainer):
             output = model(x_input)
             recon_list.append(output['recon_loss'].detach().cpu())
 
-            # output = model.forward_retrieval(x_input)
-            # _append_combined(combined_score_dict, output['scores'])
-
-            output = model.forward_repeat(x_input, max_n=5)
+            output = model.forward_retrieval(x_input)
             _append_combined(combined_score_dict, output['scores'])
+
+            # output = model.forward_repeat(x_input, max_n=5)
+            # _append_combined(combined_score_dict, output['scores'])
 
             for keyword in keyword_list:
                 output = model.forward_combined(x_input, keyword, weight_list)
@@ -59,7 +60,7 @@ class Tester(Trainer):
                 _append_combined(combined_score_dict, output['knn_scores'])
 
             test_label_list.append(y_label)
-
+        model.empty_eval_memory_bank()
         model.empty_eval_attn_bank()
         model.train()
 

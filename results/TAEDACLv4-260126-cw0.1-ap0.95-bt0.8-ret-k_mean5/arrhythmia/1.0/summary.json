@@ -1,0 +1,86 @@
+{
+    "model_config": {
+        "num_features": 274,
+        "hidden_dim": 64,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.1,
+        "contra_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "dacl_beta": null,
+        "use_flash_attn": false,
+        "use_swap": false
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 512,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TAEDACLv4",
+        "dataset_name": "arrhythmia",
+        "base_path": "results/TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-ret-k_mean5/arrhythmia/1.0",
+        "exp_name": "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8-ret-k_mean5",
+        "runs": 5,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACLv4-260126-cw0.1-ap0.95-bt0.8/arrhythmia/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.8011618778458157,
+        "ap": 0.6185228107067495,
+        "f1": 0.5545454545454545
+    },
+    "std_metrics": {
+        "rauc_std": 0.014774631504871266,
+        "ap_std": 0.03385156856460002,
+        "f1_std": 0.024618298195866556
+    },
+    "total_time": 3.947941303253174,
+    "all_seeds": [
+        {
+            "rauc": 0.8085256712199718,
+            "ap": 0.6093249878978871,
+            "f1": 0.5606060606060606,
+            "run": 0,
+            "test_time": 0.9321577548980713
+        },
+        {
+            "rauc": 0.7970639032815198,
+            "ap": 0.5933748435545939,
+            "f1": 0.5454545454545454,
+            "run": 1,
+            "test_time": 0.2658884525299072
+        },
+        {
+            "rauc": 0.775631967341812,
+            "ap": 0.5987439994163163,
+            "f1": 0.5151515151515151,
+            "run": 2,
+            "test_time": 0.2696859836578369
+        },
+        {
+            "rauc": 0.820065944418276,
+            "ap": 0.6853134744294684,
+            "f1": 0.5909090909090909,
+            "run": 3,
+            "test_time": 0.29521965980529785
+        },
+        {
+            "rauc": 0.8045219029674987,
+            "ap": 0.6058567482354815,
+            "f1": 0.5606060606060606,
+            "run": 4,
+            "test_time": 0.28917360305786133
+        }
+    ]
+}

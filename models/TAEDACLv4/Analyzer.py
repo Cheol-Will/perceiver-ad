@@ -3,7 +3,8 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
-from models.TAEDACLv3.Trainer import Trainer 
+from collections import defaultdict
+from models.TAEDACLv4.Trainer import Trainer 
 
 class Analyzer(Trainer):
     def __init__(self, model_config: dict, train_config: dict):
@@ -11,7 +12,7 @@ class Analyzer(Trainer):
         self.model_config = model_config
         self.train_config = train_config
 
-    def get_score_and_latent(self):
+    def load_model(self, ):
         path = os.path.join(self.path, "model.pth")
         path2 = path.replace('results_analysis', 'results') # replace results_analysis with results
         print(path)
@@ -32,16 +33,23 @@ class Analyzer(Trainer):
             print("Parameter does not exist. Start training")
             self.training()
             torch.save(self.model.state_dict(), path)
-        
+
+    def get_score_and_latent(self):
+        self.load_model()
         model = self.model
         model.eval() 
-        print("Build memory bank for evaluation")
-        model.build_eval_memory_bank(self.train_loader, self.device, False)
+        # print("Build memory bank for evaluation")
+        # model.build_eval_memory_bank(self.train_loader, self.device, False)
 
         score, latent = [], []
         x, x_hat, contra_score = [], [], []
         attn_enc, attn_dec = [], []
         label = []
+        repeat_recon_dict = defaultdict(list)
+        def _append_combined(d, combined):
+            for k, v in combined.items():
+                d[k].append(v.detach().cpu())
+
         with torch.no_grad():
             for (x_input, y_label) in self.train_loader:
                 x_input = x_input.to(self.device)
@@ -57,6 +65,10 @@ class Analyzer(Trainer):
                 batch_attn_dec = torch.stack(output['attn_dec'], dim=1).cpu()
                 attn_dec.append(batch_attn_dec)
                 label.extend(['Train-Normal'] * x_input.size(0))
+
+                # For repeated reconstruction
+                # output = model.forward_repeat(x_input, max_n=5)
+                # _append_combined(repeat_recon_dict, output['scores'])
 
             for (x_input, y_label) in self.test_loader:
                 x_input = x_input.to(self.device)
@@ -76,6 +88,10 @@ class Analyzer(Trainer):
                 batch_labels = np.where(y_np == 0, 'Test-Normal', 'Test-Abnormal')
                 label.extend(batch_labels)
 
+                # For repeated reconstruction
+                # output = model.forward_repeat(x_input, max_n=5)
+                # _append_combined(repeat_recon_dict, output['scores'])
+
         score = torch.cat(score, axis=0).numpy()
         contra_score = torch.cat(contra_score, axis=0).numpy()
         latent = torch.cat(latent, axis=0) 
@@ -83,6 +99,10 @@ class Analyzer(Trainer):
         x_hat = torch.cat(x_hat, axis=0) 
         attn_enc = torch.cat(attn_enc, axis=0) # (B, L1, H, F+1, F+1)
         attn_dec = torch.cat(attn_dec, axis=0) # (B, L2, H, F+1, F+1)
+        repeat_recon_score = {}
+        for k, v in repeat_recon_dict.items():
+            repeat_recon_scores = torch.cat(v, axis=0).numpy()
+            repeat_recon_score[k] = repeat_recon_scores
 
         return {
             'score': score,
@@ -93,4 +113,5 @@ class Analyzer(Trainer):
             'x_hat': x_hat,
             'attn_enc': attn_enc,
             'attn_dec': attn_dec,
+            'repeat_recon_score': repeat_recon_score,
         }
