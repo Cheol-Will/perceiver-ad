@@ -77,6 +77,7 @@ class Trainer(object):
             running_loss = 0.0
             running_recon_loss = 0.0
             running_contra_loss = 0.0
+            running_cycle_loss = 0.0
 
             for step, (x_input, y_label) in enumerate(self.train_loader):
                 x_input = x_input.to(self.device)
@@ -88,6 +89,7 @@ class Trainer(object):
                         loss = output['loss']
                         recon_loss = output['recon_loss']
                         contra_loss = output['contra_loss']
+                        cycle_loss = output['cycle_loss']
 
                     self.scaler.scale(loss).backward()
                     self.scaler.step(optimizer)
@@ -97,6 +99,7 @@ class Trainer(object):
                     loss = output['loss']
                     recon_loss = output['recon_loss']
                     contra_loss = output['contra_loss']
+                    cycle_loss = output['cycle_loss']
 
                     loss.backward()
                     optimizer.step()
@@ -104,16 +107,18 @@ class Trainer(object):
                 running_loss += loss.item()
                 running_recon_loss += recon_loss.item()
                 running_contra_loss += contra_loss.item()
+                running_cycle_loss += cycle_loss.item()
 
             scheduler.step()
 
             avg_loss = running_loss / len(self.train_loader)
             avg_recon_loss = running_recon_loss / len(self.train_loader)
             avg_contra_loss = running_contra_loss / len(self.train_loader)
+            avg_cycle_loss = running_cycle_loss / len(self.train_loader)
 
-            info = 'Epoch:[{}]\t loss={:.6f}\t recon_loss={:.6f}\t contra_loss={:.6f}'
-            self.logger.info(info.format(epoch, avg_loss, avg_recon_loss, avg_contra_loss))
-            self._log_training(epoch, avg_loss, avg_recon_loss, avg_contra_loss)
+            info = 'Epoch:[{}]\t loss={:.6f}\t recon_loss={:.6f}\t contra_loss={:.6f}\t cycle_loss={:6f}'
+            self.logger.info(info.format(epoch, avg_loss, avg_recon_loss, avg_contra_loss, avg_cycle_loss))
+            self._log_training(epoch, avg_loss, avg_recon_loss, avg_contra_loss, avg_cycle_loss)
 
             if (epoch + 1) % self.eval_interval == 0:
                 print(f"\n{'='*80}")
@@ -225,11 +230,12 @@ class Trainer(object):
         metric_dict.update(calc_metrics(combined_score, test_label, prefix='combined_'))
         return metric_dict
 
-    def _log_training(self, epoch, avg_loss, avg_recon_loss, avg_contra_loss):
+    def _log_training(self, epoch, avg_loss, avg_recon_loss, avg_contra_loss, avg_cycle_loss):
         if self.writer:
             self.writer.add_scalars(f"{self.dataname}/Loss/Total", {f'Run_{self.run}': avg_loss}, epoch)
             self.writer.add_scalars(f"{self.dataname}/Loss/Recon", {f'Run_{self.run}': avg_recon_loss}, epoch)
             self.writer.add_scalars(f"{self.dataname}/Loss/Contra", {f'Run_{self.run}': avg_contra_loss}, epoch)
+            self.writer.add_scalars(f"{self.dataname}/Loss/Cycle", {f'Run_{self.run}': avg_cycle_loss}, epoch)
             self.writer.flush()
 
     def _log_evaluation(self, epoch, metrics):

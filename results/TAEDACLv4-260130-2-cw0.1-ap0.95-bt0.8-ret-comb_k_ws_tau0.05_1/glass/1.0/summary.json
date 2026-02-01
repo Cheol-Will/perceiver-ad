@@ -1,0 +1,89 @@
+{
+    "model_config": {
+        "num_features": 9,
+        "hidden_dim": 64,
+        "depth": 4,
+        "depth_enc": null,
+        "depth_dec": null,
+        "num_heads": 4,
+        "mlp_ratio": 4.0,
+        "dropout_prob": 0.0,
+        "temperature": 0.1,
+        "contra_loss_weight": 0.01,
+        "dacl_alpha": 0.9,
+        "dacl_beta": 0.8,
+        "use_flash_attn": false,
+        "use_bn": false,
+        "use_bn_proj": false,
+        "use_swap": false,
+        "cycle_loss_weight": null
+    },
+    "train_config": {
+        "data_dir": "Data/",
+        "epochs": 200,
+        "learning_rate": 0.01,
+        "sche_gamma": 0.95,
+        "batch_size": 64,
+        "random_seed": 42,
+        "num_workers": 0,
+        "preprocess": "standard",
+        "patience": 10,
+        "min_delta": 0,
+        "use_amp": false,
+        "model_type": "TAEDACLv4",
+        "dataset_name": "glass",
+        "base_path": "results/TAEDACLv4-260130-2-cw0.1-ap0.95-bt0.8-ret-comb_k_ws_tau0.05_1/glass/1.0",
+        "exp_name": "TAEDACLv4-260130-2-cw0.1-ap0.95-bt0.8-ret-comb_k_ws_tau0.05_1",
+        "runs": 5,
+        "train_ratio": 1.0,
+        "base_pth_path": "results/TAEDACLv4-260126-cw0.1-ap0.95-bt0.8/glass/1.0"
+    },
+    "mean_metrics": {
+        "rauc": 0.8778856526429342,
+        "ap": 0.3599226621270578,
+        "f1": 0.22222222222222224
+    },
+    "std_metrics": {
+        "rauc_std": 0.02113246306448484,
+        "ap_std": 0.06927015161996374,
+        "f1_std": 0.12171612389003691
+    },
+    "total_time": 4.170263767242432,
+    "all_seeds": [
+        {
+            "rauc": 0.8748651564185546,
+            "ap": 0.3482574796300286,
+            "f1": 0.1111111111111111,
+            "run": 0,
+            "test_time": 1.0660881996154785
+        },
+        {
+            "rauc": 0.8781014023732471,
+            "ap": 0.39298251774274795,
+            "f1": 0.2222222222222222,
+            "run": 1,
+            "test_time": 0.3169677257537842
+        },
+        {
+            "rauc": 0.9147788565264294,
+            "ap": 0.43652889775438797,
+            "f1": 0.4444444444444444,
+            "run": 2,
+            "test_time": 0.36170220375061035
+        },
+        {
+            "rauc": 0.848975188781014,
+            "ap": 0.2331657462967195,
+            "f1": 0.1111111111111111,
+            "run": 3,
+            "test_time": 0.3142726421356201
+        },
+        {
+            "rauc": 0.8727076591154261,
+            "ap": 0.38867866921140526,
+            "f1": 0.2222222222222222,
+            "run": 4,
+            "test_time": 0.3148195743560791
+        }
+    ]
+}

@@ -443,12 +443,87 @@ def main(args):
         # "TAE-tuned", # 0.7240 (3.85)
         # "TAECL-250124", # 0.7273 (3.40)
         # "TAEDACLv3-260126-cw0.1-ap0.95", # 0.7316 (3.15)
-        "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8", # 0.7391 (3.00) SOTA
-        "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-temp0.1",
-        "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-temp0.2",
-        "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-temp0.05",
+        # "TAEDACLv4-260126-cw0.1-ap0.95-bt0.8", # 0.7388 (3.00) SOTA
+        
+        # Cycle Tuning
+        # "TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.002-bs-tuned", # 0.7283 (3.20)
+        # "TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.001-bs-tuned", # 0.7389 (2.70)
+        # "TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.0007-bs-tuned", # 0.7280 (3.10)
+
+        # need to fix batch, temp
+        "TAEDACLv5-260131-2-cw0.05-ap0.95-bt0.8-cycle0.0005", # 0.7379 (2.70), 
+
+        # cycle simclr
+        # "TAEDACLv6-260131-cw0.1-ap0.95-bt0.8-cycle0.1",
+        # "TAEDACLv6-260131-cw0.1-ap0.95-bt0.8-cycle0.05",
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.05",
+        
+
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.02-bs128-temp0.2", # want to see
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.02-bs128-temp0.2-ep50", 
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.01", # 0.7315 (3.10)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.01-bs128", # 0.7191 (3.10)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.01-bs128-temp0.1",
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.01-bs128-temp0.2", # 0.7361 (2.90) ##
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.01-bs128-temp0.2-ep50", # .7336 (3.05)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.01-bs128-temp0.2-ep100", # .7336 (3.05)
+
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.01-bs256", # 0.7276 (3.75)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.01-bs256-temp0.2", # 0.7276 (3.75)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.01-bs512", # 0.7211 (3.70)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.01-bs512-temp0.2", # 0.7276 (3.75)
+
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.005-bs128", # 0.7325 (3.40)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.005-bs128-temp0.1", # (3.4)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.005-bs128-temp0.2", # (3.1579)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.005-bs128-temp0.2-ep50", # (3.3)
+        
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.005-bs256", # 0.7258 (3.35)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.005-bs256-temp0.1", # (3.1) ##
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.005-bs256-temp0.2", # (3.9)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.005-bs512", # 0.7227 (3.45)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.005-bs512-temp0.1", # (3.3)
+        # "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8-cycle0.005-bs512-temp0.2",
+
+
+        # -ing
+
+        # temperature
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-temp0.1", O 
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-temp0.2",
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-temp0.05", O
         # "TAEML-260129-bt0.8",  # 0.7310 (3.65)
         # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-use_bn",
+
+        # 250131: Cycle Loss
+        # "TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.05", # O
+        # "TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.001",
+        # "TAEDACLv4-260130-cw0.01-ap0.95-bt0.8-cycle0.01", # O
+
+
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-cycle0.1", # O
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-cycle0.01", # O
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-cycle0.005", # O
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-cycle0.002", # Need to check
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-cycle0.001", # O
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-cycle0.0005", # O
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-cycle0.0002", # O
+        # "TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-cycle0.0001",
+
+        # "TAEDACLv5-260131-cw0.05-ap0.95-bt0.8-cycle0.05", # O
+        # "TAEDACLv5-260131-cw0.05-ap0.95-bt0.8-cycle0.001",
+        # "TAEDACLv5-260131-cw0.01-ap0.95-bt0.8-cycle0.01", # O
+        # "TAEDACLv5-260131-cw0.1-ap0.95-bt0.8-cycle0.1", # O
+        # "TAEDACLv5-260131-cw0.1-ap0.95-bt0.8-cycle0.01", # O
+        # "TAEDACLv5-260131-cw0.1-ap0.95-bt0.8-cycle0.005", # O
+        # "TAEDACLv5-260131-cw0.1-ap0.95-bt0.8-cycle0.002", # O
+        # "TAEDACLv5-260131-cw0.1-ap0.95-bt0.8-cycle0.001", # O
+        # "TAEDACLv5-260131-cw0.1-ap0.95-bt0.8-cycle0.0005", # O
+        # "TAEDACLv5-260131-cw0.1-ap0.95-bt0.8-cycle0.0002", # O
+        # "TAEDACLv5-260131-cw0.1-ap0.95-bt0.8-cycle0.0001",
+        # "TAEDACLv5-260131-cw0.1-ap0.95-bt0.8-cycle0.0005",
+
+        
 
         # 251130
         # "LATTE-patience-tuned",
@@ -475,9 +550,51 @@ def main(args):
     # prefix = 'TAEIMIX-260125-iw0.01-ap0.9-ph'
     # prefix = 'TAEIMIX-260125-iw0.1-ap0.9-ph'
     # prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ph'
-    prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ret'
-    prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-repeat_recon'
-    prefix = 'TAEDACLv4-260130-2-cw0.1-ap0.95-bt0.8-ret'
+
+    cw_list = [0.1, 0.05, 0.01]
+    cycle_list = [0.05, 0.02, 0.01, 0.005, 0.002, 0.001]
+    cycle_list = [0.01, 0.007, 0.005, 0.003, 0.002, 0.001]
+    
+    # my_models.append("TAEDACLv5-260131-2-cw0.05-ap0.95-bt0.8-cycle0.0005")
+    # my_models.append("TAEDACLv5-260131-2-cw0.05-ap0.95-bt0.8-cycle0.0005-bs32")
+    # my_models.append("TAEDACLv5-260131-2-cw0.05-ap0.95-bt0.8-cycle0.0005-bs64")
+    # my_models.append("TAEDACLv5-260131-2-cw0.05-ap0.95-bt0.8-cycle0.0005-bs128")
+    # my_models.append("TAEDACLv5-260131-2-cw0.05-ap0.95-bt0.8-cycle0.0005-bs256")
+    # my_models.append("TAEDACLv5-260131-2-cw0.05-ap0.95-bt0.8-cycle0.0005-bs512")
+
+    # my_models.append("TAEDACLv5-260131-2-cw0.05-ap0.95-bt0.8-cycle0.005")
+    # my_models.append("TAEDACLv5-260131-2-cw0.05-ap0.95-bt0.8-cycle0.002")
+    # my_models.append("TAEDACLv5-260131-2-cw0.01-ap0.95-bt0.8-cycle0.005")
+    # my_models.append("TAEDACLv5-260131-2-cw0.01-ap0.95-bt0.8-cycle0.001")
+
+    # my_models.append("TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.001-bs-tuned")
+    # my_models.append("TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.001")
+    # my_models.append("TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.001-bs32")
+    # my_models.append("TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.001-bs64")
+    # my_models.append("TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.001-bs128")
+    # my_models.append("TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.001-bs256")
+    # my_models.append("TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-cycle0.001-bs512")
+    
+    # my_models.append("TAEDACLv4-260130-cw0.01-ap0.95-bt0.8-cycle0.007")
+    # my_models.append("TAEDACLv4-260130-cw0.1-ap0.95-bt0.8-cycle0.007")
+    prefix = "TAEDACLv4-260130-cw0.05-ap0.95-bt0.8-"
+    prefix = "TAEDACLv4-260130-"
+    prefix = "TAEDACLv5-260131-"
+    prefix = "TAEDACLv6-260131-cw0.05-ap0.95-bt0.8"
+    for cw in cw_list:
+        for cycle in cycle_list:
+            # my_models.append(f"TAEDACLv4-260130-cw{cw}-ap0.95-bt0.8-cycle{cycle}")
+            pass
+            
+    for cw in cw_list:
+        for cycle in cycle_list:
+            # my_models.append(f"TAEDACLv5-260131-cw{cw}-ap0.95-bt0.8-cycle{cycle}")
+            pass
+
+
+    # prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-ret'
+    # prefix = 'TAEDACLv3-260126-cw0.1-ap0.95-repeat_recon'
+    # prefix = 'TAEDACLv4-260130-2-cw0.1-ap0.95-bt0.8-ret'
     # my_models.append(prefix)
     top_k_list = [
         1, 5, 10, 
@@ -493,8 +610,8 @@ def main(args):
     for k in top_k_list:    
         # my_models.append(f"{prefix}-k_mean{k}")
         # my_models.append(f"{prefix}-k_ret{k}")
-        # my_models.append(f"{prefix}-comb_k_mean{k}")
         # my_models.extend([f"{prefix}-k_ws_tau{tau}_{k}" for tau in tau_list])
+        # my_models.append(f"{prefix}-comb_k_mean{k}")
         # my_models.append(f"{prefix}-comb_k_ret{k}")
 
         # my_models.append(f"{prefix}-ret_kth_top{top_k}")

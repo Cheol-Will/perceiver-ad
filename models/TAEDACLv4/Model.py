@@ -25,6 +25,7 @@ class TAEDACLv4(nn.Module):
         use_bn: bool = False,
         use_bn_proj: bool = False,
         use_swap: bool = False,
+        cycle_loss_weight: float = None,
     ):
         super().__init__()
         depth_enc = depth if depth_enc is None else depth_enc
@@ -51,6 +52,7 @@ class TAEDACLv4(nn.Module):
         self.dacl_beta = float(dacl_beta)
         self.use_bn = bool(use_bn)
         self.use_bn_proj = bool(use_bn_proj)
+        self.cycle_loss_weight = cycle_loss_weight
 
         self.use_swap = use_swap
         self.latent_bn = nn.BatchNorm1d(hidden_dim) if self.use_bn else None
@@ -161,10 +163,20 @@ class TAEDACLv4(nn.Module):
             contra_loss = contra_loss * self.contra_loss_weight
 
             loss = recon_loss.mean() + contra_loss.mean()
+
+            if self.cycle_loss_weight is not None:
+                z_hat, _ = self.encoder(x_hat)
+                cycle_loss = F.mse_loss(z_hat, z.detach(), reduction='none').mean(dim=1)
+                cycle_loss = cycle_loss * self.cycle_loss_weight
+                loss += cycle_loss.mean()
+            else:
+                cycle_loss = torch.zeros(batch_size, device=x.device, dtype=z.dtype)
+
             return {
                 "loss": loss,
                 "recon_loss": recon_loss.mean(),
                 "contra_loss": contra_loss.mean(),
+                "cycle_loss": cycle_loss.mean(),
             }
 
         x_hat, attn_dec = self.decoder(z, self.pos_encoding)
@@ -412,7 +424,7 @@ class TAEDACLv4(nn.Module):
             kk = min(k, k_max)
             idx_k = nn_idx[:, :kk]
             lat_k = bank[idx_k]
-            dist_k = dist[:, :kk]
+            dist_k = nn_dist[:, :kk]
             
             # top-k latents mean
             z_k_mean = lat_k.mean(dim=1)

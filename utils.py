@@ -78,6 +78,7 @@ def get_parser():
     parser.add_argument('--share_mask', action='store_true')
     parser.add_argument('--use_swap', action='store_true')
     parser.add_argument('--use_bn', action='store_true')
+    parser.add_argument('--cycle_loss_weight', type=float, default=None)
 
     # Train config
     parser.add_argument('--learning_rate', type=float, default=None)

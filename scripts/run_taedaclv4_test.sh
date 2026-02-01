@@ -2,24 +2,24 @@
 set -euo pipefail
 
 data_list=(    
-    # wine 
-    # glass 
-    # wbc 
-    # ionosphere 
-    # arrhythmia 
-    # breastw 
-    # pima  
-    # optdigits 
-    # cardio 
-    # cardiotocography 
-    # thyroid 
-    # satellite 
-    # "satimage-2" 
-    # pendigits
-    # mammography 
-    # campaign 
-    # shuttle 
-    # fraud 
+    wine 
+    glass 
+    wbc 
+    ionosphere 
+    arrhythmia 
+    breastw 
+    pima  
+    optdigits 
+    cardio 
+    cardiotocography 
+    thyroid 
+    satellite 
+    "satimage-2" 
+    pendigits
+    mammography 
+    campaign 
+    shuttle 
+    fraud 
     nslkdd 
     census
 ) 
